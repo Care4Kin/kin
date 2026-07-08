@@ -206,6 +206,39 @@ button, input, select, textarea { font: inherit; }
   line-height: 1.4;
 }
 
+.auth-mode-toggle {
+  display: flex;
+  gap: 0.4rem;
+  margin-bottom: 1.25rem;
+  background: var(--surface-2);
+  border-radius: var(--radius-sm);
+  padding: 0.25rem;
+}
+
+.auth-mode-toggle button {
+  flex: 1;
+  background: transparent;
+  border: none;
+  border-radius: calc(var(--radius-sm) - 4px);
+  padding: 0.5rem;
+  color: var(--text-muted);
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.auth-mode-toggle button.active {
+  background: var(--green-mid);
+  color: #fff;
+}
+
+.google-signin-button {
+  display: flex;
+  justify-content: center;
+  margin-top: 1.25rem;
+}
+
 .forgot-link {
   font-size: 0.9rem;
   color: var(--green-light);

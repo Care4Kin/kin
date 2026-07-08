@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import { api } from '../../services/api'
+import GoogleSignInButton from '../../components/auth/GoogleSignInButton'
 
 const SECURITY_QUESTIONS = [
   "What was your first pet's name?",
@@ -55,6 +56,17 @@ export default function Register() {
       setError(err.message)
     } finally {
       setLoading(false)
+    }
+  }
+
+  async function handleGoogleCredential(idToken, role) {
+    setError('')
+    try {
+      const data = await api.googleAuth(idToken, role)
+      login({ user_id: data.user_id, role: data.role, full_name: data.full_name }, data.token)
+      navigate('/', { state: { justSignedUp: true } })
+    } catch (err) {
+      setError(err.message)
     }
   }
 
@@ -167,6 +179,8 @@ export default function Register() {
             {loading ? 'Creating account…' : 'Sign Up'}
           </button>
         </form>
+
+        <GoogleSignInButton role={form.role} onCredential={handleGoogleCredential} onError={setError} />
 
         <p className="auth-switch">
           Already have an account?{' '}
