@@ -38,7 +38,7 @@ export default function Register() {
         phone: form.phone,
       })
       const data = await api.login({ email: form.email, password: form.password })
-      login({ user_id: data.user_id, role: data.role }, data.token)
+      login({ user_id: data.user_id, role: data.role, full_name: form.full_name }, data.token)
       navigate('/')
     } catch (err) {
       setError(err.message)
