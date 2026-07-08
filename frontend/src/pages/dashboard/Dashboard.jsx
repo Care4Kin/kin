@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 
 const TIPS = [
@@ -64,9 +65,9 @@ export default function Dashboard() {
 
 function SummaryCard({ title, description, href, accent }) {
   return (
-    <a href={href} className={`summary-card summary-card--${accent}`}>
+    <Link to={href} className={`summary-card summary-card--${accent}`}>
       <h2>{title}</h2>
       <p>{description}</p>
-    </a>
+    </Link>
   )
 }
