@@ -90,10 +90,9 @@ export default function Dashboard() {
 function SummaryCard({ title, description, href, accent, count }) {
   return (
     <a href={href} className={`summary-card summary-card--${accent}`}>
-      {count !== undefined && <span className="summary-card-count">{count}</span>}
       <h2>{title}</h2>
       <p>{description}</p>
-    </a>
+    </Link>
   )
 }
 
