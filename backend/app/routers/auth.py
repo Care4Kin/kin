@@ -44,7 +44,7 @@ def login(body: LoginRequest, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.email == body.email).first()
     if not user or not verify_password(body.password, user.password_hash):
         raise HTTPException(401, 'Invalid email or password')
-    return {'token': make_token(user.user_id), 'user_id': user.user_id, 'role': user.role}
+    return {'token': make_token(user.user_id), 'user_id': user.user_id, 'role': user.role, 'full_name': user.full_name}
 
 @router.post('/logout')
 def logout():

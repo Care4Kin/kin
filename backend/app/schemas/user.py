@@ -22,3 +22,4 @@ class LoginOut(BaseModel):
     token: str
     user_id: int
     role: str
+    full_name: str
