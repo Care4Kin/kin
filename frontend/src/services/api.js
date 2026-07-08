@@ -37,6 +37,9 @@ export const api = {
   updateProfile: (data) => request('PATCH', '/api/auth/me', data),
   changePassword: (data) => request('POST', '/api/auth/change-password', data),
   updateSecurityQuestion: (data) => request('PATCH', '/api/auth/security-question', data),
+  sendPhoneCode: (phone) => request('POST', '/api/auth/phone/send-code', { phone }),
+  verifyPhoneCode: (phone, code) => request('POST', '/api/auth/phone/verify-code', { phone, code }),
+  googleAuth: (idToken, role) => request('POST', '/api/auth/google', { id_token: idToken, role }),
 
   // Circles
   getMyCircle: () => request('GET', '/api/circles/mine'),

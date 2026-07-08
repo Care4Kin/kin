@@ -15,6 +15,7 @@
   --warn:            #C0392B; /* dark red — decorative/large-text only on dark bg */
   --warn-light:      #E57373; /* red — safe for small text on dark backgrounds */
   --warn-pale:       #F9E0DE; /* light pink card background for auth errors */
+  --warn-on-pale:    #A93226; /* darker red — 5.3:1 on warn-pale, safe for normal-size error text */
   --text:            #FFFFFF;
   --text-muted:      #95D5B2; /* light green — secondary text, passes AA everywhere */
   --font:         system-ui, -apple-system, sans-serif;
@@ -206,6 +207,39 @@ button, input, select, textarea { font: inherit; }
   line-height: 1.4;
 }
 
+.auth-mode-toggle {
+  display: flex;
+  gap: 0.4rem;
+  margin-bottom: 1.25rem;
+  background: var(--surface-2);
+  border-radius: var(--radius-sm);
+  padding: 0.25rem;
+}
+
+.auth-mode-toggle button {
+  flex: 1;
+  background: transparent;
+  border: none;
+  border-radius: calc(var(--radius-sm) - 4px);
+  padding: 0.5rem;
+  color: var(--text-muted);
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.auth-mode-toggle button.active {
+  background: var(--green-mid);
+  color: #fff;
+}
+
+.google-signin-button {
+  display: flex;
+  justify-content: center;
+  margin-top: 1.25rem;
+}
+
 .forgot-link {
   font-size: 0.9rem;
   color: var(--green-light);
@@ -215,7 +249,7 @@ button, input, select, textarea { font: inherit; }
 
 .auth-error {
   background: var(--warn-pale);
-  color: var(--warn);
+  color: var(--warn-on-pale);
   border-radius: var(--radius-sm);
   padding: 0.6rem 0.9rem;
   font-size: 0.9rem;

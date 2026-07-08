@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useLocation } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import { api } from '../../services/api'
 
@@ -89,7 +89,8 @@ export default function Dashboard() {
 
 function SummaryCard({ title, description, href, accent, count }) {
   return (
-    <a href={href} className={`summary-card summary-card--${accent}`}>
+    <Link to={href} className={`summary-card summary-card--${accent}`}>
+      {Boolean(count) && <span className="summary-card-count">{count}</span>}
       <h2>{title}</h2>
       <p>{description}</p>
     </Link>

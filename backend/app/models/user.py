@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Text, TIMESTAMP, func
+from sqlalchemy import Column, Integer, String, Text, Boolean, TIMESTAMP, func
 from app.database import Base
 
 class User(Base):
@@ -12,4 +12,8 @@ class User(Base):
     phone = Column(Text)
     security_question = Column(Text)
     security_answer_hash = Column(Text)
+    phone_verified = Column(Boolean, nullable=False, server_default='false')
+    phone_verification_code_hash = Column(Text)
+    phone_verification_expires_at = Column(TIMESTAMP(timezone=True))
+    google_sub = Column(Text, unique=True)
     created_at = Column(TIMESTAMP, server_default=func.now())

@@ -4,7 +4,8 @@ import { api } from '../../services/api'
 import { useFetch } from '../../hooks/useFetch'
 
 export default function Bills() {
-  const { circleId } = useAuth()
+  const { circleId, user } = useAuth()
+  const isCaregiver = user?.role === 'caregiver'
   const { data, loading, error } = useFetch(() => api.getBills(circleId), [circleId])
   const [bills, setBills] = useState([])
   const [showForm, setShowForm] = useState(false)
@@ -85,7 +86,7 @@ export default function Bills() {
         <button className="add-toggle" onClick={() => setShowForm(true)}>+ Add a bill</button>
       )}
 
-      <CategoryPieChart bills={bills} />
+      {isCaregiver && <CategoryPieChart bills={bills} />}
 
       {unpaid.length > 0 && (
         <section className="bill-section">

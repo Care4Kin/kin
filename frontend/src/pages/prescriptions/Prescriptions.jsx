@@ -6,7 +6,8 @@ import { useFetch } from '../../hooks/useFetch'
 const emptyForm = { medication_name: '', dosage: '', prescribing_doctor: '', pharmacy_name: '', refill_date: '', notes: '' }
 
 export default function Prescriptions() {
-  const { circleId } = useAuth()
+  const { circleId, user } = useAuth()
+  const isCaregiver = user?.role === 'caregiver'
   const { data, loading, error } = useFetch(() => api.getPrescriptions(circleId), [circleId])
   const [rxs, setRxs] = useState([])
   const [showForm, setShowForm] = useState(false)
@@ -86,9 +87,27 @@ export default function Prescriptions() {
         <button className="add-toggle" onClick={() => setShowForm(true)}>+ Add a prescription</button>
       )}
 
+      {isCaregiver && <PrescriptionSummary rxs={rxs} />}
+
       <div className="card-list">
         {rxs.map(rx => <RxCard key={rx.prescription_id} rx={rx} onDelete={handleDelete} />)}
       </div>
+    </div>
+  )
+}
+
+function PrescriptionSummary({ rxs }) {
+  const active = rxs.filter(rx => rx.is_active !== false)
+  const urgent = active.filter(rx => {
+    if (!rx.refill_date) return false
+    const days = Math.ceil((new Date(rx.refill_date) - new Date()) / 86400000)
+    return days <= 10
+  })
+
+  return (
+    <div className="stat-banner">
+      <span className="stat-banner-label">{active.length} active · {urgent.length} due soon</span>
+      <span className="stat-banner-value">{urgent.length > 0 ? '⚠' : '✓'}</span>
     </div>
   )
 }
