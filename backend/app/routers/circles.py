@@ -7,6 +7,8 @@ from app.models.circle import FamilyCircle
 from app.models.circle_member import CircleMember
 from app.models.user import User
 from app.schemas.circle import MemberInvite, MemberPermissionsUpdate
+from app.services.email import send_email
+from app.config import settings
 
 router = APIRouter()
 
@@ -97,6 +99,19 @@ def invite_member(
     db.add(member)
     db.commit()
     db.refresh(member)
+
+    send_email(
+        to=caregiver.email,
+        subject=f'{current_user.full_name} added you to their Kin family circle',
+        body=(
+            f'Hi {caregiver.full_name},\n\n'
+            f'{current_user.full_name} has added you as a caregiver on Kin, '
+            'so you can help manage their bills, prescriptions, and important accounts together.\n\n'
+            f'Log in to see their dashboard: {settings.frontend_url}/login\n\n'
+            '— The Kin Team'
+        ),
+    )
+
     return {'membership_id': member.membership_id, 'caregiver_id': member.caregiver_id, 'permissions': _permissions(member)}
 
 @router.delete('/{circle_id}/members/{membership_id}')
