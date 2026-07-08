@@ -16,8 +16,11 @@ async function request(method, path, body) {
   })
 
   if (!res.ok) {
-    const err = await res.json().catch(() => ({ message: res.statusText }))
-    throw new Error(err.message)
+    const err = await res.json().catch(() => ({ detail: res.statusText }))
+    const message = Array.isArray(err.detail)
+      ? err.detail.map(d => d.msg.replace(/^Value error, /, '')).join('; ')
+      : (err.detail || err.message || res.statusText)
+    throw new Error(message)
   }
 
   return res.status === 204 ? null : res.json()
@@ -28,6 +31,12 @@ export const api = {
   register: (data) => request('POST', '/api/auth/register', data),
   login: (data) => request('POST', '/api/auth/login', data),
   logout: () => request('POST', '/api/auth/logout'),
+  getSecurityQuestion: (email) => request('GET', `/api/auth/security-question?email=${encodeURIComponent(email)}`),
+  resetPassword: (data) => request('POST', '/api/auth/reset-password', data),
+  getMe: () => request('GET', '/api/auth/me'),
+  updateProfile: (data) => request('PATCH', '/api/auth/me', data),
+  changePassword: (data) => request('POST', '/api/auth/change-password', data),
+  updateSecurityQuestion: (data) => request('PATCH', '/api/auth/security-question', data),
 
   // Circles
   getMyCircle: () => request('GET', '/api/circles/mine'),
@@ -70,4 +79,10 @@ export const api = {
   getNotes: (circleId) => request('GET', `/api/circles/${circleId}/notes`),
   createNote: (circleId, data) => request('POST', `/api/circles/${circleId}/notes`, data),
   deleteNote: (circleId, noteId) => request('DELETE', `/api/circles/${circleId}/notes/${noteId}`),
+
+  // Appointments
+  getAppointments: (circleId) => request('GET', `/api/circles/${circleId}/appointments`),
+  createAppointment: (circleId, data) => request('POST', `/api/circles/${circleId}/appointments`, data),
+  updateAppointment: (circleId, appointmentId, data) => request('PATCH', `/api/circles/${circleId}/appointments/${appointmentId}`, data),
+  deleteAppointment: (circleId, appointmentId) => request('DELETE', `/api/circles/${circleId}/appointments/${appointmentId}`),
 }

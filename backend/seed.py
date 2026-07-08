@@ -1,5 +1,5 @@
 import bcrypt
-from datetime import date
+from datetime import date, time
 from app.database import engine, Base
 from app.models.user import User
 from app.models.circle import FamilyCircle
@@ -10,6 +10,7 @@ from app.models.prescription import Prescription
 from app.models.account import Account
 from app.models.flag import Flag
 from app.models.note import Note
+from app.models.appointment import Appointment
 from sqlalchemy.orm import Session
 
 Base.metadata.create_all(bind=engine)
@@ -23,14 +24,18 @@ with Session(engine) as db:
     elder = db.query(User).filter(User.email == 'dev@kin.app').first()
     if not elder:
         elder = User(email='dev@kin.app', password_hash=hash_pw('password123'),
-                     full_name='Margaret Johnson', role='elder', phone='555-0100')
+                     full_name='Margaret Johnson', role='elder', phone='555-0100',
+                     security_question="What was your first pet's name?",
+                     security_answer_hash=hash_pw('biscuit'))
         db.add(elder)
         db.flush()
 
     caregiver = db.query(User).filter(User.email == 'caregiver@kin.app').first()
     if not caregiver:
         caregiver = User(email='caregiver@kin.app', password_hash=hash_pw('password123'),
-                         full_name='David Johnson', role='caregiver', phone='555-0101')
+                         full_name='David Johnson', role='caregiver', phone='555-0101',
+                         security_question="What city were you born in?",
+                         security_answer_hash=hash_pw('columbus'))
         db.add(caregiver)
         db.flush()
 
@@ -141,6 +146,18 @@ with Session(engine) as db:
                  content='David — don\'t worry about the electric bill, I already mailed the check. Also the plumber is coming Tuesday between 10 and noon.'),
             Note(circle_id=circle.circle_id, author_id=elder.user_id,
                  content='Reminder to myself: appointment with Dr. Chen is July 14th at 2:30pm. David can you drive me?'),
+        ])
+
+    # ── Appointments ─────────────────────────────────────────────────
+    if not db.query(Appointment).filter(Appointment.circle_id == circle.circle_id).first():
+        db.add_all([
+            Appointment(circle_id=circle.circle_id, title='Dr. Chen — Annual Checkup',
+                        date=date(2026, 7, 14), time=time(14, 30),
+                        location='Oak St Medical Center, Suite 200',
+                        notes='David is driving. Bring insurance card and medication list.'),
+            Appointment(circle_id=circle.circle_id, title='Eye Exam',
+                        date=date(2026, 8, 3), time=time(10, 0),
+                        location='Main Ave Vision Center', notes=''),
         ])
 
     db.commit()

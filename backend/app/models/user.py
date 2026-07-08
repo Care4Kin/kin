@@ -10,4 +10,6 @@ class User(Base):
     full_name = Column(Text, nullable=False)
     role = Column(String(20), nullable=False)
     phone = Column(Text)
+    security_question = Column(Text)
+    security_answer_hash = Column(Text)
     created_at = Column(TIMESTAMP, server_default=func.now())

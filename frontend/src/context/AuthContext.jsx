@@ -3,6 +3,13 @@ import { api } from '../services/api'
 
 const AuthContext = createContext(null)
 
+function ensureCircle(userData) {
+  return api.getMyCircle().catch(() => {
+    if (userData.role === 'elder') return api.createCircle()
+    throw new Error('No circle found')
+  })
+}
+
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null)
   const [circleId, setCircleId] = useState(null)
@@ -14,7 +21,7 @@ export function AuthProvider({ children }) {
     if (token && stored) {
       const u = JSON.parse(stored)
       setUser(u)
-      api.getMyCircle().then(c => setCircleId(c.circle_id)).catch(() => {}).finally(() => setLoading(false))
+      ensureCircle(u).then(c => setCircleId(c.circle_id)).catch(() => {}).finally(() => setLoading(false))
     } else {
       setLoading(false)
     }
@@ -24,7 +31,7 @@ export function AuthProvider({ children }) {
     localStorage.setItem('token', token)
     localStorage.setItem('user', JSON.stringify(userData))
     setUser(userData)
-    api.getMyCircle().then(c => setCircleId(c.circle_id)).catch(() => {})
+    ensureCircle(userData).then(c => setCircleId(c.circle_id)).catch(() => {})
   }
 
   function logout() {
