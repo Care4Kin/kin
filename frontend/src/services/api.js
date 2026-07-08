@@ -30,6 +30,7 @@ export const api = {
   logout: () => request('POST', '/api/auth/logout'),
 
   // Circles
+  getMyCircle: () => request('GET', '/api/circles/mine'),
   createCircle: () => request('POST', '/api/circles'),
   getCircle: (circleId) => request('GET', `/api/circles/${circleId}`),
   addMember: (circleId, data) => request('POST', `/api/circles/${circleId}/members`, data),

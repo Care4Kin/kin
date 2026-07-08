@@ -5,6 +5,7 @@ import jwt
 
 from app.config import settings
 from app.database import get_db
+from app.models.user import User
 
 bearer = HTTPBearer()
 
@@ -21,5 +22,8 @@ def get_current_user(
     except jwt.PyJWTError:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='Invalid token')
 
-    # TODO: return db.query(User).filter(User.user_id == user_id).first()
-    return {'user_id': user_id}
+    user = db.query(User).filter(User.user_id == int(user_id)).first()
+    if user is None:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='User not found')
+    return user
+
