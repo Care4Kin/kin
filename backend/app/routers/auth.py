@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 import bcrypt
 import jwt
+import secrets
 from datetime import datetime, timedelta, timezone
 
 from app.database import get_db
@@ -11,8 +12,10 @@ from app.schemas.user import (
     RegisterRequest, LoginRequest, UserOut, LoginOut,
     SecurityQuestionOut, ResetPasswordRequest,
     UserProfileOut, ProfileUpdateRequest, ChangePasswordRequest, SecurityQuestionUpdateRequest,
+    PhoneSendCodeRequest, PhoneVerifyCodeRequest, GoogleAuthRequest,
 )
 from app.config import settings
+from app.services.sms import send_sms
 
 router = APIRouter()
 
@@ -59,6 +62,73 @@ def login(body: LoginRequest, db: Session = Depends(get_db)):
 @router.post('/logout')
 def logout():
     return {'message': 'Logged out'}
+
+@router.post('/phone/send-code')
+def send_phone_code(body: PhoneSendCodeRequest, db: Session = Depends(get_db)):
+    user = db.query(User).filter(User.phone == body.phone).first()
+    if not user:
+        raise HTTPException(404, 'No account found with that phone number')
+    code = f'{secrets.randbelow(1_000_000):06d}'
+    user.phone_verification_code_hash = hash_password(code)
+    user.phone_verification_expires_at = datetime.now(timezone.utc) + timedelta(minutes=5)
+    db.commit()
+    send_sms(body.phone, f'Your Kin verification code is {code}. It expires in 5 minutes.')
+    return {'message': 'Code sent'}
+
+@router.post('/phone/verify-code', response_model=LoginOut)
+def verify_phone_code(body: PhoneVerifyCodeRequest, db: Session = Depends(get_db)):
+    user = db.query(User).filter(User.phone == body.phone).first()
+    if not user or not user.phone_verification_code_hash or not user.phone_verification_expires_at:
+        raise HTTPException(401, 'Invalid or expired code')
+    expires_at = user.phone_verification_expires_at
+    if expires_at.tzinfo is None:
+        expires_at = expires_at.replace(tzinfo=timezone.utc)
+    if expires_at < datetime.now(timezone.utc):
+        raise HTTPException(401, 'Invalid or expired code')
+    if not verify_password(body.code, user.phone_verification_code_hash):
+        raise HTTPException(401, 'Invalid or expired code')
+
+    user.phone_verified = True
+    user.phone_verification_code_hash = None
+    user.phone_verification_expires_at = None
+    db.commit()
+    return {'token': make_token(user.user_id), 'user_id': user.user_id, 'role': user.role, 'full_name': user.full_name}
+
+@router.post('/google', response_model=LoginOut)
+def google_auth(body: GoogleAuthRequest, db: Session = Depends(get_db)):
+    from google.oauth2 import id_token as google_id_token
+    from google.auth.transport import requests as google_requests
+
+    try:
+        idinfo = google_id_token.verify_oauth2_token(
+            body.id_token, google_requests.Request(), settings.google_client_id
+        )
+    except ValueError:
+        raise HTTPException(401, 'Invalid Google token')
+
+    email = idinfo['email']
+    full_name = idinfo.get('name', email)
+    google_sub = idinfo['sub']
+
+    user = db.query(User).filter(User.email == email).first()
+    if not user:
+        if body.role not in ('elder', 'caregiver'):
+            raise HTTPException(400, 'role must be elder or caregiver for a new Google sign-up')
+        user = User(
+            email=email,
+            password_hash=hash_password(secrets.token_urlsafe(32)),
+            full_name=full_name,
+            role=body.role,
+            google_sub=google_sub,
+        )
+        db.add(user)
+        db.commit()
+        db.refresh(user)
+    elif not user.google_sub:
+        user.google_sub = google_sub
+        db.commit()
+
+    return {'token': make_token(user.user_id), 'user_id': user.user_id, 'role': user.role, 'full_name': user.full_name}
 
 @router.get('/security-question', response_model=SecurityQuestionOut)
 def get_security_question(email: str, db: Session = Depends(get_db)):

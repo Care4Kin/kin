@@ -53,3 +53,14 @@ class ChangePasswordRequest(BaseModel):
 class SecurityQuestionUpdateRequest(BaseModel):
     security_question: str
     security_answer: str
+
+class PhoneSendCodeRequest(BaseModel):
+    phone: str
+
+class PhoneVerifyCodeRequest(BaseModel):
+    phone: str
+    code: str
+
+class GoogleAuthRequest(BaseModel):
+    id_token: str
+    role: Optional[str] = None

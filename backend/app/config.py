@@ -11,6 +11,7 @@ class Settings(BaseSettings):
     gmail_user: str = ''
     gmail_app_password: str = ''
     frontend_url: str = 'http://localhost:5173'
+    google_client_id: str = ''
 
     class Config:
         env_file = '.env'
