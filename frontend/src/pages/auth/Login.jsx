@@ -20,7 +20,7 @@ export default function Login() {
     setLoading(true)
     try {
       const data = await api.login(form)
-      login({ user_id: data.user_id, role: data.role }, data.token)
+      login({ user_id: data.user_id, role: data.role, full_name: data.full_name }, data.token)
       navigate('/')
     } catch (err) {
       setError(err.message)
