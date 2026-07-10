@@ -2,12 +2,15 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.routers import auth, circles, bills, subscriptions, accounts, prescriptions, flags, notes, appointments
+from app.config import settings
 
 app = FastAPI(title='Kin API', version='0.1.0')
 
+allowed_origins = {'http://localhost:5173', settings.frontend_url}
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=['http://localhost:5173'],
+    allow_origins=list(allowed_origins),
     allow_credentials=True,
     allow_methods=['*'],
     allow_headers=['*'],
