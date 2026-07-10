@@ -1,17 +1,23 @@
 /* ─── Design tokens ─────────────────────────────────────────────── */
 :root {
-  --bg:           #0f0f0f;
-  --surface:      #1a1a1a;
-  --surface-2:    #242424;
-  --border:       #2e2e2e;
-  --green-dark:   #1a5c1a;
-  --green-mid:    #2e8b2e;
-  --green-light:  #5db85d;
-  --green-pale:   #d4edda;
-  --warn:         #c0392b;
-  --warn-pale:    #f9e0de;
-  --text:         #f0f0f0;
-  --text-muted:   #9a9a9a;
+  /* Dark green "family tree" palette. Values chosen and checked against
+     WCAG 2.1 AA contrast (4.5:1 text / 3:1 UI) for the pairings actually
+     used below — see comments on individual rules for the tighter cases. */
+  --bg:              #0A1F0F; /* deep near-black green — page background */
+  --surface:         #1C1C1C; /* charcoal — card background */
+  --surface-2:       #2E2E2E; /* charcoal — input/hover background */
+  --border:          #5A7A68; /* muted sage — passes 3:1 on both bg and surface */
+  --green-dark:      #1B4332; /* dark forest green — banners */
+  --green-mid:       #2D6A4F; /* mid green — fill-only backgrounds (buttons) */
+  --green-mid-hover: #388160; /* hover shade for mid-green fills; keeps white text AA */
+  --green-light:     #52B788; /* fresh green — accents, borders, links on dark bg */
+  --green-pale:      #D8F3DC; /* pale green — high-emphasis text on green-dark */
+  --warn:            #C0392B; /* dark red — decorative/large-text only on dark bg */
+  --warn-light:      #E57373; /* red — safe for small text on dark backgrounds */
+  --warn-pale:       #F9E0DE; /* light pink card background for auth errors */
+  --warn-on-pale:    #A93226; /* darker red — 5.3:1 on warn-pale, safe for normal-size error text */
+  --text:            #FFFFFF;
+  --text-muted:      #95D5B2; /* light green — secondary text, passes AA everywhere */
   --font:         system-ui, -apple-system, sans-serif;
   --radius:       12px;
   --radius-sm:    8px;
@@ -72,6 +78,20 @@ button, input, select, textarea { font: inherit; }
   font-size: 0.9rem;
   color: var(--text-muted);
 }
+
+.top-bar-right {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+}
+
+.top-bar-settings {
+  font-size: 1.2rem;
+  color: var(--text-muted);
+  line-height: 1;
+}
+
+.top-bar-settings:hover { color: var(--green-light); }
 
 /* ─── Main content ───────────────────────────────────────────────── */
 .main-content {
@@ -176,10 +196,49 @@ button, input, select, textarea { font: inherit; }
 .field-group input:focus,
 .field-group select:focus {
   outline: none;
-  border-color: var(--green-mid);
+  border-color: var(--green-light);
 }
 
 .field-group select option { background: var(--surface-2); }
+
+.field-hint {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  line-height: 1.4;
+}
+
+.auth-mode-toggle {
+  display: flex;
+  gap: 0.4rem;
+  margin-bottom: 1.25rem;
+  background: var(--surface-2);
+  border-radius: var(--radius-sm);
+  padding: 0.25rem;
+}
+
+.auth-mode-toggle button {
+  flex: 1;
+  background: transparent;
+  border: none;
+  border-radius: calc(var(--radius-sm) - 4px);
+  padding: 0.5rem;
+  color: var(--text-muted);
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.auth-mode-toggle button.active {
+  background: var(--green-mid);
+  color: #fff;
+}
+
+.google-signin-button {
+  display: flex;
+  justify-content: center;
+  margin-top: 1.25rem;
+}
 
 .forgot-link {
   font-size: 0.9rem;
@@ -190,7 +249,7 @@ button, input, select, textarea { font: inherit; }
 
 .auth-error {
   background: var(--warn-pale);
-  color: var(--warn);
+  color: var(--warn-on-pale);
   border-radius: var(--radius-sm);
   padding: 0.6rem 0.9rem;
   font-size: 0.9rem;
@@ -225,7 +284,7 @@ button, input, select, textarea { font: inherit; }
   margin-top: 0.25rem;
 }
 
-.btn-primary:hover { background: var(--green-light); }
+.btn-primary:hover { background: var(--green-mid-hover); }
 .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
 
 /* ─── Dashboard ──────────────────────────────────────────────────── */
@@ -233,7 +292,7 @@ button, input, select, textarea { font: inherit; }
 
 .tip-banner {
   background: var(--green-dark);
-  border: 1px solid var(--green-mid);
+  border: 1px solid var(--green-light);
   border-radius: var(--radius);
   padding: 1rem 1.25rem;
   margin-bottom: 1.5rem;
@@ -245,7 +304,7 @@ button, input, select, textarea { font: inherit; }
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  color: var(--green-light);
+  color: var(--text-muted);
   margin-bottom: 0.35rem;
 }
 
@@ -262,6 +321,7 @@ button, input, select, textarea { font: inherit; }
 }
 
 .summary-card {
+  position: relative;
   display: flex;
   flex-direction: column;
   gap: 0.4rem;
@@ -273,7 +333,26 @@ button, input, select, textarea { font: inherit; }
   transition: border-color 0.15s, background 0.15s;
 }
 
-.summary-card:hover { border-color: var(--green-mid); background: var(--surface-2); }
+.summary-card-count {
+  position: absolute;
+  top: 0.65rem;
+  right: 0.65rem;
+  background: var(--green-mid);
+  color: #fff;
+  font-size: 0.75rem;
+  font-weight: 800;
+  min-width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 0.35rem;
+}
+
+.summary-card--warn .summary-card-count { background: var(--warn); }
+
+.summary-card:hover { border-color: var(--green-light); background: var(--surface-2); }
 
 .summary-card--warn { border-left: 3px solid var(--warn); }
 .summary-card--warn:hover { border-color: var(--warn); }
@@ -282,9 +361,10 @@ button, input, select, textarea { font: inherit; }
   font-size: 1rem;
   font-weight: 700;
   color: var(--green-light);
+  padding-right: 2rem;
 }
 
-.summary-card--warn h2 { color: #e57373; }
+.summary-card--warn h2 { color: var(--warn-light); }
 
 .summary-card p {
   font-size: 0.8rem;
@@ -303,3 +383,320 @@ button, input, select, textarea { font: inherit; }
   color: var(--text);
   margin-bottom: 1.25rem;
 }
+
+.page-status {
+  padding: 2rem 0;
+  color: var(--text-muted);
+  font-size: 1rem;
+}
+
+.page-status--error { color: var(--warn-light); }
+
+/* ─── Section labels ─────────────────────────────────────────────── */
+.section-label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+  margin-bottom: 0.6rem;
+}
+
+/* ─── Bill rows ──────────────────────────────────────────────────── */
+.bill-section { margin-bottom: 1.5rem; }
+
+.bill-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 0.85rem 1rem;
+  margin-bottom: 0.5rem;
+  gap: 0.75rem;
+}
+
+.bill-row--paid { opacity: 0.55; }
+
+.bill-row-info { display: flex; flex-direction: column; gap: 0.2rem; }
+.bill-row-name { font-weight: 600; font-size: 1rem; }
+.bill-row-category { font-size: 0.75rem; color: var(--text-muted); text-transform: capitalize; }
+
+.bill-row-meta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.25rem;
+  flex-shrink: 0;
+}
+
+.bill-row-amount { font-weight: 700; font-size: 1rem; }
+.bill-row-due    { font-size: 0.78rem; color: var(--text-muted); }
+
+.bill-pill {
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 0.2rem 0.55rem;
+  border-radius: 99px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.bill-pill--paid   { background: var(--green-dark); color: var(--green-pale); }
+.bill-pill--unpaid { background: #3d1e1e; color: var(--warn-light); }
+
+/* ─── Card list ──────────────────────────────────────────────────── */
+.card-list { display: flex; flex-direction: column; gap: 0.6rem; }
+
+.info-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.info-card--urgent { border-left: 3px solid var(--warn); }
+
+.info-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.info-card-title { font-weight: 700; font-size: 1rem; }
+
+.info-card-note {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+
+.info-card-rows { display: flex; flex-direction: column; gap: 0.35rem; margin-top: 0.25rem; }
+
+.info-row { display: flex; gap: 0.5rem; align-items: baseline; }
+.info-row-label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+  flex-shrink: 0;
+  min-width: 80px;
+}
+.info-row-value { font-size: 0.9rem; color: var(--text); }
+
+/* ─── Badges ─────────────────────────────────────────────────────── */
+.badge {
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 0.2rem 0.55rem;
+  border-radius: 99px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  flex-shrink: 0;
+}
+.badge--warn { background: #3d1e1e; color: var(--warn-light); }
+.badge--ok   { background: var(--green-dark); color: var(--green-pale); }
+
+/* ─── Stat banner ────────────────────────────────────────────────── */
+.stat-banner {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 0.85rem 1rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.25rem;
+}
+.stat-banner-label { font-size: 0.85rem; color: var(--text-muted); }
+.stat-banner-value { font-size: 1.4rem; font-weight: 800; color: var(--green-light); }
+
+/* ─── Add / inline forms ─────────────────────────────────────────── */
+.add-toggle {
+  background: none;
+  border: 1px dashed var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--green-light);
+  font-weight: 700;
+  font-size: 0.9rem;
+  padding: 0.65rem 1rem;
+  width: 100%;
+  cursor: pointer;
+  margin-bottom: 1.25rem;
+}
+.add-toggle:hover { border-color: var(--green-light); background: var(--surface); }
+
+.inline-form {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1rem;
+  margin-bottom: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.inline-form form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.inline-form-row { display: flex; gap: 0.6rem; }
+.inline-form-row .field-group { flex: 1; min-width: 0; }
+
+.settings-success { color: var(--green-light); }
+
+.btn-row { display: flex; gap: 0.6rem; margin-top: 0.25rem; }
+.btn-row .btn-primary,
+.btn-row .btn-secondary { width: auto; flex: 1; margin-top: 0; }
+
+.btn-secondary {
+  background: var(--surface-2);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 0.85rem 1.5rem;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+.btn-secondary:hover { border-color: var(--green-light); }
+
+/* ─── Small action buttons (mark paid, resolve, delete) ──────────── */
+.action-row { display: flex; gap: 0.5rem; margin-top: 0.4rem; }
+
+.action-btn {
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 0.35rem 0.7rem;
+  cursor: pointer;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+.action-btn:hover { border-color: var(--green-light); color: var(--green-light); }
+.action-btn--danger:hover { border-color: var(--warn-light); color: var(--warn-light); }
+
+/* ─── Circle permissions ─────────────────────────────────────────── */
+.permission-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  margin-top: 0.25rem;
+}
+
+.permission-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+  color: var(--text-muted);
+}
+
+.permission-item input[type="checkbox"] {
+  width: 1.1rem;
+  height: 1.1rem;
+  accent-color: var(--green-light);
+}
+
+/* ─── Caregiver "At a Glance" summary ────────────────────────────── */
+.caregiver-summary { margin-bottom: 1.5rem; }
+
+.caregiver-stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+}
+
+.stat-tile {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 0.85rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.stat-tile--warn { border-left: 3px solid var(--warn); }
+
+.stat-tile-value { font-size: 1.3rem; font-weight: 800; color: var(--text); }
+.stat-tile-label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--green-light);
+}
+.stat-tile-sub { font-size: 0.78rem; color: var(--text-muted); }
+
+/* ─── Category pie chart (Bills) ──────────────────────────────────── */
+.pie-chart-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.pie-chart-body {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  margin-top: 0.85rem;
+  flex-wrap: wrap;
+}
+
+.pie-chart-donut {
+  width: 140px;
+  height: 140px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.pie-chart-hole {
+  width: 86px;
+  height: 86px;
+  border-radius: 50%;
+  background: var(--surface);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.pie-chart-total { font-size: 1.1rem; font-weight: 800; color: var(--text); }
+.pie-chart-total-label {
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+}
+
+.pie-chart-legend {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  flex: 1;
+  min-width: 160px;
+}
+
+.pie-chart-legend li { display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; }
+.pie-chart-swatch { width: 0.7rem; height: 0.7rem; border-radius: 3px; flex-shrink: 0; }
+.pie-chart-legend-label { text-transform: capitalize; color: var(--text); flex: 1; }
+.pie-chart-legend-value { color: var(--text-muted); font-variant-numeric: tabular-nums; }

@@ -5,6 +5,7 @@ import Layout from './components/layout/Layout'
 
 import Login from './pages/auth/Login'
 import Register from './pages/auth/Register'
+import ForgotPassword from './pages/auth/ForgotPassword'
 import Dashboard from './pages/dashboard/Dashboard'
 import Bills from './pages/bills/Bills'
 import Subscriptions from './pages/subscriptions/Subscriptions'
@@ -14,9 +15,11 @@ import Flags from './pages/flags/Flags'
 import Notes from './pages/notes/Notes'
 import Appointments from './pages/appointments/Appointments'
 import Circle from './pages/circle/Circle'
+import Settings from './pages/settings/Settings'
 
 function PrivateRoute({ children }) {
-  const { user } = useAuth()
+  const { user, loading } = useAuth()
+  if (loading) return null
   return user ? children : <Navigate to="/login" replace />
 }
 
@@ -26,6 +29,7 @@ export default function App() {
       <Routes>
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route
           path="/"
           element={
@@ -43,6 +47,7 @@ export default function App() {
           <Route path="notes" element={<Notes />} />
           <Route path="appointments" element={<Appointments />} />
           <Route path="circle" element={<Circle />} />
+          <Route path="settings" element={<Settings />} />
         </Route>
       </Routes>
     </BrowserRouter>

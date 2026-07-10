@@ -9,3 +9,4 @@ python-dotenv==1.0.1
 twilio==9.3.2
 python-multipart==0.0.12
 pydantic-settings==2.5.2
+google-auth==2.35.0

@@ -8,6 +8,10 @@ class Settings(BaseSettings):
     twilio_account_sid: str = ''
     twilio_auth_token: str = ''
     twilio_phone_number: str = ''
+    gmail_user: str = ''
+    gmail_app_password: str = ''
+    frontend_url: str = 'http://localhost:5173'
+    google_client_id: str = ''
 
     class Config:
         env_file = '.env'

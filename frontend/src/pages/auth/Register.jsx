@@ -2,6 +2,14 @@ import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import { api } from '../../services/api'
+import GoogleSignInButton from '../../components/auth/GoogleSignInButton'
+
+const SECURITY_QUESTIONS = [
+  "What was your first pet's name?",
+  'What city were you born in?',
+  "What is your mother's maiden name?",
+  'What was the name of your first school?',
+]
 
 export default function Register() {
   const [form, setForm] = useState({
@@ -11,6 +19,8 @@ export default function Register() {
     password: '',
     confirm_password: '',
     role: 'elder',
+    security_question: SECURITY_QUESTIONS[0],
+    security_answer: '',
   })
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
@@ -36,14 +46,33 @@ export default function Register() {
         full_name: form.full_name,
         role: form.role,
         phone: form.phone,
+        security_question: form.security_question,
+        security_answer: form.security_answer,
       })
       const data = await api.login({ email: form.email, password: form.password })
-      login({ user_id: data.user_id, role: data.role }, data.token)
-      navigate('/')
+      login({ user_id: data.user_id, role: data.role, full_name: data.full_name }, data.token)
+      navigate('/', { state: { justSignedUp: true } })
     } catch (err) {
       setError(err.message)
     } finally {
       setLoading(false)
+    }
+  }
+
+  async function handleGoogleCredential(idToken, role) {
+    setError('')
+    try {
+      const data = await api.googleAuth(idToken, role)
+      login({ user_id: data.user_id, role: data.role, full_name: data.full_name }, data.token)
+      if (form.security_answer.trim()) {
+        await api.updateSecurityQuestion({
+          security_question: form.security_question,
+          security_answer: form.security_answer,
+        }).catch(() => {})
+      }
+      navigate('/', { state: { justSignedUp: true } })
+    } catch (err) {
+      setError(err.message)
     }
   }
 
@@ -125,12 +154,39 @@ export default function Register() {
             </select>
           </div>
 
+          <div className="field-group">
+            <label htmlFor="security_question">Security Question</label>
+            <p className="field-hint">Used to reset your password if you forget it — no email or phone needed.</p>
+            <select
+              id="security_question"
+              name="security_question"
+              value={form.security_question}
+              onChange={handleChange}
+            >
+              {SECURITY_QUESTIONS.map(q => <option key={q} value={q}>{q}</option>)}
+            </select>
+          </div>
+
+          <div className="field-group">
+            <label htmlFor="security_answer">Your Answer</label>
+            <input
+              id="security_answer"
+              name="security_answer"
+              type="text"
+              value={form.security_answer}
+              onChange={handleChange}
+              required
+            />
+          </div>
+
           {error && <p className="auth-error">{error}</p>}
 
           <button type="submit" className="btn-primary" disabled={loading}>
             {loading ? 'Creating account…' : 'Sign Up'}
           </button>
         </form>
+
+        <GoogleSignInButton role={form.role} onCredential={handleGoogleCredential} onError={setError} />
 
         <p className="auth-switch">
           Already have an account?{' '}
