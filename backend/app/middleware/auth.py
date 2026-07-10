@@ -54,3 +54,28 @@ def require_elder(circle: FamilyCircle, current_user: User):
     if circle.elder_id != current_user.user_id:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail='Only the elder can do this')
 
+def require_permission(permission: str):
+    def dependency(
+        circle_id: int,
+        current_user: User = Depends(get_current_user),
+        db: Session = Depends(get_db),
+    ) -> FamilyCircle:
+        circle = db.query(FamilyCircle).filter(FamilyCircle.circle_id == circle_id).first()
+        if not circle:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='Circle not found')
+
+        if circle.elder_id == current_user.user_id:
+            return circle
+
+        member = db.query(CircleMember).filter(
+            CircleMember.circle_id == circle_id,
+            CircleMember.caregiver_id == current_user.user_id,
+        ).first()
+        if not member:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail='Not a member of this circle')
+        if not getattr(member, permission):
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail='The elder has not shared this with you')
+
+        return circle
+    return dependency
+

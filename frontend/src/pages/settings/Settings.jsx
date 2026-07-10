@@ -38,15 +38,19 @@ export default function Settings() {
 function ProfileSection({ me }) {
   const [form, setForm] = useState({ full_name: me.full_name, phone: me.phone || '' })
   const [saving, setSaving] = useState(false)
+  const [error, setError] = useState('')
   const [message, setMessage] = useState('')
 
   async function handleSubmit(e) {
     e.preventDefault()
     setSaving(true)
+    setError('')
     setMessage('')
     try {
       await api.updateProfile({ full_name: form.full_name, phone: form.phone })
       setMessage('Saved.')
+    } catch (err) {
+      setError(err.message)
     } finally {
       setSaving(false)
     }
@@ -68,6 +72,7 @@ function ProfileSection({ me }) {
           <label>Email</label>
           <p className="field-hint">{me.email} (cannot be changed)</p>
         </div>
+        {error && <p className="auth-error">{error}</p>}
         {message && <p className="field-hint settings-success">{message}</p>}
         <button type="submit" className="btn-primary" disabled={saving}>{saving ? 'Saving…' : 'Save Profile'}</button>
       </form>
@@ -128,16 +133,20 @@ function PasswordSection() {
 function SecurityQuestionSection({ me }) {
   const [form, setForm] = useState({ security_question: me.security_question || SECURITY_QUESTIONS[0], security_answer: '' })
   const [saving, setSaving] = useState(false)
+  const [error, setError] = useState('')
   const [message, setMessage] = useState('')
 
   async function handleSubmit(e) {
     e.preventDefault()
     setSaving(true)
+    setError('')
     setMessage('')
     try {
       await api.updateSecurityQuestion(form)
       setMessage('Security question updated.')
       setForm(f => ({ ...f, security_answer: '' }))
+    } catch (err) {
+      setError(err.message)
     } finally {
       setSaving(false)
     }
@@ -158,6 +167,7 @@ function SecurityQuestionSection({ me }) {
           <label htmlFor="settings-answer">New Answer</label>
           <input id="settings-answer" required value={form.security_answer} onChange={e => setForm({ ...form, security_answer: e.target.value })} />
         </div>
+        {error && <p className="auth-error">{error}</p>}
         {message && <p className="field-hint settings-success">{message}</p>}
         <button type="submit" className="btn-primary" disabled={saving}>{saving ? 'Saving…' : 'Update Security Question'}</button>
       </form>

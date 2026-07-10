@@ -106,6 +106,9 @@ def google_auth(body: GoogleAuthRequest, db: Session = Depends(get_db)):
     except ValueError:
         raise HTTPException(401, 'Invalid Google token')
 
+    if not idinfo.get('email_verified'):
+        raise HTTPException(401, 'Google account email is not verified')
+
     email = idinfo['email']
     full_name = idinfo.get('name', email)
     google_sub = idinfo['sub']
@@ -154,7 +157,14 @@ def get_me(current_user: User = Depends(get_current_user)):
 
 @router.patch('/me', response_model=UserProfileOut)
 def update_me(body: ProfileUpdateRequest, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    for k, v in body.model_dump(exclude_unset=True).items():
+    updates = body.model_dump(exclude_unset=True)
+    if 'phone' in updates and updates['phone'] != current_user.phone:
+        if updates['phone'] and db.query(User).filter(
+            User.phone == updates['phone'], User.user_id != current_user.user_id
+        ).first():
+            raise HTTPException(409, 'That phone number is already in use')
+        current_user.phone_verified = False
+    for k, v in updates.items():
         setattr(current_user, k, v)
     db.commit()
     db.refresh(current_user)

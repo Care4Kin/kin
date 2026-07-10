@@ -8,6 +8,7 @@ export function useFetch(fetchFn, deps = []) {
   useEffect(() => {
     let cancelled = false
     setLoading(true)
+    setError(null)
     fetchFn()
       .then(d => { if (!cancelled) setData(d) })
       .catch(e => { if (!cancelled) setError(e.message) })

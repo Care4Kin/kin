@@ -20,10 +20,14 @@ export default function Subscriptions() {
   async function handleAdd(e) {
     e.preventDefault()
     setFormError('')
+    if (!form.name.trim()) {
+      setFormError('Please enter a subscription name')
+      return
+    }
     setSaving(true)
     try {
       const sub = await api.createSubscription(circleId, {
-        name: form.name,
+        name: form.name.trim(),
         monthly_cost: Number(form.monthly_cost),
       })
       setSubs(prev => [...prev, sub])

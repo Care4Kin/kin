@@ -32,7 +32,7 @@ export default function Circle() {
     setInviteError('')
     setSaving(true)
     try {
-      await api.addMember(circleId, { caregiver_email: inviteEmail })
+      await api.addMember(circleId, { caregiver_email: inviteEmail.trim() })
       const refreshed = await api.getCircle(circleId)
       setCircle(refreshed)
       setInviteEmail('')

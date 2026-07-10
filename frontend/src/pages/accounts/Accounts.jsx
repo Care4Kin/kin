@@ -22,6 +22,7 @@ export default function Accounts() {
   const [form, setForm] = useState(emptyForm)
   const [saving, setSaving] = useState(false)
   const [editingId, setEditingId] = useState(null)
+  const [formError, setFormError] = useState('')
 
   useEffect(() => { if (data) setAccounts(data) }, [data])
 
@@ -30,16 +31,23 @@ export default function Accounts() {
 
   async function handleAdd(e) {
     e.preventDefault()
+    setFormError('')
+    if (!form.name.trim()) {
+      setFormError('Please enter an account name')
+      return
+    }
     setSaving(true)
     try {
       const account = await api.createAccount(circleId, {
-        name: form.name,
+        name: form.name.trim(),
         category: form.category,
         notes: form.notes || null,
       })
       setAccounts(prev => [...prev, account])
       setForm(emptyForm)
       setShowForm(false)
+    } catch (err) {
+      setFormError(err.message)
     } finally {
       setSaving(false)
     }
@@ -83,9 +91,10 @@ export default function Accounts() {
             <label htmlFor="acct-notes">Notes</label>
             <input id="acct-notes" placeholder="No passwords — just helpful reminders" value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} />
           </div>
+          {formError && <p className="auth-error">{formError}</p>}
           <div className="btn-row">
             <button type="submit" className="btn-primary" disabled={saving}>{saving ? 'Saving…' : 'Add Account'}</button>
-            <button type="button" className="btn-secondary" onClick={() => setShowForm(false)}>Cancel</button>
+            <button type="button" className="btn-secondary" onClick={() => { setShowForm(false); setFormError('') }}>Cancel</button>
           </div>
         </form>
       ) : (
@@ -124,12 +133,20 @@ export default function Accounts() {
 function AccountEditForm({ account, onSave, onCancel }) {
   const [form, setForm] = useState({ name: account.name, category: account.category || 'other', notes: account.notes || '' })
   const [saving, setSaving] = useState(false)
+  const [formError, setFormError] = useState('')
 
   async function handleSubmit(e) {
     e.preventDefault()
+    setFormError('')
+    if (!form.name.trim()) {
+      setFormError('Please enter an account name')
+      return
+    }
     setSaving(true)
     try {
-      await onSave(account.account_id, { name: form.name, category: form.category, notes: form.notes || null })
+      await onSave(account.account_id, { name: form.name.trim(), category: form.category, notes: form.notes || null })
+    } catch (err) {
+      setFormError(err.message)
     } finally {
       setSaving(false)
     }
@@ -151,6 +168,7 @@ function AccountEditForm({ account, onSave, onCancel }) {
         <label htmlFor={`edit-notes-${account.account_id}`}>Notes</label>
         <input id={`edit-notes-${account.account_id}`} value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} />
       </div>
+      {formError && <p className="auth-error">{formError}</p>}
       <div className="btn-row">
         <button type="submit" className="btn-primary" disabled={saving}>{saving ? 'Saving…' : 'Save'}</button>
         <button type="button" className="btn-secondary" onClick={onCancel}>Cancel</button>

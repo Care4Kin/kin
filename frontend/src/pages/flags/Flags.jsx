@@ -14,6 +14,7 @@ export default function Flags() {
   const [showForm, setShowForm] = useState(false)
   const [form, setForm] = useState(emptyForm)
   const [saving, setSaving] = useState(false)
+  const [formError, setFormError] = useState('')
 
   useEffect(() => { if (data) setFlags(data) }, [data])
 
@@ -22,12 +23,19 @@ export default function Flags() {
 
   async function handleAdd(e) {
     e.preventDefault()
+    setFormError('')
+    if (!form.description.trim()) {
+      setFormError('Please describe what you noticed')
+      return
+    }
     setSaving(true)
     try {
-      const flag = await api.createFlag(circleId, form)
+      const flag = await api.createFlag(circleId, { ...form, description: form.description.trim() })
       setFlags(prev => [flag, ...prev])
       setForm(emptyForm)
       setShowForm(false)
+    } catch (err) {
+      setFormError(err.message)
     } finally {
       setSaving(false)
     }
@@ -67,9 +75,10 @@ export default function Flags() {
             <label htmlFor="flag-description">What did you notice?</label>
             <input id="flag-description" required value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} />
           </div>
+          {formError && <p className="auth-error">{formError}</p>}
           <div className="btn-row">
             <button type="submit" className="btn-primary" disabled={saving}>{saving ? 'Saving…' : 'Flag It'}</button>
-            <button type="button" className="btn-secondary" onClick={() => setShowForm(false)}>Cancel</button>
+            <button type="button" className="btn-secondary" onClick={() => { setShowForm(false); setFormError('') }}>Cancel</button>
           </div>
         </form>
       ) : (

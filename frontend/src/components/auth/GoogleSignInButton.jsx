@@ -2,9 +2,15 @@ import { useEffect, useRef } from 'react'
 
 const CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID
 
+let scriptPromise = null
+
 function loadGoogleScript() {
-  if (document.getElementById('google-identity-script')) return Promise.resolve()
-  return new Promise((resolve, reject) => {
+  if (scriptPromise) return scriptPromise
+  scriptPromise = new Promise((resolve, reject) => {
+    if (document.getElementById('google-identity-script')) {
+      resolve()
+      return
+    }
     const script = document.createElement('script')
     script.id = 'google-identity-script'
     script.src = 'https://accounts.google.com/gsi/client'
@@ -13,10 +19,13 @@ function loadGoogleScript() {
     script.onerror = reject
     document.head.appendChild(script)
   })
+  return scriptPromise
 }
 
 export default function GoogleSignInButton({ role, onCredential, onError }) {
   const buttonRef = useRef(null)
+  const roleRef = useRef(role)
+  roleRef.current = role
 
   useEffect(() => {
     if (!CLIENT_ID) return
@@ -26,7 +35,7 @@ export default function GoogleSignInButton({ role, onCredential, onError }) {
       if (cancelled || !window.google || !buttonRef.current) return
       window.google.accounts.id.initialize({
         client_id: CLIENT_ID,
-        callback: (response) => onCredential(response.credential, role),
+        callback: (response) => onCredential(response.credential, roleRef.current),
       })
       window.google.accounts.id.renderButton(buttonRef.current, {
         type: 'standard',
@@ -37,7 +46,7 @@ export default function GoogleSignInButton({ role, onCredential, onError }) {
     }).catch(() => onError?.('Could not load Google Sign-In'))
 
     return () => { cancelled = true }
-  }, [role])
+  }, [])
 
   if (!CLIENT_ID) return null
 

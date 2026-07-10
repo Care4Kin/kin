@@ -64,6 +64,12 @@ export default function Register() {
     try {
       const data = await api.googleAuth(idToken, role)
       login({ user_id: data.user_id, role: data.role, full_name: data.full_name }, data.token)
+      if (form.security_answer.trim()) {
+        await api.updateSecurityQuestion({
+          security_question: form.security_question,
+          security_answer: form.security_answer,
+        }).catch(() => {})
+      }
       navigate('/', { state: { justSignedUp: true } })
     } catch (err) {
       setError(err.message)

@@ -72,7 +72,11 @@ export default function Login() {
       const data = await api.googleAuth(idToken)
       finishLogin(data)
     } catch (err) {
-      setError(err.message)
+      if (err.message.includes('new Google sign-up')) {
+        setError("We don't recognize that Google account yet. Please sign up first.")
+      } else {
+        setError(err.message)
+      }
     }
   }
 
@@ -172,7 +176,7 @@ export default function Login() {
             <button type="submit" className="btn-primary" disabled={loading}>
               {loading ? 'Checking…' : 'Log In'}
             </button>
-            <button type="button" className="btn-secondary" onClick={() => { setCodeSent(false); setCode(''); setError('') }}>
+            <button type="button" className="btn-secondary" onClick={() => { setCodeSent(false); setCode(''); setPhone(''); setError('') }}>
               Use a different number
             </button>
           </form>

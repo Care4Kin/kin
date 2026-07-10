@@ -9,6 +9,7 @@ export default function Notes() {
   const [notes, setNotes] = useState([])
   const [content, setContent] = useState('')
   const [saving, setSaving] = useState(false)
+  const [formError, setFormError] = useState('')
 
   useEffect(() => { if (data) setNotes(data) }, [data])
 
@@ -17,12 +18,15 @@ export default function Notes() {
 
   async function handleAdd(e) {
     e.preventDefault()
+    setFormError('')
     if (!content.trim()) return
     setSaving(true)
     try {
-      const note = await api.createNote(circleId, { content })
+      const note = await api.createNote(circleId, { content: content.trim() })
       setNotes(prev => [note, ...prev])
       setContent('')
+    } catch (err) {
+      setFormError(err.message)
     } finally {
       setSaving(false)
     }
@@ -42,6 +46,7 @@ export default function Notes() {
           <label htmlFor="note-content">Leave a message for your family</label>
           <input id="note-content" value={content} onChange={e => setContent(e.target.value)} placeholder="Type a note…" />
         </div>
+        {formError && <p className="auth-error">{formError}</p>}
         <button type="submit" className="btn-primary" disabled={saving || !content.trim()}>{saving ? 'Posting…' : 'Post Note'}</button>
       </form>
 

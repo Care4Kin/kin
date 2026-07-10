@@ -28,13 +28,17 @@ export default function Appointments() {
   async function handleAdd(e) {
     e.preventDefault()
     setFormError('')
+    if (!form.title.trim() || !form.location.trim()) {
+      setFormError('Please fill in the appointment name and location')
+      return
+    }
     setSaving(true)
     try {
       const appt = await api.createAppointment(circleId, {
-        title: form.title,
+        title: form.title.trim(),
         date: form.date,
         time: form.time,
-        location: form.location,
+        location: form.location.trim(),
         notes: form.notes || null,
       })
       setAppointments(prev => [...prev, appt].sort((a, b) => a.date.localeCompare(b.date)))

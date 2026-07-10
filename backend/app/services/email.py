@@ -12,6 +12,9 @@ def send_email(to: str, subject: str, body: str):
     message['To'] = to
     message.set_content(body)
 
-    with smtplib.SMTP_SSL('smtp.gmail.com', 465) as smtp:
-        smtp.login(settings.gmail_user, settings.gmail_app_password)
-        smtp.send_message(message)
+    try:
+        with smtplib.SMTP_SSL('smtp.gmail.com', 465) as smtp:
+            smtp.login(settings.gmail_user, settings.gmail_app_password)
+            smtp.send_message(message)
+    except Exception as e:
+        print(f'send_email failed: {e}')

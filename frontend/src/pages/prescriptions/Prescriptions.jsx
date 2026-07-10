@@ -13,6 +13,7 @@ export default function Prescriptions() {
   const [showForm, setShowForm] = useState(false)
   const [form, setForm] = useState(emptyForm)
   const [saving, setSaving] = useState(false)
+  const [formError, setFormError] = useState('')
 
   useEffect(() => { if (data) setRxs(data) }, [data])
 
@@ -21,10 +22,15 @@ export default function Prescriptions() {
 
   async function handleAdd(e) {
     e.preventDefault()
+    setFormError('')
+    if (!form.medication_name.trim()) {
+      setFormError('Please enter a medication name')
+      return
+    }
     setSaving(true)
     try {
       const rx = await api.createPrescription(circleId, {
-        medication_name: form.medication_name,
+        medication_name: form.medication_name.trim(),
         dosage: form.dosage || null,
         prescribing_doctor: form.prescribing_doctor || null,
         pharmacy_name: form.pharmacy_name || null,
@@ -34,6 +40,8 @@ export default function Prescriptions() {
       setRxs(prev => [...prev, rx])
       setForm(emptyForm)
       setShowForm(false)
+    } catch (err) {
+      setFormError(err.message)
     } finally {
       setSaving(false)
     }
@@ -78,9 +86,10 @@ export default function Prescriptions() {
             <label htmlFor="rx-notes">Notes</label>
             <input id="rx-notes" value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} />
           </div>
+          {formError && <p className="auth-error">{formError}</p>}
           <div className="btn-row">
             <button type="submit" className="btn-primary" disabled={saving}>{saving ? 'Saving…' : 'Add Prescription'}</button>
-            <button type="button" className="btn-secondary" onClick={() => setShowForm(false)}>Cancel</button>
+            <button type="button" className="btn-secondary" onClick={() => { setShowForm(false); setFormError('') }}>Cancel</button>
           </div>
         </form>
       ) : (

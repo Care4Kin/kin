@@ -21,13 +21,17 @@ export default function Bills() {
   async function handleAdd(e) {
     e.preventDefault()
     setFormError('')
+    if (!form.name.trim()) {
+      setFormError('Please enter a bill name')
+      return
+    }
     setSaving(true)
     try {
       const bill = await api.createBill(circleId, {
-        name: form.name,
+        name: form.name.trim(),
         amount: Number(form.amount),
         due_date: form.due_date,
-        category: form.category || null,
+        category: form.category.trim() || null,
       })
       setBills(prev => [...prev, bill])
       setForm({ name: '', amount: '', due_date: '', category: '' })
@@ -150,7 +154,13 @@ function CategoryPieChart({ bills }) {
   if (entries.length > MAX_SLICES) {
     const top = entries.slice(0, MAX_SLICES - 1)
     const restTotal = entries.slice(MAX_SLICES - 1).reduce((sum, [, v]) => sum + v, 0)
-    entries = [...top, ['other', restTotal]]
+    const otherIndex = top.findIndex(([category]) => category === 'other')
+    if (otherIndex >= 0) {
+      top[otherIndex] = ['other', top[otherIndex][1] + restTotal]
+    } else {
+      top.push(['other', restTotal])
+    }
+    entries = top
   }
 
   const grandTotal = entries.reduce((sum, [, v]) => sum + v, 0)
