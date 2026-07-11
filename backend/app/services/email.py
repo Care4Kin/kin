@@ -1,20 +1,27 @@
-import smtplib
-from email.message import EmailMessage
+import json
+import urllib.request
 
 from app.config import settings
 
 def send_email(to: str, subject: str, body: str):
-    if not settings.gmail_user or not settings.gmail_app_password:
+    if not settings.resend_api_key:
         return
-    message = EmailMessage()
-    message['Subject'] = subject
-    message['From'] = settings.gmail_user
-    message['To'] = to
-    message.set_content(body)
-
+    payload = json.dumps({
+        'from': settings.resend_from_email,
+        'to': [to],
+        'subject': subject,
+        'text': body,
+    }).encode()
+    req = urllib.request.Request(
+        'https://api.resend.com/emails',
+        data=payload,
+        headers={
+            'Authorization': f'Bearer {settings.resend_api_key}',
+            'Content-Type': 'application/json',
+        },
+        method='POST',
+    )
     try:
-        with smtplib.SMTP_SSL('smtp.gmail.com', 465) as smtp:
-            smtp.login(settings.gmail_user, settings.gmail_app_password)
-            smtp.send_message(message)
+        urllib.request.urlopen(req, timeout=10)
     except Exception as e:
         print(f'send_email failed: {e}')

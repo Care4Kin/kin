@@ -8,8 +8,8 @@ class Settings(BaseSettings):
     twilio_account_sid: str = ''
     twilio_auth_token: str = ''
     twilio_phone_number: str = ''
-    gmail_user: str = ''
-    gmail_app_password: str = ''
+    resend_api_key: str = ''
+    resend_from_email: str = 'Kin <onboarding@resend.dev>'
     frontend_url: str = 'http://localhost:5173'
     google_client_id: str = ''
 
