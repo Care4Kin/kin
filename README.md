@@ -14,19 +14,13 @@ Caregiving for an elderly or dependent family member is often coordinated inform
 
 ## Deployment & Demo
 
-**Live Deployment:** [Insert deployment link here]
-
-*If not deployed, include one of the following:*
-- Demo Recording: [Link to video demo]
-- Project Screenshots:
-  - Screenshot 1
-  - Screenshot 2
+**Live Deployment:** [https://kin-frontend.onrender.com/](https://kin-frontend.onrender.com/)
 
 ## Additional Project Links
 
-- Wireframes: [Link to wireframe designs]
+- Wireframes: [\[Link to wireframe designs\]](https://excalidraw.com/#room=1b482c8bf933a6cef9cd,wuvVUUk22_2Hcs7fJTpQfQ)
 - ERD (Entity Relationship Diagram): [Link to database schema/ERD]
-- Project Proposal: [Link to proposal document]
+- Project Proposal: https://docs.google.com/document/d/1dGEgJf7xnHXUElOZpvTWB_dx-Dhi66rYN8wfloh5hK0/edit?tab=t.0#heading=h.canbmh92j15o
 - Project Blog: [Link to development blog/journal]
 - Additional Resources: [Any other relevant links]
 
