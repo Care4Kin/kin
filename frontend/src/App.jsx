@@ -6,6 +6,7 @@ import Layout from './components/layout/Layout'
 import Login from './pages/auth/Login'
 import Register from './pages/auth/Register'
 import ForgotPassword from './pages/auth/ForgotPassword'
+import CompleteSignup from './pages/auth/CompleteSignup'
 import Dashboard from './pages/dashboard/Dashboard'
 import Bills from './pages/bills/Bills'
 import Subscriptions from './pages/subscriptions/Subscriptions'
@@ -30,6 +31,7 @@ export default function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/complete-signup" element={<CompleteSignup />} />
         <Route
           path="/"
           element={

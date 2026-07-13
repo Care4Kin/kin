@@ -30,6 +30,10 @@ export default function Circle() {
   async function handleInvite(e) {
     e.preventDefault()
     setInviteError('')
+    if (!inviteEmail.trim()) {
+      setInviteError('Please enter an email address')
+      return
+    }
     setSaving(true)
     try {
       await api.addMember(circleId, { caregiver_email: inviteEmail.trim() })
@@ -47,6 +51,14 @@ export default function Circle() {
   async function handleRemove(membershipId) {
     await api.removeMember(circleId, membershipId)
     setCircle(prev => ({ ...prev, members: prev.members.filter(m => m.membership_id !== membershipId) }))
+  }
+
+  async function handleCancelInvite(invitationId) {
+    await api.cancelInvitation(circleId, invitationId)
+    setCircle(prev => ({
+      ...prev,
+      pending_invitations: prev.pending_invitations.filter(i => i.invitation_id !== invitationId),
+    }))
   }
 
   async function handleTogglePermission(member, key) {
@@ -102,18 +114,43 @@ export default function Circle() {
         ))}
       </div>
 
+      {circle.pending_invitations?.length > 0 && (
+        <section style={{ marginTop: '1.5rem' }}>
+          <h2 className="section-label">Invited — Not Joined Yet</h2>
+          <div className="card-list">
+            {circle.pending_invitations.map(inv => (
+              <div key={inv.invitation_id} className="info-card">
+                <div className="info-card-header">
+                  <span className="info-card-title">{inv.email}</span>
+                  {isElder && (
+                    <button
+                      className="action-btn action-btn--danger"
+                      onClick={() => handleCancelInvite(inv.invitation_id)}
+                      title="Cancel this invitation"
+                    >
+                      Cancel
+                    </button>
+                  )}
+                </div>
+                <p className="info-card-note">Waiting for them to create an account with this email. They'll join automatically when they sign up.</p>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
       {isElder && (
         showInvite ? (
           <form className="inline-form" onSubmit={handleInvite} style={{ marginTop: '1.25rem' }}>
             <div className="field-group">
               <label htmlFor="invite-email">Invite by Email</label>
-              <p className="field-hint">They'll need to already have a Kin account with this email address.</p>
+              <p className="field-hint">If they already use Kin, they'll be added right away. If not, we'll email them an invitation to sign up — and they'll join your circle automatically.</p>
               <input id="invite-email" type="email" required value={inviteEmail} onChange={e => setInviteEmail(e.target.value)} />
             </div>
             {inviteError && <p className="auth-error">{inviteError}</p>}
             <div className="btn-row">
-              <button type="submit" className="btn-primary" disabled={saving}>{saving ? 'Inviting…' : 'Invite'}</button>
-              <button type="button" className="btn-secondary" onClick={() => setShowInvite(false)}>Cancel</button>
+              <button type="submit" className="btn-primary" disabled={saving}>{saving ? 'Inviting…' : 'Send Invite'}</button>
+              <button type="button" className="btn-secondary" onClick={() => { setShowInvite(false); setInviteError('') }}>Cancel</button>
             </div>
           </form>
         ) : (

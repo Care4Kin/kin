@@ -70,13 +70,13 @@ export default function Login() {
     setError('')
     try {
       const data = await api.googleAuth(idToken)
+      if (data.needs_setup) {
+        navigate('/complete-signup', { state: { idToken, fullName: data.full_name } })
+        return
+      }
       finishLogin(data)
     } catch (err) {
-      if (err.message.includes('new Google sign-up')) {
-        setError("We don't recognize that Google account yet. Please sign up first.")
-      } else {
-        setError(err.message)
-      }
+      setError(err.message)
     }
   }
 

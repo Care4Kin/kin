@@ -12,10 +12,11 @@ from app.schemas.user import (
     RegisterRequest, LoginRequest, UserOut, LoginOut,
     SecurityQuestionOut, ResetPasswordRequest,
     UserProfileOut, ProfileUpdateRequest, ChangePasswordRequest, SecurityQuestionUpdateRequest,
-    PhoneSendCodeRequest, PhoneVerifyCodeRequest, GoogleAuthRequest,
+    PhoneSendCodeRequest, PhoneVerifyCodeRequest, GoogleAuthRequest, GoogleCompleteRequest,
 )
 from app.config import settings
 from app.services.sms import send_sms
+from app.services.invitations import claim_invitations
 
 router = APIRouter()
 
@@ -50,6 +51,7 @@ def register(body: RegisterRequest, db: Session = Depends(get_db)):
     db.add(user)
     db.commit()
     db.refresh(user)
+    claim_invitations(user, db)
     return user
 
 @router.post('/login', response_model=LoginOut)
@@ -94,14 +96,13 @@ def verify_phone_code(body: PhoneVerifyCodeRequest, db: Session = Depends(get_db
     db.commit()
     return {'token': make_token(user.user_id), 'user_id': user.user_id, 'role': user.role, 'full_name': user.full_name}
 
-@router.post('/google', response_model=LoginOut)
-def google_auth(body: GoogleAuthRequest, db: Session = Depends(get_db)):
+def _verify_google_token(id_token_str: str) -> dict:
     from google.oauth2 import id_token as google_id_token
     from google.auth.transport import requests as google_requests
 
     try:
         idinfo = google_id_token.verify_oauth2_token(
-            body.id_token, google_requests.Request(), settings.google_client_id
+            id_token_str, google_requests.Request(), settings.google_client_id
         )
     except ValueError:
         raise HTTPException(401, 'Invalid Google token')
@@ -109,27 +110,52 @@ def google_auth(body: GoogleAuthRequest, db: Session = Depends(get_db)):
     if not idinfo.get('email_verified'):
         raise HTTPException(401, 'Google account email is not verified')
 
+    return idinfo
+
+@router.post('/google')
+def google_auth(body: GoogleAuthRequest, db: Session = Depends(get_db)):
+    """Sign in with an existing Google-linked (or email-matched) account.
+    For an unknown email, returns needs_setup so the client can collect a
+    role + security question before the account is created."""
+    idinfo = _verify_google_token(body.id_token)
     email = idinfo['email']
-    full_name = idinfo.get('name', email)
-    google_sub = idinfo['sub']
 
     user = db.query(User).filter(User.email == email).first()
     if not user:
-        if body.role not in ('elder', 'caregiver'):
-            raise HTTPException(400, 'role must be elder or caregiver for a new Google sign-up')
-        user = User(
-            email=email,
-            password_hash=hash_password(secrets.token_urlsafe(32)),
-            full_name=full_name,
-            role=body.role,
-            google_sub=google_sub,
-        )
-        db.add(user)
+        return {'needs_setup': True, 'email': email, 'full_name': idinfo.get('name', email)}
+
+    if not user.google_sub:
+        user.google_sub = idinfo['sub']
         db.commit()
-        db.refresh(user)
-    elif not user.google_sub:
-        user.google_sub = google_sub
-        db.commit()
+
+    return {'token': make_token(user.user_id), 'user_id': user.user_id, 'role': user.role, 'full_name': user.full_name}
+
+@router.post('/google/complete', response_model=LoginOut)
+def google_complete(body: GoogleCompleteRequest, db: Session = Depends(get_db)):
+    """Finish a new Google sign-up once the user has chosen a role (and
+    optionally a security question). Re-verifies the token before creating."""
+    if body.role not in ('elder', 'caregiver'):
+        raise HTTPException(400, 'role must be elder or caregiver')
+
+    idinfo = _verify_google_token(body.id_token)
+    email = idinfo['email']
+
+    if db.query(User).filter(User.email == email).first():
+        raise HTTPException(409, 'Account already exists — please sign in instead')
+
+    user = User(
+        email=email,
+        password_hash=hash_password(secrets.token_urlsafe(32)),
+        full_name=idinfo.get('name', email),
+        role=body.role,
+        google_sub=idinfo['sub'],
+        security_question=body.security_question,
+        security_answer_hash=hash_password(normalize_answer(body.security_answer)) if body.security_answer else None,
+    )
+    db.add(user)
+    db.commit()
+    db.refresh(user)
+    claim_invitations(user, db)
 
     return {'token': make_token(user.user_id), 'user_id': user.user_id, 'role': user.role, 'full_name': user.full_name}
 

@@ -64,3 +64,9 @@ class PhoneVerifyCodeRequest(BaseModel):
 class GoogleAuthRequest(BaseModel):
     id_token: str
     role: Optional[str] = None
+
+class GoogleCompleteRequest(BaseModel):
+    id_token: str
+    role: str
+    security_question: Optional[str] = None
+    security_answer: Optional[str] = None

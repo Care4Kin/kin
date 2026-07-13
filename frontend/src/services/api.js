@@ -39,7 +39,8 @@ export const api = {
   updateSecurityQuestion: (data) => request('PATCH', '/api/auth/security-question', data),
   sendPhoneCode: (phone) => request('POST', '/api/auth/phone/send-code', { phone }),
   verifyPhoneCode: (phone, code) => request('POST', '/api/auth/phone/verify-code', { phone, code }),
-  googleAuth: (idToken, role) => request('POST', '/api/auth/google', { id_token: idToken, role }),
+  googleAuth: (idToken) => request('POST', '/api/auth/google', { id_token: idToken }),
+  googleComplete: (data) => request('POST', '/api/auth/google/complete', data),
 
   // Circles
   getMyCircle: () => request('GET', '/api/circles/mine'),
@@ -48,6 +49,7 @@ export const api = {
   addMember: (circleId, data) => request('POST', `/api/circles/${circleId}/members`, data),
   removeMember: (circleId, membershipId) => request('DELETE', `/api/circles/${circleId}/members/${membershipId}`),
   updateMemberPermissions: (circleId, membershipId, data) => request('PATCH', `/api/circles/${circleId}/members/${membershipId}`, data),
+  cancelInvitation: (circleId, invitationId) => request('DELETE', `/api/circles/${circleId}/invitations/${invitationId}`),
 
   // Bills
   getBills: (circleId, params) => request('GET', `/api/circles/${circleId}/bills${params || ''}`),

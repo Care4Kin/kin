@@ -1,6 +1,7 @@
 from app.models.user import User
 from app.models.circle import FamilyCircle
 from app.models.circle_member import CircleMember
+from app.models.circle_invitation import CircleInvitation
 from app.models.bill import Bill
 from app.models.subscription import Subscription
 from app.models.account import Account

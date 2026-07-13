@@ -5,6 +5,7 @@ from app.database import get_db
 from app.middleware.auth import get_current_user, require_circle_access, require_elder
 from app.models.circle import FamilyCircle
 from app.models.circle_member import CircleMember
+from app.models.circle_invitation import CircleInvitation
 from app.models.user import User
 from app.schemas.circle import MemberInvite, MemberPermissionsUpdate
 from app.services.email import send_email
@@ -57,6 +58,10 @@ def get_circle(circle_id: int, db: Session = Depends(get_db), circle=Depends(req
     rows = db.query(CircleMember, User).join(User, User.user_id == CircleMember.caregiver_id).filter(
         CircleMember.circle_id == circle_id
     ).all()
+    pending = db.query(CircleInvitation).filter(
+        CircleInvitation.circle_id == circle_id,
+        CircleInvitation.accepted_at.is_(None),
+    ).all()
     return {
         'circle_id': circle.circle_id,
         'elder': {'user_id': elder.user_id, 'full_name': elder.full_name},
@@ -69,6 +74,10 @@ def get_circle(circle_id: int, db: Session = Depends(get_db), circle=Depends(req
             }
             for m, u in rows
         ],
+        'pending_invitations': [
+            {'invitation_id': inv.invitation_id, 'email': inv.email, 'permissions': _permissions(inv)}
+            for inv in pending
+        ],
     }
 
 @router.post('/{circle_id}/members', status_code=201)
@@ -80,9 +89,48 @@ def invite_member(
     circle=Depends(require_circle_access),
 ):
     require_elder(circle, current_user)
-    caregiver = db.query(User).filter(User.email == body.caregiver_email).first()
+    email = body.caregiver_email.strip().lower()
+    caregiver = db.query(User).filter(User.email == email).first()
+
+    # Person doesn't have a Kin account yet — record a pending invitation and
+    # email them a sign-up link. They join the circle automatically on sign-up.
     if not caregiver:
-        raise HTTPException(404, 'No account found with that email')
+        pending = db.query(CircleInvitation).filter(
+            CircleInvitation.circle_id == circle_id,
+            CircleInvitation.email == email,
+            CircleInvitation.accepted_at.is_(None),
+        ).first()
+        if pending:
+            pending.can_view_bills = body.can_view_bills
+            pending.can_view_prescriptions = body.can_view_prescriptions
+            pending.can_view_accounts = body.can_view_accounts
+            pending.can_view_flags = body.can_view_flags
+        else:
+            pending = CircleInvitation(
+                circle_id=circle_id,
+                email=email,
+                can_view_bills=body.can_view_bills,
+                can_view_prescriptions=body.can_view_prescriptions,
+                can_view_accounts=body.can_view_accounts,
+                can_view_flags=body.can_view_flags,
+            )
+            db.add(pending)
+        db.commit()
+        db.refresh(pending)
+
+        send_email(
+            to=email,
+            subject=f'{current_user.full_name} invited you to help on Kin',
+            body=(
+                f'Hi,\n\n'
+                f'{current_user.full_name} invited you to their Kin family circle, '
+                'so you can help manage bills, prescriptions, and important accounts together.\n\n'
+                f'Create a free account with this email address to join: {settings.frontend_url}/register\n\n'
+                '— The Kin Team'
+            ),
+        )
+        return {'invitation_id': pending.invitation_id, 'email': pending.email, 'status': 'pending', 'permissions': _permissions(pending)}
+
     existing = db.query(CircleMember).filter(
         CircleMember.circle_id == circle_id, CircleMember.caregiver_id == caregiver.user_id
     ).first()
@@ -112,7 +160,7 @@ def invite_member(
         ),
     )
 
-    return {'membership_id': member.membership_id, 'caregiver_id': member.caregiver_id, 'permissions': _permissions(member)}
+    return {'membership_id': member.membership_id, 'caregiver_id': member.caregiver_id, 'status': 'added', 'permissions': _permissions(member)}
 
 @router.delete('/{circle_id}/members/{membership_id}')
 def remove_member(
@@ -152,3 +200,23 @@ def update_member_permissions(
     db.commit()
     db.refresh(member)
     return {'membership_id': member.membership_id, 'permissions': _permissions(member)}
+
+@router.delete('/{circle_id}/invitations/{invitation_id}')
+def cancel_invitation(
+    circle_id: int,
+    invitation_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+    circle=Depends(require_circle_access),
+):
+    require_elder(circle, current_user)
+    invitation = db.query(CircleInvitation).filter(
+        CircleInvitation.invitation_id == invitation_id,
+        CircleInvitation.circle_id == circle_id,
+        CircleInvitation.accepted_at.is_(None),
+    ).first()
+    if not invitation:
+        raise HTTPException(404, 'Invitation not found')
+    db.delete(invitation)
+    db.commit()
+    return {'message': 'Invitation cancelled'}

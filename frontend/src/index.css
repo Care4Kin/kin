@@ -240,6 +240,29 @@ button, input, select, textarea { font: inherit; }
   margin-top: 1.25rem;
 }
 
+/* ─── Role choice (Google onboarding) ────────────────────────────── */
+.role-choice { display: flex; flex-direction: column; gap: 0.6rem; }
+
+.role-option {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  padding: 0.85rem 1rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  background: var(--surface-2);
+  text-transform: none;
+  letter-spacing: normal;
+}
+
+.role-option:hover { border-color: var(--green-light); }
+.role-option--active { border-color: var(--green-light); background: var(--green-dark); }
+
+.role-option input[type="radio"] { position: absolute; opacity: 0; }
+.role-option-title { font-size: 1rem; font-weight: 700; color: var(--text); text-transform: none; letter-spacing: normal; }
+.role-option-desc { font-size: 0.85rem; color: var(--text-muted); text-transform: none; letter-spacing: normal; }
+
 .forgot-link {
   font-size: 0.9rem;
   color: var(--green-light);
