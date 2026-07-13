@@ -59,17 +59,16 @@ export default function Register() {
     }
   }
 
-  async function handleGoogleCredential(idToken, role) {
+  async function handleGoogleCredential(idToken) {
     setError('')
     try {
-      const data = await api.googleAuth(idToken, role)
-      login({ user_id: data.user_id, role: data.role, full_name: data.full_name }, data.token)
-      if (form.security_answer.trim()) {
-        await api.updateSecurityQuestion({
-          security_question: form.security_question,
-          security_answer: form.security_answer,
-        }).catch(() => {})
+      const data = await api.googleAuth(idToken)
+      if (data.needs_setup) {
+        navigate('/complete-signup', { state: { idToken, fullName: data.full_name } })
+        return
       }
+      // Email already had an account — just log them in.
+      login({ user_id: data.user_id, role: data.role, full_name: data.full_name }, data.token)
       navigate('/', { state: { justSignedUp: true } })
     } catch (err) {
       setError(err.message)
