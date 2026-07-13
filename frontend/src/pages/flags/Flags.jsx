@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, lazy } from 'react'
 import { useAuth } from '../../context/AuthContext'
 import { api } from '../../services/api'
 import { useFetch } from '../../hooks/useFetch'
@@ -7,7 +7,17 @@ const TYPE_LABELS = { call: 'Phone Call', email: 'Email', text: 'Text', bill: 'B
 
 const emptyForm = { type: 'call', description: '', severity: 'low' }
 
+const FILTERS = [
+  { value: 'all', label:'ALL' },
+  { value: 'call', label: 'Phone Call' }, 
+  { value: 'email', label: 'Email'},
+  { value: 'text', label: 'Text' },
+  { value: 'bill', label: 'Bill' },
+  { value: 'open', label: 'Open Only'}
+]
+
 export default function Flags() {
+  const [filter, setFilter] = useState('all')
   const { circleId } = useAuth()
   const { data, loading, error } = useFetch(() => api.getFlags(circleId), [circleId])
   const [flags, setFlags] = useState([])
@@ -46,12 +56,30 @@ export default function Flags() {
     setFlags(prev => prev.map(f => f.flag_id === updated.flag_id ? updated : f))
   }
 
-  const open     = flags.filter(f => !f.is_resolved)
-  const resolved = flags.filter(f => f.is_resolved)
+const visible = filter === 'all'
+  ? flags
+  : filter === 'open'
+    ? flags.filter(f => !f.is_resolved)
+    : flags.filter(f => f.type === filter)
+
+  const open     = visible.filter(f => !f.is_resolved)
+  const resolved = visible.filter(f => f.is_resolved)
 
   return (
     <div className="page">
       <h1 className="page-title">Suspicious Activity</h1>
+      
+    <div className="filter-bar">
+      {FILTERS.map(f => (
+        <button
+          key={f.value}
+          className={`filter-btn ${filter === f.value ? 'filter-btn--active' : ''}`}
+          onClick={() => setFilter(f.value)}
+        >
+          {f.label}
+        </button>
+      ))}
+    </div>
 
       {showForm ? (
         <form className="inline-form" onSubmit={handleAdd}>
