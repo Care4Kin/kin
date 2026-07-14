@@ -39,3 +39,12 @@ def update_flag(circle_id: int, flag_id: int, body: FlagUpdate, db: Session = De
     db.commit()
     db.refresh(flag)
     return flag
+
+@router.delete('/{circle_id}/flags/{flag_id}')
+def delete_flag(circle_id: int, flag_id: int, db: Session = Depends(get_db), circle=Depends(require_flags_access)):
+    flag = db.query(Flag).filter(Flag.flag_id == flag_id, Flag.circle_id == circle_id).first()
+    if not flag:
+        raise HTTPException(404, 'Flag not found')
+    db.delete(flag)
+    db.commit()
+    return {'message': 'Flag deleted'}
