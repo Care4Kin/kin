@@ -1,9 +1,9 @@
-from datetime import datetime, timezone
 from sqlalchemy.orm import Session
 
 from app.models.circle_invitation import CircleInvitation
 from app.models.circle_member import CircleMember
 from app.models.user import User
+from app.utils import utcnow
 
 def claim_invitations(user: User, db: Session) -> None:
     """Turn any pending circle invitations for this user's email into real
@@ -12,7 +12,7 @@ def claim_invitations(user: User, db: Session) -> None:
         CircleInvitation.email == user.email,
         CircleInvitation.accepted_at.is_(None),
     ).all()
-    now = datetime.now(timezone.utc)
+    now = utcnow()
     for inv in invites:
         already_member = db.query(CircleMember).filter(
             CircleMember.circle_id == inv.circle_id,

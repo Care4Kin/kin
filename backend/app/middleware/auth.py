@@ -29,23 +29,28 @@ def get_current_user(
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='User not found')
     return user
 
+def _get_circle_or_404(circle_id: int, db: Session) -> FamilyCircle:
+    circle = db.query(FamilyCircle).filter(FamilyCircle.circle_id == circle_id).first()
+    if not circle:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='Circle not found')
+    return circle
+
+def _get_membership(circle_id: int, caregiver_id: int, db: Session) -> CircleMember | None:
+    return db.query(CircleMember).filter(
+        CircleMember.circle_id == circle_id,
+        CircleMember.caregiver_id == caregiver_id,
+    ).first()
+
 def require_circle_access(
     circle_id: int,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ) -> FamilyCircle:
-    circle = db.query(FamilyCircle).filter(FamilyCircle.circle_id == circle_id).first()
-    if not circle:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='Circle not found')
-
+    circle = _get_circle_or_404(circle_id, db)
     if circle.elder_id == current_user.user_id:
         return circle
 
-    is_member = db.query(CircleMember).filter(
-        CircleMember.circle_id == circle_id,
-        CircleMember.caregiver_id == current_user.user_id,
-    ).first()
-    if not is_member:
+    if not _get_membership(circle_id, current_user.user_id, db):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail='Not a member of this circle')
 
     return circle
@@ -60,17 +65,11 @@ def require_permission(permission: str):
         current_user: User = Depends(get_current_user),
         db: Session = Depends(get_db),
     ) -> FamilyCircle:
-        circle = db.query(FamilyCircle).filter(FamilyCircle.circle_id == circle_id).first()
-        if not circle:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='Circle not found')
-
+        circle = _get_circle_or_404(circle_id, db)
         if circle.elder_id == current_user.user_id:
             return circle
 
-        member = db.query(CircleMember).filter(
-            CircleMember.circle_id == circle_id,
-            CircleMember.caregiver_id == current_user.user_id,
-        ).first()
+        member = _get_membership(circle_id, current_user.user_id, db)
         if not member:
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail='Not a member of this circle')
         if not getattr(member, permission):
@@ -78,4 +77,3 @@ def require_permission(permission: str):
 
         return circle
     return dependency
-

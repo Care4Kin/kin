@@ -15,7 +15,7 @@ from app.schemas.user import (
     PhoneSendCodeRequest, PhoneVerifyCodeRequest, GoogleAuthRequest, GoogleCompleteRequest,
 )
 from app.config import settings
-from app.services.sms import send_sms
+from app.services.sms import send_sms, twilio_configured
 from app.services.invitations import claim_invitations
 
 router = APIRouter()
@@ -29,18 +29,20 @@ def verify_password(password: str, hashed: str) -> bool:
 def normalize_answer(answer: str) -> str:
     return answer.strip().lower()
 
+def normalize_email(email: str) -> str:
+    return email.strip().lower()
+
 def make_token(user_id: int) -> str:
     expire = datetime.now(timezone.utc) + timedelta(minutes=settings.access_token_expire_minutes)
     return jwt.encode({'sub': str(user_id), 'exp': expire}, settings.secret_key, algorithm=settings.algorithm)
 
 @router.post('/register', response_model=UserOut, status_code=201)
 def register(body: RegisterRequest, db: Session = Depends(get_db)):
-    if body.role not in ('elder', 'caregiver'):
-        raise HTTPException(400, 'role must be elder or caregiver')
-    if db.query(User).filter(User.email == body.email).first():
+    email = normalize_email(body.email)
+    if db.query(User).filter(User.email == email).first():
         raise HTTPException(409, 'Email already registered')
     user = User(
-        email=body.email,
+        email=email,
         password_hash=hash_password(body.password),
         full_name=body.full_name,
         role=body.role,
@@ -56,7 +58,7 @@ def register(body: RegisterRequest, db: Session = Depends(get_db)):
 
 @router.post('/login', response_model=LoginOut)
 def login(body: LoginRequest, db: Session = Depends(get_db)):
-    user = db.query(User).filter(User.email == body.email).first()
+    user = db.query(User).filter(User.email == normalize_email(body.email)).first()
     if not user or not verify_password(body.password, user.password_hash):
         raise HTTPException(401, 'Invalid email or password')
     return {'token': make_token(user.user_id), 'user_id': user.user_id, 'role': user.role, 'full_name': user.full_name}
@@ -67,6 +69,8 @@ def logout():
 
 @router.post('/phone/send-code')
 def send_phone_code(body: PhoneSendCodeRequest, db: Session = Depends(get_db)):
+    if not twilio_configured():
+        raise HTTPException(400, 'Phone sign-in is not set up for this app yet')
     user = db.query(User).filter(User.phone == body.phone).first()
     if not user:
         raise HTTPException(404, 'No account found with that phone number')
@@ -118,7 +122,7 @@ def google_auth(body: GoogleAuthRequest, db: Session = Depends(get_db)):
     For an unknown email, returns needs_setup so the client can collect a
     role + security question before the account is created."""
     idinfo = _verify_google_token(body.id_token)
-    email = idinfo['email']
+    email = normalize_email(idinfo['email'])
 
     user = db.query(User).filter(User.email == email).first()
     if not user:
@@ -134,11 +138,8 @@ def google_auth(body: GoogleAuthRequest, db: Session = Depends(get_db)):
 def google_complete(body: GoogleCompleteRequest, db: Session = Depends(get_db)):
     """Finish a new Google sign-up once the user has chosen a role (and
     optionally a security question). Re-verifies the token before creating."""
-    if body.role not in ('elder', 'caregiver'):
-        raise HTTPException(400, 'role must be elder or caregiver')
-
     idinfo = _verify_google_token(body.id_token)
-    email = idinfo['email']
+    email = normalize_email(idinfo['email'])
 
     if db.query(User).filter(User.email == email).first():
         raise HTTPException(409, 'Account already exists — please sign in instead')
@@ -161,14 +162,14 @@ def google_complete(body: GoogleCompleteRequest, db: Session = Depends(get_db)):
 
 @router.get('/security-question', response_model=SecurityQuestionOut)
 def get_security_question(email: str, db: Session = Depends(get_db)):
-    user = db.query(User).filter(User.email == email).first()
+    user = db.query(User).filter(User.email == normalize_email(email)).first()
     if not user or not user.security_question:
         raise HTTPException(404, 'No security question found for that email')
     return {'security_question': user.security_question}
 
 @router.post('/reset-password')
 def reset_password(body: ResetPasswordRequest, db: Session = Depends(get_db)):
-    user = db.query(User).filter(User.email == body.email).first()
+    user = db.query(User).filter(User.email == normalize_email(body.email)).first()
     if not user or not user.security_answer_hash:
         raise HTTPException(404, 'No security question found for that email')
     if not verify_password(normalize_answer(body.security_answer), user.security_answer_hash):
