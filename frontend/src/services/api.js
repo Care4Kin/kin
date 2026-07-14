@@ -90,4 +90,12 @@ export const api = {
   createAppointment: (circleId, data) => request('POST', `/api/circles/${circleId}/appointments`, data),
   updateAppointment: (circleId, appointmentId, data) => request('PATCH', `/api/circles/${circleId}/appointments/${appointmentId}`, data),
   deleteAppointment: (circleId, appointmentId) => request('DELETE', `/api/circles/${circleId}/appointments/${appointmentId}`),
+
+  // Bank (Plaid)
+  createPlaidLinkToken: (circleId) => request('POST', `/api/circles/${circleId}/plaid/link-token`),
+  exchangePlaidToken: (circleId, data) => request('POST', `/api/circles/${circleId}/plaid/exchange`, data),
+  getPlaidAccounts: (circleId) => request('GET', `/api/circles/${circleId}/plaid/accounts`),
+  getPlaidSpending: (circleId) => request('GET', `/api/circles/${circleId}/plaid/spending`),
+  getPlaidSubscriptions: (circleId) => request('GET', `/api/circles/${circleId}/plaid/subscriptions`),
+  removePlaidItem: (circleId, plaidItemId) => request('DELETE', `/api/circles/${circleId}/plaid/items/${plaidItemId}`),
 }

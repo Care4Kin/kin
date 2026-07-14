@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.routers import auth, circles, bills, subscriptions, accounts, prescriptions, flags, notes, appointments
+from app.routers import auth, circles, bills, subscriptions, accounts, prescriptions, flags, notes, appointments, plaid
 from app.config import settings
 
 app = FastAPI(title='Kin API', version='0.1.0')
@@ -25,6 +25,7 @@ app.include_router(prescriptions.router, prefix='/api/circles', tags=['prescript
 app.include_router(flags.router, prefix='/api/circles', tags=['flags'])
 app.include_router(notes.router, prefix='/api/circles', tags=['notes'])
 app.include_router(appointments.router, prefix='/api/circles', tags=['appointments'])
+app.include_router(plaid.router, prefix='/api/circles', tags=['plaid'])
 
 @app.get('/health')
 def health():

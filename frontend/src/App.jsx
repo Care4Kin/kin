@@ -17,6 +17,7 @@ import Notes from './pages/notes/Notes'
 import Appointments from './pages/appointments/Appointments'
 import Circle from './pages/circle/Circle'
 import Settings from './pages/settings/Settings'
+import Bank from './pages/bank/Bank'
 
 function PrivateRoute({ children }) {
   const { user, loading } = useAuth()
@@ -50,6 +51,7 @@ export default function App() {
           <Route path="appointments" element={<Appointments />} />
           <Route path="circle" element={<Circle />} />
           <Route path="settings" element={<Settings />} />
+          <Route path="bank" element={<Bank />} />
         </Route>
       </Routes>
     </BrowserRouter>

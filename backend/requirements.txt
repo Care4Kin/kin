@@ -11,3 +11,4 @@ python-multipart==0.0.12
 pydantic-settings==2.5.2
 google-auth==2.35.0
 requests==2.34.2
+plaid-python==40.1.0

@@ -12,6 +12,9 @@ class Settings(BaseSettings):
     resend_from_email: str = 'Kin <invites@ishtiaqakanda.dev>'
     frontend_url: str = 'http://localhost:5173'
     google_client_id: str = ''
+    plaid_client_id: str = ''
+    plaid_secret: str = ''
+    plaid_env: str = 'sandbox'
 
     class Config:
         env_file = '.env'

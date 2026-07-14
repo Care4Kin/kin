@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useAuth } from '../../context/AuthContext'
 import { api } from '../../services/api'
 import { useFetch } from '../../hooks/useFetch'
+import CategoryPieChart from '../../components/CategoryPieChart'
 
 export default function Bills() {
   const { circleId, user } = useAuth()
@@ -90,7 +91,7 @@ export default function Bills() {
         <button className="add-toggle" onClick={() => setShowForm(true)}>+ Add a bill</button>
       )}
 
-      {isCaregiver && <CategoryPieChart bills={bills} />}
+      {isCaregiver && <CategoryPieChart entries={billsToEntries(bills)} title="Spending by Category" />}
 
       {unpaid.length > 0 && (
         <section className="bill-section">
@@ -138,64 +139,11 @@ function BillRow({ bill, onTogglePaid, onDelete }) {
   )
 }
 
-// Validated categorical palette (dark-surface step, see dataviz skill) — fixed
-// order so slice color stays stable as amounts change from render to render.
-const CHART_COLORS = ['#3987e5', '#199e70', '#c98500', '#008300', '#9085e9', '#e66767', '#d55181']
-const MAX_SLICES = 7
-
-function CategoryPieChart({ bills }) {
+function billsToEntries(bills) {
   const totals = {}
   bills.forEach(b => {
-    const cat = (b.category || '').trim().toLowerCase() || 'other'
+    const cat = (b.category || 'other').trim().toLowerCase() || 'other'
     totals[cat] = (totals[cat] || 0) + Number(b.amount || 0)
   })
-
-  let entries = Object.entries(totals).sort((a, b) => b[1] - a[1])
-  if (entries.length > MAX_SLICES) {
-    const top = entries.slice(0, MAX_SLICES - 1)
-    const restTotal = entries.slice(MAX_SLICES - 1).reduce((sum, [, v]) => sum + v, 0)
-    const otherIndex = top.findIndex(([category]) => category === 'other')
-    if (otherIndex >= 0) {
-      top[otherIndex] = ['other', top[otherIndex][1] + restTotal]
-    } else {
-      top.push(['other', restTotal])
-    }
-    entries = top
-  }
-
-  const grandTotal = entries.reduce((sum, [, v]) => sum + v, 0)
-  if (grandTotal <= 0) return null
-
-  let cursor = 0
-  const slices = entries.map(([category, amount], i) => {
-    const pct = (amount / grandTotal) * 100
-    const slice = { category, amount, pct, start: cursor, end: cursor + pct, color: CHART_COLORS[i % CHART_COLORS.length] }
-    cursor += pct
-    return slice
-  })
-
-  const gradient = slices.map(s => `${s.color} ${s.start}% ${s.end}%`).join(', ')
-
-  return (
-    <div className="pie-chart-card">
-      <h2 className="section-label">Spending by Category</h2>
-      <div className="pie-chart-body">
-        <div className="pie-chart-donut" style={{ background: `conic-gradient(${gradient})` }} role="img" aria-label={`Bill spending by category: ${slices.map(s => `${s.category} ${s.pct.toFixed(0)}%`).join(', ')}`}>
-          <div className="pie-chart-hole">
-            <span className="pie-chart-total">${grandTotal.toFixed(0)}</span>
-            <span className="pie-chart-total-label">total</span>
-          </div>
-        </div>
-        <ul className="pie-chart-legend">
-          {slices.map(s => (
-            <li key={s.category}>
-              <span className="pie-chart-swatch" style={{ background: s.color }} aria-hidden="true" />
-              <span className="pie-chart-legend-label">{s.category}</span>
-              <span className="pie-chart-legend-value">${s.amount.toFixed(2)} ({s.pct.toFixed(0)}%)</span>
-            </li>
-          ))}
-        </ul>
-      </div>
-    </div>
-  )
+  return Object.entries(totals).map(([category, amount]) => ({ category, amount }))
 }
