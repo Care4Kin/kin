@@ -1,11 +1,13 @@
 from pydantic import BaseModel
-from typing import Optional
+from typing import Literal, Optional
+
+Role = Literal['elder', 'caregiver']
 
 class RegisterRequest(BaseModel):
     email: str
     password: str
     full_name: str
-    role: str
+    role: Role
     phone: Optional[str] = None
     security_question: Optional[str] = None
     security_answer: Optional[str] = None
@@ -63,10 +65,9 @@ class PhoneVerifyCodeRequest(BaseModel):
 
 class GoogleAuthRequest(BaseModel):
     id_token: str
-    role: Optional[str] = None
 
 class GoogleCompleteRequest(BaseModel):
     id_token: str
-    role: str
+    role: Role
     security_question: Optional[str] = None
     security_answer: Optional[str] = None

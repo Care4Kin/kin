@@ -1,7 +1,8 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useAuth } from '../../context/AuthContext'
 import { api } from '../../services/api'
-import { useFetch } from '../../hooks/useFetch'
+import { useResourceList } from '../../hooks/useResourceList'
+import { usePlaidBank } from '../../hooks/usePlaidBank'
 
 const CATEGORY_LABELS = {
   bank: 'Bank',
@@ -15,16 +16,17 @@ const CATEGORY_LABELS = {
 const emptyForm = { name: '', category: 'bank', notes: '' }
 
 export default function Accounts() {
-  const { circleId } = useAuth()
-  const { data, loading, error } = useFetch(() => api.getAccounts(circleId), [circleId])
-  const [accounts, setAccounts] = useState([])
+  const { circleId, user } = useAuth()
+  const isElder = user?.role === 'elder'
+  const { items: accounts, setItems: setAccounts, loading, error } = useResourceList(() => api.getAccounts(circleId), [circleId], !!circleId)
   const [showForm, setShowForm] = useState(false)
   const [form, setForm] = useState(emptyForm)
   const [saving, setSaving] = useState(false)
   const [editingId, setEditingId] = useState(null)
   const [formError, setFormError] = useState('')
+  const [actionError, setActionError] = useState('')
 
-  useEffect(() => { if (data) setAccounts(data) }, [data])
+  const bank = usePlaidBank(circleId)
 
   if (!circleId || loading) return <p className="page-status">Loading accounts…</p>
   if (error) return <p className="page-status page-status--error">{error}</p>
@@ -60,8 +62,13 @@ export default function Accounts() {
   }
 
   async function handleDelete(account) {
-    await api.deleteAccount(circleId, account.account_id)
-    setAccounts(prev => prev.filter(a => a.account_id !== account.account_id))
+    setActionError('')
+    try {
+      await api.deleteAccount(circleId, account.account_id)
+      setAccounts(prev => prev.filter(a => a.account_id !== account.account_id))
+    } catch (err) {
+      setActionError(err.message)
+    }
   }
 
   const grouped = accounts.reduce((acc, a) => {
@@ -74,6 +81,45 @@ export default function Accounts() {
   return (
     <div className="page">
       <h1 className="page-title">Important Accounts</h1>
+      {actionError && <p className="page-status page-status--error">{actionError}</p>}
+
+      <section className="mb-lg">
+        <h2 className="section-label">Linked Bank Accounts</h2>
+        <p className="field-hint mb-sm">
+          Connect a real bank to see balances here automatically, plus spending by category on Bills and detected recurring charges on Subscriptions.
+        </p>
+
+        {bank.error && <p className="auth-error mb-sm">{bank.error}</p>}
+
+        {isElder && (
+          <button className="add-toggle" onClick={bank.connect} disabled={bank.connecting}>
+            {bank.connecting ? 'Connecting…' : '+ Connect a Bank'}
+          </button>
+        )}
+
+        {bank.accounts.length === 0 ? (
+          <p className="page-status">No banks connected yet.</p>
+        ) : (
+          <div className="card-list">
+            {bank.accounts.map(a => (
+              <div key={a.account_id} className="info-card">
+                <div className="info-card-header">
+                  <span className="info-card-title">{a.name} {a.mask ? `••${a.mask}` : ''}</span>
+                  {isElder && (
+                    <button className="action-btn action-btn--danger" onClick={() => bank.disconnect(a.plaid_item_id)} title="Disconnect this bank">
+                      Disconnect
+                    </button>
+                  )}
+                </div>
+                <p className="info-card-note">
+                  {a.institution_name || 'Bank'} · {a.subtype || a.type}
+                  {a.current_balance != null && ` · $${Number(a.current_balance).toFixed(2)} available`}
+                </p>
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
 
       {showForm ? (
         <form className="inline-form" onSubmit={handleAdd}>
@@ -102,7 +148,7 @@ export default function Accounts() {
       )}
 
       {Object.entries(grouped).map(([category, items]) => (
-        <section key={category} style={{ marginBottom: '1.5rem' }}>
+        <section key={category} className="mb-lg">
           <h2 className="section-label">{CATEGORY_LABELS[category] || category}</h2>
           <div className="card-list">
             {items.map(a => (

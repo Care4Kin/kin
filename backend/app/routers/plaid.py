@@ -1,5 +1,4 @@
 from collections import defaultdict
-from datetime import datetime
 
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
@@ -22,7 +21,7 @@ from app.schemas.plaid import LinkTokenOut, ExchangeTokenRequest
 from app.services.plaid_client import get_plaid_client, plaid_configured
 
 router = APIRouter()
-require_finance_access = require_permission('can_view_accounts')
+require_accounts_access = require_permission('can_view_accounts')
 
 def _require_plaid_configured():
     if not plaid_configured():
@@ -47,7 +46,7 @@ def _fetch_all_transactions(client, access_token: str) -> list:
 def create_link_token(
     circle_id: int,
     current_user: User = Depends(get_current_user),
-    circle=Depends(require_finance_access),
+    circle=Depends(require_accounts_access),
 ):
     require_elder(circle, current_user)
     _require_plaid_configured()
@@ -71,7 +70,7 @@ def exchange_public_token(
     body: ExchangeTokenRequest,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
-    circle=Depends(require_finance_access),
+    circle=Depends(require_accounts_access),
 ):
     require_elder(circle, current_user)
     _require_plaid_configured()
@@ -95,7 +94,7 @@ def exchange_public_token(
     return {'plaid_item_id': item.plaid_item_id, 'institution_name': item.institution_name}
 
 @router.get('/{circle_id}/plaid/accounts')
-def get_linked_accounts(circle_id: int, db: Session = Depends(get_db), circle=Depends(require_finance_access)):
+def get_linked_accounts(circle_id: int, db: Session = Depends(get_db), circle=Depends(require_accounts_access)):
     _require_plaid_configured()
     client = get_plaid_client()
     items = db.query(PlaidItem).filter(PlaidItem.circle_id == circle_id).all()
@@ -121,7 +120,7 @@ def get_linked_accounts(circle_id: int, db: Session = Depends(get_db), circle=De
     return result
 
 @router.get('/{circle_id}/plaid/spending')
-def get_spending_breakdown(circle_id: int, db: Session = Depends(get_db), circle=Depends(require_finance_access)):
+def get_spending_breakdown(circle_id: int, db: Session = Depends(get_db), circle=Depends(require_accounts_access)):
     _require_plaid_configured()
     client = get_plaid_client()
     items = db.query(PlaidItem).filter(PlaidItem.circle_id == circle_id).all()
@@ -140,7 +139,7 @@ def get_spending_breakdown(circle_id: int, db: Session = Depends(get_db), circle
     return breakdown
 
 @router.get('/{circle_id}/plaid/subscriptions')
-def get_detected_subscriptions(circle_id: int, db: Session = Depends(get_db), circle=Depends(require_finance_access)):
+def get_detected_subscriptions(circle_id: int, db: Session = Depends(get_db), circle=Depends(require_accounts_access)):
     _require_plaid_configured()
     client = get_plaid_client()
     items = db.query(PlaidItem).filter(PlaidItem.circle_id == circle_id).all()
@@ -188,7 +187,7 @@ def remove_linked_item(
     plaid_item_id: int,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
-    circle=Depends(require_finance_access),
+    circle=Depends(require_accounts_access),
 ):
     require_elder(circle, current_user)
     item = db.query(PlaidItem).filter(

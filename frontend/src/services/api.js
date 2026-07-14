@@ -20,7 +20,9 @@ async function request(method, path, body) {
     const message = Array.isArray(err.detail)
       ? err.detail.map(d => d.msg.replace(/^Value error, /, '')).join('; ')
       : (err.detail || err.message || res.statusText)
-    throw new Error(message)
+    const error = new Error(message)
+    error.status = res.status
+    throw error
   }
 
   return res.status === 204 ? null : res.json()

@@ -12,12 +12,13 @@ const PERMISSION_LABELS = {
 
 export default function Circle() {
   const { circleId, user } = useAuth()
-  const { data, loading, error } = useFetch(() => api.getCircle(circleId), [circleId])
+  const { data, loading, error } = useFetch(() => api.getCircle(circleId), [circleId], !!circleId)
   const [circle, setCircle] = useState(null)
   const [showInvite, setShowInvite] = useState(false)
   const [inviteEmail, setInviteEmail] = useState('')
   const [inviteError, setInviteError] = useState('')
   const [saving, setSaving] = useState(false)
+  const [actionError, setActionError] = useState('')
 
   useEffect(() => { if (data) setCircle(data) }, [data])
 
@@ -49,33 +50,49 @@ export default function Circle() {
   }
 
   async function handleRemove(membershipId) {
-    await api.removeMember(circleId, membershipId)
-    setCircle(prev => ({ ...prev, members: prev.members.filter(m => m.membership_id !== membershipId) }))
+    setActionError('')
+    try {
+      await api.removeMember(circleId, membershipId)
+      setCircle(prev => ({ ...prev, members: prev.members.filter(m => m.membership_id !== membershipId) }))
+    } catch (err) {
+      setActionError(err.message)
+    }
   }
 
   async function handleCancelInvite(invitationId) {
-    await api.cancelInvitation(circleId, invitationId)
-    setCircle(prev => ({
-      ...prev,
-      pending_invitations: prev.pending_invitations.filter(i => i.invitation_id !== invitationId),
-    }))
+    setActionError('')
+    try {
+      await api.cancelInvitation(circleId, invitationId)
+      setCircle(prev => ({
+        ...prev,
+        pending_invitations: prev.pending_invitations.filter(i => i.invitation_id !== invitationId),
+      }))
+    } catch (err) {
+      setActionError(err.message)
+    }
   }
 
   async function handleTogglePermission(member, key) {
-    const updated = await api.updateMemberPermissions(circleId, member.membership_id, {
-      [key]: !member.permissions[key],
-    })
-    setCircle(prev => ({
-      ...prev,
-      members: prev.members.map(m => m.membership_id === member.membership_id ? { ...m, permissions: updated.permissions } : m),
-    }))
+    setActionError('')
+    try {
+      const updated = await api.updateMemberPermissions(circleId, member.membership_id, {
+        [key]: !member.permissions[key],
+      })
+      setCircle(prev => ({
+        ...prev,
+        members: prev.members.map(m => m.membership_id === member.membership_id ? { ...m, permissions: updated.permissions } : m),
+      }))
+    } catch (err) {
+      setActionError(err.message)
+    }
   }
 
   return (
     <div className="page">
       <h1 className="page-title">My Circle</h1>
+      {actionError && <p className="page-status page-status--error">{actionError}</p>}
 
-      <div className="info-card" style={{ marginBottom: '1.25rem' }}>
+      <div className="info-card mb-md">
         <span className="info-card-title">{circle.elder.full_name}</span>
         <p className="info-card-note">The elder in this circle. Everyone below can only see what's checked off for them — never more.</p>
       </div>
@@ -115,7 +132,7 @@ export default function Circle() {
       </div>
 
       {circle.pending_invitations?.length > 0 && (
-        <section style={{ marginTop: '1.5rem' }}>
+        <section className="mt-lg">
           <h2 className="section-label">Invited — Not Joined Yet</h2>
           <div className="card-list">
             {circle.pending_invitations.map(inv => (
@@ -141,7 +158,7 @@ export default function Circle() {
 
       {isElder && (
         showInvite ? (
-          <form className="inline-form" onSubmit={handleInvite} style={{ marginTop: '1.25rem' }}>
+          <form className="inline-form mt-md" onSubmit={handleInvite}>
             <div className="field-group">
               <label htmlFor="invite-email">Invite by Email</label>
               <p className="field-hint">If they already use Kin, they'll be added right away. If not, we'll email them an invitation to sign up — and they'll join your circle automatically.</p>
@@ -154,7 +171,7 @@ export default function Circle() {
             </div>
           </form>
         ) : (
-          <button className="add-toggle" style={{ marginTop: '1.25rem' }} onClick={() => setShowInvite(true)}>
+          <button className="add-toggle mt-md" onClick={() => setShowInvite(true)}>
             + Invite a family member
           </button>
         )

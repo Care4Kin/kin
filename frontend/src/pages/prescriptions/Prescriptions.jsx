@@ -1,22 +1,22 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useAuth } from '../../context/AuthContext'
 import { api } from '../../services/api'
-import { useFetch } from '../../hooks/useFetch'
+import { useResourceList } from '../../hooks/useResourceList'
+import InfoRow from '../../components/InfoRow'
+import { daysUntil } from '../../utils/date'
 
 const emptyForm = { medication_name: '', dosage: '', prescribing_doctor: '', pharmacy_name: '', refill_date: '', notes: '' }
 
 export default function Prescriptions() {
   const { circleId, user } = useAuth()
   const isCaregiver = user?.role === 'caregiver'
-  const { data, loading, error } = useFetch(() => api.getPrescriptions(circleId), [circleId])
-  const [rxs, setRxs] = useState([])
+  const { items: rxs, setItems: setRxs, loading, error } = useResourceList(() => api.getPrescriptions(circleId), [circleId], !!circleId)
   const [showForm, setShowForm] = useState(false)
   const [form, setForm] = useState(emptyForm)
   const [saving, setSaving] = useState(false)
   const [formError, setFormError] = useState('')
   const [editingId, setEditingId] = useState(null)
-
-  useEffect(() => { if (data) setRxs(data) }, [data])
+  const [actionError, setActionError] = useState('')
 
   if (!circleId || loading) return <p className="page-status">Loading prescriptions…</p>
   if (error) return <p className="page-status page-status--error">{error}</p>
@@ -70,13 +70,19 @@ export default function Prescriptions() {
   }
 
   async function handleDelete(rx) {
-    await api.deletePrescription(circleId, rx.prescription_id)
-    setRxs(prev => prev.filter(r => r.prescription_id !== rx.prescription_id))
+    setActionError('')
+    try {
+      await api.deletePrescription(circleId, rx.prescription_id)
+      setRxs(prev => prev.filter(r => r.prescription_id !== rx.prescription_id))
+    } catch (err) {
+      setActionError(err.message)
+    }
   }
 
   return (
     <div className="page">
       <h1 className="page-title">Prescriptions</h1>
+      {actionError && <p className="page-status page-status--error">{actionError}</p>}
 
       {showForm ? (
         <form className="inline-form" onSubmit={handleSubmit}>
@@ -131,11 +137,7 @@ export default function Prescriptions() {
 
 function PrescriptionSummary({ rxs }) {
   const active = rxs.filter(rx => rx.is_active !== false)
-  const urgent = active.filter(rx => {
-    if (!rx.refill_date) return false
-    const days = Math.ceil((new Date(rx.refill_date) - new Date()) / 86400000)
-    return days <= 10
-  })
+  const urgent = active.filter(rx => rx.refill_date && daysUntil(rx.refill_date) <= 10)
 
   return (
     <div className="stat-banner">
@@ -149,10 +151,8 @@ function RxCard({ rx, onDelete, onEdit }) {
   const refill = rx.refill_date
     ? new Date(rx.refill_date + 'T00:00:00').toLocaleDateString('en-US', { month: 'long', day: 'numeric' })
     : null
-  const daysUntil = rx.refill_date
-    ? Math.ceil((new Date(rx.refill_date) - new Date()) / 86400000)
-    : null
-  const urgent = daysUntil !== null && daysUntil <= 10
+  const daysLeft = rx.refill_date ? daysUntil(rx.refill_date) : null
+  const urgent = daysLeft !== null && daysLeft <= 10
 
   return (
     <div className={`info-card ${urgent ? 'info-card--urgent' : ''}`}>
@@ -164,7 +164,7 @@ function RxCard({ rx, onDelete, onEdit }) {
         {rx.dosage && <InfoRow label="Dosage" value={rx.dosage} />}
         {rx.prescribing_doctor && <InfoRow label="Doctor" value={rx.prescribing_doctor} />}
         {rx.pharmacy_name && <InfoRow label="Pharmacy" value={rx.pharmacy_name} />}
-        {refill && <InfoRow label="Refill date" value={`${refill}${daysUntil !== null ? ` (${daysUntil} days)` : ''}`} />}
+        {refill && <InfoRow label="Refill date" value={`${refill}${daysLeft !== null ? ` (${daysLeft} days)` : ''}`} />}
         {rx.notes && <InfoRow label="Notes" value={rx.notes} />}
       </div>
       <div className="action-row">
@@ -175,15 +175,6 @@ function RxCard({ rx, onDelete, onEdit }) {
           Delete
         </button>
       </div>
-    </div>
-  )
-}
-
-function InfoRow({ label, value }) {
-  return (
-    <div className="info-row">
-      <span className="info-row-label">{label}</span>
-      <span className="info-row-value">{value}</span>
     </div>
   )
 }

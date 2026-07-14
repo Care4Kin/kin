@@ -4,9 +4,12 @@ import { api } from '../services/api'
 const AuthContext = createContext(null)
 
 function ensureCircle(userData) {
-  return api.getMyCircle().catch(() => {
-    if (userData.role === 'elder') return api.createCircle()
-    throw new Error('No circle found')
+  return api.getMyCircle().catch(err => {
+    // Only a "no circle yet" 404 should trigger creating one — any other
+    // failure (network error, server error) should propagate as-is rather
+    // than being silently treated as "elder needs a new circle".
+    if (userData.role === 'elder' && err.status === 404) return api.createCircle()
+    throw err
   })
 }
 
@@ -35,6 +38,7 @@ export function AuthProvider({ children }) {
   }
 
   function logout() {
+    api.logout().catch(() => {})
     localStorage.removeItem('token')
     localStorage.removeItem('user')
     setUser(null)

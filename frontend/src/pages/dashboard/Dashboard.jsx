@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import { api } from '../../services/api'
+import { daysUntil } from '../../utils/date'
 
 const TIPS = [
   'You can add a bill by tapping Bills in the menu below.',
@@ -66,6 +67,8 @@ export default function Dashboard() {
     api.getPlaidAccounts(circleId).then(accs => setBankCount(accs.length)).catch(() => {})
   }, [circleId])
 
+  const accountsCount = (counts.accounts || 0) + bankCount
+
   const isCaregiver = user?.role === 'caregiver'
   const [tip] = useState(() => justSignedUp ? getSignupTip() : getTodaysTip())
 
@@ -83,8 +86,7 @@ export default function Dashboard() {
         <SummaryCard title="Prescriptions" description="See upcoming refill dates" href="/prescriptions" accent="green" count={counts.prescriptions} />
         <SummaryCard title="Subscriptions" description="Review your monthly services" href="/subscriptions" accent="green" count={counts.subscriptions} />
         <SummaryCard title="Appointments" description="Upcoming visits and reminders" href="/appointments" accent="green" count={counts.appointments} />
-        <SummaryCard title="Important Accounts" description="Bank, insurance, healthcare and more" href="/accounts" accent="green" count={counts.accounts} />
-        <SummaryCard title="Connected Banks" description="Spending by category & subscriptions" href="/bank" accent="green" count={bankCount} />
+        <SummaryCard title="Important Accounts" description="Bank, insurance, healthcare and more" href="/accounts" accent="green" count={accountsCount} />
         <SummaryCard title="Suspicious Activity" description="Flag a scam call, email, or bill" href="/flags" accent="warn" count={counts.flags} />
         <SummaryCard title="Shared Notes" description="Leave a message for your family" href="/notes" accent="green" count={counts.notes} />
         <SummaryCard title="My Circle" description="See who's helping and manage access" href="/circle" accent="green" count={counts.circle} />
@@ -109,7 +111,7 @@ function CaregiverSummary({ data }) {
   const openFlags = data.flags.filter(f => !f.is_resolved)
   const upcomingRx = data.prescriptions.filter(rx => {
     if (!rx.refill_date) return false
-    const days = Math.ceil((new Date(rx.refill_date) - new Date()) / 86400000)
+    const days = daysUntil(rx.refill_date)
     return days >= 0 && days <= 10
   })
   const nextAppt = [...data.appointments].sort((a, b) => a.date.localeCompare(b.date))[0]

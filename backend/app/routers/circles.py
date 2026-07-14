@@ -29,7 +29,12 @@ def get_my_circle(current_user=Depends(get_current_user), db: Session = Depends(
     if user.role == 'elder':
         circle = db.query(FamilyCircle).filter(FamilyCircle.elder_id == user_id).first()
     else:
-        membership = db.query(CircleMember).filter(CircleMember.caregiver_id == user_id).first()
+        # A caregiver could in principle be invited into more than one elder's
+        # circle; order deterministically (earliest membership) rather than
+        # leaving it to whatever order the DB happens to return.
+        membership = db.query(CircleMember).filter(
+            CircleMember.caregiver_id == user_id
+        ).order_by(CircleMember.membership_id.asc()).first()
         circle = db.query(FamilyCircle).filter(
             FamilyCircle.circle_id == membership.circle_id
         ).first() if membership else None
