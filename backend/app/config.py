@@ -9,7 +9,7 @@ class Settings(BaseSettings):
     twilio_auth_token: str = ''
     twilio_phone_number: str = ''
     resend_api_key: str = ''
-    resend_from_email: str = 'Kin <onboarding@resend.dev>'
+    resend_from_email: str = 'Kin <invites@ishtiaqakanda.dev>'
     frontend_url: str = 'http://localhost:5173'
     google_client_id: str = ''
 
