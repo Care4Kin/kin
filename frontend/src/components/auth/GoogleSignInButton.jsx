@@ -22,10 +22,8 @@ function loadGoogleScript() {
   return scriptPromise
 }
 
-export default function GoogleSignInButton({ role, onCredential, onError }) {
+export default function GoogleSignInButton({ onCredential, onError }) {
   const buttonRef = useRef(null)
-  const roleRef = useRef(role)
-  roleRef.current = role
 
   useEffect(() => {
     if (!CLIENT_ID) return
@@ -35,7 +33,7 @@ export default function GoogleSignInButton({ role, onCredential, onError }) {
       if (cancelled || !window.google || !buttonRef.current) return
       window.google.accounts.id.initialize({
         client_id: CLIENT_ID,
-        callback: (response) => onCredential(response.credential, roleRef.current),
+        callback: (response) => onCredential(response.credential),
       })
       window.google.accounts.id.renderButton(buttonRef.current, {
         type: 'standard',

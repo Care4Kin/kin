@@ -1,7 +1,8 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useAuth } from '../../context/AuthContext'
 import { api } from '../../services/api'
-import { useFetch } from '../../hooks/useFetch'
+import { useResourceList } from '../../hooks/useResourceList'
+import InfoRow from '../../components/InfoRow'
 
 const emptyForm = { title: '', date: '', time: '', location: '', notes: '' }
 
@@ -13,14 +14,12 @@ function todayStr() {
 
 export default function Appointments() {
   const { circleId } = useAuth()
-  const { data, loading, error } = useFetch(() => api.getAppointments(circleId), [circleId])
-  const [appointments, setAppointments] = useState([])
+  const { items: appointments, setItems: setAppointments, loading, error } = useResourceList(() => api.getAppointments(circleId), [circleId], !!circleId)
   const [showForm, setShowForm] = useState(false)
   const [form, setForm] = useState(emptyForm)
   const [saving, setSaving] = useState(false)
   const [formError, setFormError] = useState('')
-
-  useEffect(() => { if (data) setAppointments(data) }, [data])
+  const [actionError, setActionError] = useState('')
 
   if (!circleId || loading) return <p className="page-status">Loading appointments…</p>
   if (error) return <p className="page-status page-status--error">{error}</p>
@@ -52,13 +51,19 @@ export default function Appointments() {
   }
 
   async function handleDelete(appt) {
-    await api.deleteAppointment(circleId, appt.appointment_id)
-    setAppointments(prev => prev.filter(a => a.appointment_id !== appt.appointment_id))
+    setActionError('')
+    try {
+      await api.deleteAppointment(circleId, appt.appointment_id)
+      setAppointments(prev => prev.filter(a => a.appointment_id !== appt.appointment_id))
+    } catch (err) {
+      setActionError(err.message)
+    }
   }
 
   return (
     <div className="page">
       <h1 className="page-title">Appointments</h1>
+      {actionError && <p className="page-status page-status--error">{actionError}</p>}
 
       {showForm ? (
         <form className="inline-form" onSubmit={handleAdd}>
@@ -128,15 +133,6 @@ function AppointmentCard({ appt, onDelete }) {
           Delete
         </button>
       </div>
-    </div>
-  )
-}
-
-function InfoRow({ label, value }) {
-  return (
-    <div className="info-row">
-      <span className="info-row-label">{label}</span>
-      <span className="info-row-value">{value}</span>
     </div>
   )
 }

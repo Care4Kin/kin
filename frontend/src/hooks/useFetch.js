@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react'
 
-export function useFetch(fetchFn, deps = []) {
+export function useFetch(fetchFn, deps = [], enabled = true) {
   const [data, setData] = useState(null)
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(enabled)
   const [error, setError] = useState(null)
 
   useEffect(() => {
+    if (!enabled) return
     let cancelled = false
     setLoading(true)
     setError(null)
@@ -14,7 +15,7 @@ export function useFetch(fetchFn, deps = []) {
       .catch(e => { if (!cancelled) setError(e.message) })
       .finally(() => { if (!cancelled) setLoading(false) })
     return () => { cancelled = true }
-  }, deps)
+  }, [...deps, enabled])
 
   return { data, loading, error }
 }

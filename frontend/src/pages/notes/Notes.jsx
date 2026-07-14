@@ -1,17 +1,15 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useAuth } from '../../context/AuthContext'
 import { api } from '../../services/api'
-import { useFetch } from '../../hooks/useFetch'
+import { useResourceList } from '../../hooks/useResourceList'
 
 export default function Notes() {
   const { circleId, user } = useAuth()
-  const { data, loading, error } = useFetch(() => api.getNotes(circleId), [circleId])
-  const [notes, setNotes] = useState([])
+  const { items: notes, setItems: setNotes, loading, error } = useResourceList(() => api.getNotes(circleId), [circleId], !!circleId)
   const [content, setContent] = useState('')
   const [saving, setSaving] = useState(false)
   const [formError, setFormError] = useState('')
-
-  useEffect(() => { if (data) setNotes(data) }, [data])
+  const [actionError, setActionError] = useState('')
 
   if (!circleId || loading) return <p className="page-status">Loading notes…</p>
   if (error) return <p className="page-status page-status--error">{error}</p>
@@ -33,13 +31,19 @@ export default function Notes() {
   }
 
   async function handleDelete(note) {
-    await api.deleteNote(circleId, note.note_id)
-    setNotes(prev => prev.filter(n => n.note_id !== note.note_id))
+    setActionError('')
+    try {
+      await api.deleteNote(circleId, note.note_id)
+      setNotes(prev => prev.filter(n => n.note_id !== note.note_id))
+    } catch (err) {
+      setActionError(err.message)
+    }
   }
 
   return (
     <div className="page">
       <h1 className="page-title">Shared Notes</h1>
+      {actionError && <p className="page-status page-status--error">{actionError}</p>}
 
       <form className="inline-form" onSubmit={handleAdd}>
         <div className="field-group">
@@ -54,7 +58,7 @@ export default function Notes() {
         {notes.map(n => (
           <div key={n.note_id} className="info-card">
             <p className="info-card-note" style={{ fontSize: '1rem', color: 'var(--text)' }}>{n.content}</p>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '0.5rem' }}>
+            <div className="row-between" style={{ marginTop: '0.5rem' }}>
               <span className="info-row-label">
                 {n.author?.full_name || 'Unknown'} · {new Date(n.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
               </span>

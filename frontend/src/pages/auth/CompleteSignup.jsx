@@ -51,7 +51,7 @@ export default function CompleteSignup() {
     <div className="auth-page">
       <div className="auth-card">
         <h1 className="auth-title">Finish Setting Up</h1>
-        <p className="field-hint" style={{ marginBottom: '1.25rem' }}>
+        <p className="field-hint mb-md">
           {fullName ? `Welcome, ${fullName.split(' ')[0]}! ` : ''}
           Just a couple of things so we can set up your circle.
         </p>

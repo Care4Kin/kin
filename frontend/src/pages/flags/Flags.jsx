@@ -1,7 +1,7 @@
-import { useState, useEffect, lazy } from 'react'
+import { useState } from 'react'
 import { useAuth } from '../../context/AuthContext'
 import { api } from '../../services/api'
-import { useFetch } from '../../hooks/useFetch'
+import { useResourceList } from '../../hooks/useResourceList'
 
 const TYPE_LABELS = { call: 'Phone Call', email: 'Email', text: 'Text', bill: 'Bill', other: 'Other' }
 
@@ -19,15 +19,13 @@ const FILTERS = [
 export default function Flags() {
   const [filter, setFilter] = useState('all')
   const { circleId } = useAuth()
-  const { data, loading, error } = useFetch(() => api.getFlags(circleId), [circleId])
-  const [flags, setFlags] = useState([])
+  const { items: flags, setItems: setFlags, loading, error } = useResourceList(() => api.getFlags(circleId), [circleId], !!circleId)
   const [showForm, setShowForm] = useState(false)
   const [form, setForm] = useState(emptyForm)
   const [saving, setSaving] = useState(false)
   const [formError, setFormError] = useState('')
   const [editingId, setEditingId] = useState(null)
-
-  useEffect(() => { if (data) setFlags(data) }, [data])
+  const [actionError, setActionError] = useState('')
 
   if (!circleId || loading) return <p className="page-status">Loading…</p>
   if (error) return <p className="page-status page-status--error">{error}</p>
@@ -67,13 +65,23 @@ export default function Flags() {
   }
 
   async function handleDelete(flag) {
-    await api.deleteFlag(circleId, flag.flag_id)
-    setFlags(prev => prev.filter(f => f.flag_id !== flag.flag_id))
+    setActionError('')
+    try {
+      await api.deleteFlag(circleId, flag.flag_id)
+      setFlags(prev => prev.filter(f => f.flag_id !== flag.flag_id))
+    } catch (err) {
+      setActionError(err.message)
+    }
   }
 
   async function handleResolve(flag) {
-    const updated = await api.updateFlag(circleId, flag.flag_id, { is_resolved: !flag.is_resolved })
-    setFlags(prev => prev.map(f => f.flag_id === updated.flag_id ? updated : f))
+    setActionError('')
+    try {
+      const updated = await api.updateFlag(circleId, flag.flag_id, { is_resolved: !flag.is_resolved })
+      setFlags(prev => prev.map(f => f.flag_id === updated.flag_id ? updated : f))
+    } catch (err) {
+      setActionError(err.message)
+    }
   }
 
 const visible = filter === 'all'
@@ -88,7 +96,8 @@ const visible = filter === 'all'
   return (
     <div className="page">
       <h1 className="page-title">Suspicious Activity</h1>
-      
+      {actionError && <p className="page-status page-status--error">{actionError}</p>}
+
     <div className="filter-bar">
       {FILTERS.map(f => (
         <button
@@ -136,7 +145,7 @@ const visible = filter === 'all'
       )}
 
       {open.length > 0 && (
-        <section style={{ marginBottom: '1.5rem' }}>
+        <section className="mb-lg">
           <h2 className="section-label">Needs Attention</h2>
           <div className="card-list">
             {open.map(f => <FlagCard key={f.flag_id} flag={f} onResolve={handleResolve} onEdit={handleEditClick} onDelete={handleDelete} />)}

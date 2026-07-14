@@ -77,8 +77,13 @@ export function usePlaidBank(circleId) {
   }
 
   async function disconnect(plaidItemId) {
-    await api.removePlaidItem(circleId, plaidItemId)
-    await refresh()
+    setError('')
+    try {
+      await api.removePlaidItem(circleId, plaidItemId)
+      await refresh()
+    } catch (err) {
+      setError(err.message)
+    }
   }
 
   return { accounts, spending, subscriptions, loading, error, connecting, connect, disconnect, refresh }

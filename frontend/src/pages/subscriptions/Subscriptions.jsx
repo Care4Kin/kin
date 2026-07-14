@@ -1,20 +1,18 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useAuth } from '../../context/AuthContext'
 import { api } from '../../services/api'
-import { useFetch } from '../../hooks/useFetch'
+import { useResourceList } from '../../hooks/useResourceList'
 import { usePlaidBank } from '../../hooks/usePlaidBank'
 
 export default function Subscriptions() {
   const { circleId } = useAuth()
-  const { data, loading, error } = useFetch(() => api.getSubscriptions(circleId), [circleId])
+  const { items: subs, setItems: setSubs, loading, error } = useResourceList(() => api.getSubscriptions(circleId), [circleId], !!circleId)
   const bank = usePlaidBank(circleId)
-  const [subs, setSubs] = useState([])
   const [showForm, setShowForm] = useState(false)
   const [form, setForm] = useState({ name: '', monthly_cost: '' })
   const [saving, setSaving] = useState(false)
   const [formError, setFormError] = useState('')
-
-  useEffect(() => { if (data) setSubs(data) }, [data])
+  const [actionError, setActionError] = useState('')
 
   if (!circleId || loading) return <p className="page-status">Loading subscriptions…</p>
   if (error) return <p className="page-status page-status--error">{error}</p>
@@ -43,13 +41,23 @@ export default function Subscriptions() {
   }
 
   async function toggleActive(sub) {
-    const updated = await api.updateSubscription(circleId, sub.subscription_id, { is_active: !sub.is_active })
-    setSubs(prev => prev.map(s => s.subscription_id === updated.subscription_id ? updated : s))
+    setActionError('')
+    try {
+      const updated = await api.updateSubscription(circleId, sub.subscription_id, { is_active: !sub.is_active })
+      setSubs(prev => prev.map(s => s.subscription_id === updated.subscription_id ? updated : s))
+    } catch (err) {
+      setActionError(err.message)
+    }
   }
 
   async function handleDelete(sub) {
-    await api.deleteSubscription(circleId, sub.subscription_id)
-    setSubs(prev => prev.filter(s => s.subscription_id !== sub.subscription_id))
+    setActionError('')
+    try {
+      await api.deleteSubscription(circleId, sub.subscription_id)
+      setSubs(prev => prev.filter(s => s.subscription_id !== sub.subscription_id))
+    } catch (err) {
+      setActionError(err.message)
+    }
   }
 
   const active   = subs.filter(s => s.is_active)
@@ -59,6 +67,7 @@ export default function Subscriptions() {
   return (
     <div className="page">
       <h1 className="page-title">Subscriptions</h1>
+      {actionError && <p className="page-status page-status--error">{actionError}</p>}
 
       <div className="stat-banner">
         <span className="stat-banner-label">Monthly total</span>
@@ -93,7 +102,7 @@ export default function Subscriptions() {
       </section>
 
       {inactive.length > 0 && (
-        <section style={{ marginTop: '1.5rem' }}>
+        <section className="mt-lg">
           <h2 className="section-label">Inactive</h2>
           <div className="card-list">
             {inactive.map(s => <SubRow key={s.subscription_id} sub={s} onToggleActive={toggleActive} onDelete={handleDelete} />)}
@@ -102,7 +111,7 @@ export default function Subscriptions() {
       )}
 
       {bank.subscriptions.length > 0 && (
-        <section style={{ marginTop: '1.5rem' }}>
+        <section className="mt-lg">
           <h2 className="section-label">Detected From Your Bank</h2>
           <p className="field-hint" style={{ marginBottom: '0.6rem' }}>
             Recurring charges we noticed on a connected bank account — not added to your list above automatically.
@@ -126,8 +135,8 @@ export default function Subscriptions() {
 
 function SubRow({ sub, onToggleActive, onDelete }) {
   return (
-    <div className={`bill-row ${!sub.is_active ? 'bill-row--paid' : ''}`} style={{ flexDirection: 'column', alignItems: 'stretch' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', gap: '0.75rem' }}>
+    <div className={`bill-row row-stacked ${!sub.is_active ? 'bill-row--paid' : ''}`}>
+      <div className="row-between">
         <span className="bill-row-name">{sub.name}</span>
         <div className="bill-row-meta">
           <span className="bill-row-amount">${Number(sub.monthly_cost || 0).toFixed(2)}/mo</span>

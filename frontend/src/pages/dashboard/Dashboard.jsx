@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import { api } from '../../services/api'
+import { daysUntil } from '../../utils/date'
 
 const TIPS = [
   'You can add a bill by tapping Bills in the menu below.',
@@ -110,7 +111,7 @@ function CaregiverSummary({ data }) {
   const openFlags = data.flags.filter(f => !f.is_resolved)
   const upcomingRx = data.prescriptions.filter(rx => {
     if (!rx.refill_date) return false
-    const days = Math.ceil((new Date(rx.refill_date) - new Date()) / 86400000)
+    const days = daysUntil(rx.refill_date)
     return days >= 0 && days <= 10
   })
   const nextAppt = [...data.appointments].sort((a, b) => a.date.localeCompare(b.date))[0]

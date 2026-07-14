@@ -185,7 +185,7 @@ export default function Register() {
           </button>
         </form>
 
-        <GoogleSignInButton role={form.role} onCredential={handleGoogleCredential} onError={setError} />
+        <GoogleSignInButton onCredential={handleGoogleCredential} onError={setError} />
 
         <p className="auth-switch">
           Already have an account?{' '}
