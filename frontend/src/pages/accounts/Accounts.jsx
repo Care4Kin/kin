@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useAuth } from '../../context/AuthContext'
 import { api } from '../../services/api'
 import { useFetch } from '../../hooks/useFetch'
+import { usePlaidBank } from '../../hooks/usePlaidBank'
 
 const CATEGORY_LABELS = {
   bank: 'Bank',
@@ -15,7 +16,8 @@ const CATEGORY_LABELS = {
 const emptyForm = { name: '', category: 'bank', notes: '' }
 
 export default function Accounts() {
-  const { circleId } = useAuth()
+  const { circleId, user } = useAuth()
+  const isElder = user?.role === 'elder'
   const { data, loading, error } = useFetch(() => api.getAccounts(circleId), [circleId])
   const [accounts, setAccounts] = useState([])
   const [showForm, setShowForm] = useState(false)
@@ -23,6 +25,8 @@ export default function Accounts() {
   const [saving, setSaving] = useState(false)
   const [editingId, setEditingId] = useState(null)
   const [formError, setFormError] = useState('')
+
+  const bank = usePlaidBank(circleId)
 
   useEffect(() => { if (data) setAccounts(data) }, [data])
 
@@ -74,6 +78,44 @@ export default function Accounts() {
   return (
     <div className="page">
       <h1 className="page-title">Important Accounts</h1>
+
+      <section style={{ marginBottom: '1.5rem' }}>
+        <h2 className="section-label">Linked Bank Accounts</h2>
+        <p className="field-hint" style={{ marginBottom: '0.75rem' }}>
+          Connect a real bank to see balances here automatically, plus spending by category on Bills and detected recurring charges on Subscriptions.
+        </p>
+
+        {bank.error && <p className="auth-error" style={{ marginBottom: '0.75rem' }}>{bank.error}</p>}
+
+        {isElder && (
+          <button className="add-toggle" onClick={bank.connect} disabled={bank.connecting}>
+            {bank.connecting ? 'Connecting…' : '+ Connect a Bank'}
+          </button>
+        )}
+
+        {bank.accounts.length === 0 ? (
+          <p className="page-status">No banks connected yet.</p>
+        ) : (
+          <div className="card-list">
+            {bank.accounts.map(a => (
+              <div key={a.account_id} className="info-card">
+                <div className="info-card-header">
+                  <span className="info-card-title">{a.name} {a.mask ? `••${a.mask}` : ''}</span>
+                  {isElder && (
+                    <button className="action-btn action-btn--danger" onClick={() => bank.disconnect(a.plaid_item_id)} title="Disconnect this bank">
+                      Disconnect
+                    </button>
+                  )}
+                </div>
+                <p className="info-card-note">
+                  {a.institution_name || 'Bank'} · {a.subtype || a.type}
+                  {a.current_balance != null && ` · $${Number(a.current_balance).toFixed(2)} available`}
+                </p>
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
 
       {showForm ? (
         <form className="inline-form" onSubmit={handleAdd}>

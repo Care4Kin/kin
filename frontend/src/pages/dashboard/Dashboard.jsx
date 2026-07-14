@@ -66,6 +66,8 @@ export default function Dashboard() {
     api.getPlaidAccounts(circleId).then(accs => setBankCount(accs.length)).catch(() => {})
   }, [circleId])
 
+  const accountsCount = (counts.accounts || 0) + bankCount
+
   const isCaregiver = user?.role === 'caregiver'
   const [tip] = useState(() => justSignedUp ? getSignupTip() : getTodaysTip())
 
@@ -83,8 +85,7 @@ export default function Dashboard() {
         <SummaryCard title="Prescriptions" description="See upcoming refill dates" href="/prescriptions" accent="green" count={counts.prescriptions} />
         <SummaryCard title="Subscriptions" description="Review your monthly services" href="/subscriptions" accent="green" count={counts.subscriptions} />
         <SummaryCard title="Appointments" description="Upcoming visits and reminders" href="/appointments" accent="green" count={counts.appointments} />
-        <SummaryCard title="Important Accounts" description="Bank, insurance, healthcare and more" href="/accounts" accent="green" count={counts.accounts} />
-        <SummaryCard title="Connected Banks" description="Spending by category & subscriptions" href="/bank" accent="green" count={bankCount} />
+        <SummaryCard title="Important Accounts" description="Bank, insurance, healthcare and more" href="/accounts" accent="green" count={accountsCount} />
         <SummaryCard title="Suspicious Activity" description="Flag a scam call, email, or bill" href="/flags" accent="warn" count={counts.flags} />
         <SummaryCard title="Shared Notes" description="Leave a message for your family" href="/notes" accent="green" count={counts.notes} />
         <SummaryCard title="My Circle" description="See who's helping and manage access" href="/circle" accent="green" count={counts.circle} />

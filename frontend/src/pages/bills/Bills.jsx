@@ -2,12 +2,14 @@ import { useState, useEffect } from 'react'
 import { useAuth } from '../../context/AuthContext'
 import { api } from '../../services/api'
 import { useFetch } from '../../hooks/useFetch'
+import { usePlaidBank } from '../../hooks/usePlaidBank'
 import CategoryPieChart from '../../components/CategoryPieChart'
 
 export default function Bills() {
   const { circleId, user } = useAuth()
   const isCaregiver = user?.role === 'caregiver'
   const { data, loading, error } = useFetch(() => api.getBills(circleId), [circleId])
+  const bank = usePlaidBank(circleId)
   const [bills, setBills] = useState([])
   const [showForm, setShowForm] = useState(false)
   const [form, setForm] = useState({ name: '', amount: '', due_date: '', category: '' })
@@ -114,6 +116,13 @@ export default function Bills() {
       )}
 
       {isCaregiver && <CategoryPieChart entries={billsToEntries(bills)} title="Spending by Category" />}
+
+      {isCaregiver && bank.spending.length > 0 && (
+        <CategoryPieChart
+          entries={bank.spending.map(s => ({ category: s.category, amount: s.amount }))}
+          title="Bank Spending by Category"
+        />
+      )}
 
       {unpaid.length > 0 && (
         <section className="bill-section">

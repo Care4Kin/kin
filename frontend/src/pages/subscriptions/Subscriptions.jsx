@@ -2,10 +2,12 @@ import { useState, useEffect } from 'react'
 import { useAuth } from '../../context/AuthContext'
 import { api } from '../../services/api'
 import { useFetch } from '../../hooks/useFetch'
+import { usePlaidBank } from '../../hooks/usePlaidBank'
 
 export default function Subscriptions() {
   const { circleId } = useAuth()
   const { data, loading, error } = useFetch(() => api.getSubscriptions(circleId), [circleId])
+  const bank = usePlaidBank(circleId)
   const [subs, setSubs] = useState([])
   const [showForm, setShowForm] = useState(false)
   const [form, setForm] = useState({ name: '', monthly_cost: '' })
@@ -95,6 +97,26 @@ export default function Subscriptions() {
           <h2 className="section-label">Inactive</h2>
           <div className="card-list">
             {inactive.map(s => <SubRow key={s.subscription_id} sub={s} onToggleActive={toggleActive} onDelete={handleDelete} />)}
+          </div>
+        </section>
+      )}
+
+      {bank.subscriptions.length > 0 && (
+        <section style={{ marginTop: '1.5rem' }}>
+          <h2 className="section-label">Detected From Your Bank</h2>
+          <p className="field-hint" style={{ marginBottom: '0.6rem' }}>
+            Recurring charges we noticed on a connected bank account — not added to your list above automatically.
+          </p>
+          <div className="card-list">
+            {bank.subscriptions.map(s => (
+              <div key={s.merchant} className="info-card">
+                <div className="info-card-header">
+                  <span className="info-card-title">{s.merchant}</span>
+                  <span className="bill-row-amount">${s.average_amount.toFixed(2)}</span>
+                </div>
+                <p className="info-card-note">Seen {s.occurrences} times · last on {s.last_date}</p>
+              </div>
+            ))}
           </div>
         </section>
       )}
