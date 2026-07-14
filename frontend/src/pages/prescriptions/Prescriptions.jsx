@@ -14,13 +14,14 @@ export default function Prescriptions() {
   const [form, setForm] = useState(emptyForm)
   const [saving, setSaving] = useState(false)
   const [formError, setFormError] = useState('')
+  const [editingId, setEditingId] = useState(null)
 
   useEffect(() => { if (data) setRxs(data) }, [data])
 
   if (!circleId || loading) return <p className="page-status">Loading prescriptions…</p>
   if (error) return <p className="page-status page-status--error">{error}</p>
 
-  async function handleAdd(e) {
+  async function handleSubmit(e) {
     e.preventDefault()
     setFormError('')
     if (!form.medication_name.trim()) {
@@ -28,23 +29,44 @@ export default function Prescriptions() {
       return
     }
     setSaving(true)
+    const payload = {
+      medication_name: form.medication_name.trim(),
+      dosage: form.dosage || null,
+      prescribing_doctor: form.prescribing_doctor || null,
+      pharmacy_name: form.pharmacy_name || null,
+      refill_date: form.refill_date || null,
+      notes: form.notes || null,
+    }
     try {
-      const rx = await api.createPrescription(circleId, {
-        medication_name: form.medication_name.trim(),
-        dosage: form.dosage || null,
-        prescribing_doctor: form.prescribing_doctor || null,
-        pharmacy_name: form.pharmacy_name || null,
-        refill_date: form.refill_date || null,
-        notes: form.notes || null,
-      })
-      setRxs(prev => [...prev, rx])
+      if (editingId) {
+        const rx = await api.updatePrescription(circleId, editingId, payload)
+        setRxs(prev => prev.map(r => r.prescription_id === rx.prescription_id ? rx : r))
+      } else {
+        const rx = await api.createPrescription(circleId, payload)
+        setRxs(prev => [...prev, rx])
+      }
       setForm(emptyForm)
+      setEditingId(null)
       setShowForm(false)
     } catch (err) {
       setFormError(err.message)
     } finally {
       setSaving(false)
     }
+  }
+
+  function handleEditClick(rx) {
+    setForm({
+      medication_name: rx.medication_name || '',
+      dosage: rx.dosage || '',
+      prescribing_doctor: rx.prescribing_doctor || '',
+      pharmacy_name: rx.pharmacy_name || '',
+      refill_date: rx.refill_date || '',
+      notes: rx.notes || '',
+    })
+    setEditingId(rx.prescription_id)
+    setFormError('')
+    setShowForm(true)
   }
 
   async function handleDelete(rx) {
@@ -57,7 +79,7 @@ export default function Prescriptions() {
       <h1 className="page-title">Prescriptions</h1>
 
       {showForm ? (
-        <form className="inline-form" onSubmit={handleAdd}>
+        <form className="inline-form" onSubmit={handleSubmit}>
           <div className="field-group">
             <label htmlFor="rx-name">Medication Name</label>
             <input id="rx-name" required value={form.medication_name} onChange={e => setForm({ ...form, medication_name: e.target.value })} />
@@ -88,18 +110,20 @@ export default function Prescriptions() {
           </div>
           {formError && <p className="auth-error">{formError}</p>}
           <div className="btn-row">
-            <button type="submit" className="btn-primary" disabled={saving}>{saving ? 'Saving…' : 'Add Prescription'}</button>
-            <button type="button" className="btn-secondary" onClick={() => { setShowForm(false); setFormError('') }}>Cancel</button>
+            <button type="submit" className="btn-primary" disabled={saving}>
+              {saving ? 'Saving…' : editingId ? 'Save Changes' : 'Add Prescription'}
+            </button>
+            <button type="button" className="btn-secondary" onClick={() => { setShowForm(false); setFormError(''); setForm(emptyForm); setEditingId(null) }}>Cancel</button>
           </div>
         </form>
       ) : (
-        <button className="add-toggle" onClick={() => setShowForm(true)}>+ Add a prescription</button>
+        <button className="add-toggle" onClick={() => { setForm(emptyForm); setEditingId(null); setShowForm(true) }}>+ Add a prescription</button>
       )}
 
       {isCaregiver && <PrescriptionSummary rxs={rxs} />}
 
       <div className="card-list">
-        {rxs.map(rx => <RxCard key={rx.prescription_id} rx={rx} onDelete={handleDelete} />)}
+        {rxs.map(rx => <RxCard key={rx.prescription_id} rx={rx} onDelete={handleDelete} onEdit={handleEditClick} />)}
       </div>
     </div>
   )
@@ -121,7 +145,7 @@ function PrescriptionSummary({ rxs }) {
   )
 }
 
-function RxCard({ rx, onDelete }) {
+function RxCard({ rx, onDelete, onEdit }) {
   const refill = rx.refill_date
     ? new Date(rx.refill_date + 'T00:00:00').toLocaleDateString('en-US', { month: 'long', day: 'numeric' })
     : null
@@ -144,6 +168,9 @@ function RxCard({ rx, onDelete }) {
         {rx.notes && <InfoRow label="Notes" value={rx.notes} />}
       </div>
       <div className="action-row">
+        <button className="action-btn" onClick={() => onEdit(rx)} title="Edit this prescription">
+          Edit
+        </button>
         <button className="action-btn action-btn--danger" onClick={() => onDelete(rx)} title="Remove this prescription from the dashboard">
           Delete
         </button>
