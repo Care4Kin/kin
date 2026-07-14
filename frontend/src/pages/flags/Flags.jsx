@@ -25,13 +25,14 @@ export default function Flags() {
   const [form, setForm] = useState(emptyForm)
   const [saving, setSaving] = useState(false)
   const [formError, setFormError] = useState('')
+  const [editingId, setEditingId] = useState(null)
 
   useEffect(() => { if (data) setFlags(data) }, [data])
 
   if (!circleId || loading) return <p className="page-status">Loading…</p>
   if (error) return <p className="page-status page-status--error">{error}</p>
 
-  async function handleAdd(e) {
+  async function handleSubmit(e) {
     e.preventDefault()
     setFormError('')
     if (!form.description.trim()) {
@@ -39,16 +40,35 @@ export default function Flags() {
       return
     }
     setSaving(true)
+    const payload = { ...form, description: form.description.trim() }
     try {
-      const flag = await api.createFlag(circleId, { ...form, description: form.description.trim() })
-      setFlags(prev => [flag, ...prev])
+      if (editingId) {
+        const flag = await api.updateFlag(circleId, editingId, payload)
+        setFlags(prev => prev.map(f => f.flag_id === flag.flag_id ? flag : f))
+      } else {
+        const flag = await api.createFlag(circleId, payload)
+        setFlags(prev => [flag, ...prev])
+      }
       setForm(emptyForm)
+      setEditingId(null)
       setShowForm(false)
     } catch (err) {
       setFormError(err.message)
     } finally {
       setSaving(false)
     }
+  }
+
+  function handleEditClick(flag) {
+    setForm({ type: flag.type, description: flag.description, severity: flag.severity })
+    setEditingId(flag.flag_id)
+    setFormError('')
+    setShowForm(true)
+  }
+
+  async function handleDelete(flag) {
+    await api.deleteFlag(circleId, flag.flag_id)
+    setFlags(prev => prev.filter(f => f.flag_id !== flag.flag_id))
   }
 
   async function handleResolve(flag) {
@@ -82,7 +102,7 @@ const visible = filter === 'all'
     </div>
 
       {showForm ? (
-        <form className="inline-form" onSubmit={handleAdd}>
+        <form className="inline-form" onSubmit={handleSubmit}>
           <p className="field-hint">If something feels like a scam, flag it here — your family will be able to see it and help you sort it out.</p>
           <div className="inline-form-row">
             <div className="field-group">
@@ -105,19 +125,21 @@ const visible = filter === 'all'
           </div>
           {formError && <p className="auth-error">{formError}</p>}
           <div className="btn-row">
-            <button type="submit" className="btn-primary" disabled={saving}>{saving ? 'Saving…' : 'Flag It'}</button>
-            <button type="button" className="btn-secondary" onClick={() => { setShowForm(false); setFormError('') }}>Cancel</button>
+            <button type="submit" className="btn-primary" disabled={saving}>
+              {saving ? 'Saving…' : editingId ? 'Save Changes' : 'Flag It'}
+            </button>
+            <button type="button" className="btn-secondary" onClick={() => { setShowForm(false); setFormError(''); setForm(emptyForm); setEditingId(null) }}>Cancel</button>
           </div>
         </form>
       ) : (
-        <button className="add-toggle" onClick={() => setShowForm(true)}>+ Flag something suspicious</button>
+        <button className="add-toggle" onClick={() => { setForm(emptyForm); setEditingId(null); setShowForm(true) }}>+ Flag something suspicious</button>
       )}
 
       {open.length > 0 && (
         <section style={{ marginBottom: '1.5rem' }}>
           <h2 className="section-label">Needs Attention</h2>
           <div className="card-list">
-            {open.map(f => <FlagCard key={f.flag_id} flag={f} onResolve={handleResolve} />)}
+            {open.map(f => <FlagCard key={f.flag_id} flag={f} onResolve={handleResolve} onEdit={handleEditClick} onDelete={handleDelete} />)}
           </div>
         </section>
       )}
@@ -126,7 +148,7 @@ const visible = filter === 'all'
         <section>
           <h2 className="section-label">Resolved</h2>
           <div className="card-list">
-            {resolved.map(f => <FlagCard key={f.flag_id} flag={f} onResolve={handleResolve} />)}
+            {resolved.map(f => <FlagCard key={f.flag_id} flag={f} onResolve={handleResolve} onEdit={handleEditClick} onDelete={handleDelete} />)}
           </div>
         </section>
       )}
@@ -134,7 +156,7 @@ const visible = filter === 'all'
   )
 }
 
-function FlagCard({ flag, onResolve }) {
+function FlagCard({ flag, onResolve, onEdit, onDelete }) {
   return (
     <div className={`info-card ${flag.severity === 'high' && !flag.is_resolved ? 'info-card--urgent' : ''}`}>
       <div className="info-card-header">
@@ -148,6 +170,12 @@ function FlagCard({ flag, onResolve }) {
       <div className="action-row">
         <button className="action-btn" onClick={() => onResolve(flag)} title={flag.is_resolved ? 'Reopen this flag' : 'Mark this as resolved'}>
           {flag.is_resolved ? 'Reopen' : 'Mark Resolved'}
+        </button>
+        <button className="action-btn" onClick={() => onEdit(flag)} title="Edit this flag">
+          Edit
+        </button>
+        <button className="action-btn action-btn--danger" onClick={() => onDelete(flag)} title="Delete this flag">
+          Delete
         </button>
       </div>
     </div>
