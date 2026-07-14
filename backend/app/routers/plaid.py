@@ -166,7 +166,8 @@ def get_detected_subscriptions(circle_id: int, db: Session = Depends(get_db), ci
         # charges roughly the same amount each time) and it happened in more than
         # one calendar month, not just multiple times in one week.
         within_tolerance = all(abs(a - avg) <= max(avg * 0.15, 1.0) for a in amounts)
-        months = {(t.get('date') or '')[:7] for t in txns if t.get('date')}
+        # Plaid returns `date` as a datetime.date object, not a string.
+        months = {str(t['date'])[:7] for t in txns if t.get('date')}
         if not within_tolerance or len(months) < 2:
             continue
         display_name = txns[0].get('merchant_name') or txns[0].get('name') or key.title()

@@ -1,3 +1,4 @@
+import certifi
 import plaid
 from plaid.api import plaid_api
 
@@ -15,6 +16,7 @@ def get_plaid_client():
             'clientId': settings.plaid_client_id,
             'secret': settings.plaid_secret,
         },
+        ssl_ca_cert=certifi.where(),
     )
     api_client = plaid.ApiClient(configuration)
     return plaid_api.PlaidApi(api_client)
