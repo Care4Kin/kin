@@ -79,6 +79,7 @@ export const api = {
   getFlags: (circleId) => request('GET', `/api/circles/${circleId}/flags`),
   createFlag: (circleId, data) => request('POST', `/api/circles/${circleId}/flags`, data),
   updateFlag: (circleId, flagId, data) => request('PATCH', `/api/circles/${circleId}/flags/${flagId}`, data),
+  deleteFlag: (circleId, flagId) => request('DELETE', `/api/circles/${circleId}/flags/${flagId}`),
 
   // Notes
   getNotes: (circleId) => request('GET', `/api/circles/${circleId}/notes`),
