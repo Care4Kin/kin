@@ -9,3 +9,4 @@ from app.models.prescription import Prescription
 from app.models.flag import Flag
 from app.models.note import Note
 from app.models.appointment import Appointment
+from app.models.plaid_item import PlaidItem

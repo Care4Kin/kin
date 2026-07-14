@@ -34,6 +34,12 @@ services:
         sync: false
       - key: GOOGLE_CLIENT_ID
         sync: false
+      - key: PLAID_CLIENT_ID
+        sync: false
+      - key: PLAID_SECRET
+        sync: false
+      - key: PLAID_ENV
+        value: sandbox
 
   - type: web
     name: kin-frontend

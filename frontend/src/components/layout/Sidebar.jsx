@@ -7,6 +7,7 @@ const navItems = [
   { to: '/subscriptions', label: 'Subscriptions', description: 'Monthly services' },
   { to: '/prescriptions', label: 'Prescriptions', description: 'Your medications' },
   { to: '/accounts', label: 'Accounts', description: 'Important accounts' },
+  { to: '/bank', label: 'Bank Accounts', description: 'Link a bank for spending insights' },
   { to: '/appointments', label: 'Appointments', description: 'Upcoming visits' },
   { to: '/flags', label: 'Suspicious Activity', description: 'Report something odd' },
   { to: '/notes', label: 'Notes', description: 'Leave a message' },

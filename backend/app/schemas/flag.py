@@ -11,5 +11,6 @@ class FlagCreate(BaseModel):
 
 class FlagUpdate(BaseModel):
     is_resolved: Optional[bool] = None
+    type: Optional[FlagType] = None
     description: Optional[str] = None
     severity: Optional[FlagSeverity] = None

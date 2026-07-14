@@ -34,6 +34,7 @@ export default function Dashboard() {
   const justSignedUp = Boolean(location.state?.justSignedUp)
   const [counts, setCounts] = useState({})
   const [data, setData] = useState(null)
+  const [bankCount, setBankCount] = useState(0)
 
   useEffect(() => {
     if (!circleId) return
@@ -59,6 +60,10 @@ export default function Dashboard() {
       })
       setData({ bills, prescriptions, appointments, flags })
     }).catch(() => {})
+
+    // Fetched separately from the rest — Plaid may not be configured, and a
+    // failure here shouldn't blank out every other card's count.
+    api.getPlaidAccounts(circleId).then(accs => setBankCount(accs.length)).catch(() => {})
   }, [circleId])
 
   const isCaregiver = user?.role === 'caregiver'
@@ -79,6 +84,7 @@ export default function Dashboard() {
         <SummaryCard title="Subscriptions" description="Review your monthly services" href="/subscriptions" accent="green" count={counts.subscriptions} />
         <SummaryCard title="Appointments" description="Upcoming visits and reminders" href="/appointments" accent="green" count={counts.appointments} />
         <SummaryCard title="Important Accounts" description="Bank, insurance, healthcare and more" href="/accounts" accent="green" count={counts.accounts} />
+        <SummaryCard title="Connected Banks" description="Spending by category & subscriptions" href="/bank" accent="green" count={bankCount} />
         <SummaryCard title="Suspicious Activity" description="Flag a scam call, email, or bill" href="/flags" accent="warn" count={counts.flags} />
         <SummaryCard title="Shared Notes" description="Leave a message for your family" href="/notes" accent="green" count={counts.notes} />
         <SummaryCard title="My Circle" description="See who's helping and manage access" href="/circle" accent="green" count={counts.circle} />
