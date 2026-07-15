@@ -3,6 +3,7 @@ import { useAuth } from '../../context/AuthContext'
 import { api } from '../../services/api'
 import { useFetch } from '../../hooks/useFetch'
 import FormMessage from '../../components/FormMessage'
+import LoggedOutGate from '../../components/LoggedOutGate'
 
 const PERMISSION_LABELS = {
   can_view_bills: 'Bills',
@@ -12,7 +13,7 @@ const PERMISSION_LABELS = {
 }
 
 export default function Circle() {
-  const { circleId, user } = useAuth()
+  const { circleId, user, loading: authLoading } = useAuth()
   const { data, loading, error } = useFetch(() => api.getCircle(circleId), [circleId], !!circleId)
   const [circle, setCircle] = useState(null)
   const [showInvite, setShowInvite] = useState(false)
@@ -23,6 +24,8 @@ export default function Circle() {
 
   useEffect(() => { if (data) setCircle(data) }, [data])
 
+  if (authLoading) return null
+  if (!user) return <LoggedOutGate title="My Circle" description="See who's helping and manage who can see what — you're always in control." />
   if (!circleId || loading) return <p className="page-status">Loading your circle…</p>
   if (error) return <FormMessage variant="error" className="page-status page-status--error">{error}</FormMessage>
   if (!circle) return null

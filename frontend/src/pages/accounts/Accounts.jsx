@@ -5,6 +5,7 @@ import { useResourceList } from '../../hooks/useResourceList'
 import { usePlaidBank } from '../../hooks/usePlaidBank'
 import CategoryPieChart from '../../components/CategoryPieChart'
 import FormMessage from '../../components/FormMessage'
+import LoggedOutGate from '../../components/LoggedOutGate'
 
 const CATEGORY_LABELS = {
   bank: 'Bank',
@@ -36,7 +37,7 @@ function bankBalance(a) {
 const emptyForm = { name: '', category: 'bank', notes: '' }
 
 export default function Accounts() {
-  const { circleId, user } = useAuth()
+  const { circleId, user, loading: authLoading } = useAuth()
   const isElder = user?.role === 'elder'
   const isCaregiver = user?.role === 'caregiver'
   const { items: accounts, setItems: setAccounts, loading, error } = useResourceList(() => api.getAccounts(circleId), [circleId], !!circleId)
@@ -49,6 +50,8 @@ export default function Accounts() {
 
   const bank = usePlaidBank(circleId)
 
+  if (authLoading) return null
+  if (!user) return <LoggedOutGate title="Important Accounts" description="Keep bank, insurance, healthcare, and other key accounts in one place — no passwords, just helpful reminders." />
   if (!circleId || loading) return <p className="page-status">Loading accounts…</p>
   if (error) return <FormMessage variant="error" className="page-status page-status--error">{error}</FormMessage>
 

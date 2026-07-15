@@ -105,6 +105,17 @@ button, input, select, textarea { font: inherit; }
 
 .top-bar-settings:hover { color: var(--green-light); }
 
+.top-bar-login {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--green-light);
+  padding: 0.5rem 0.75rem;
+  margin: -0.5rem -0.75rem;
+  border-radius: var(--radius-sm);
+}
+
+.top-bar-login:hover { background: var(--surface-2); }
+
 /* ─── Main content ───────────────────────────────────────────────── */
 .main-content {
   flex: 1;
@@ -431,6 +442,31 @@ button, input, select, textarea { font: inherit; }
 
 .page-status--error { color: var(--warn-light); }
 
+.page-description {
+  font-size: 0.95rem;
+  color: var(--text-muted);
+  line-height: 1.5;
+  margin-bottom: 1.5rem;
+}
+
+.page-title + .page-description { margin-top: -0.6rem; }
+
+/* ─── Logged-out page teaser ──────────────────────────────────────── */
+.login-gate {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  align-items: flex-start;
+}
+
+.login-gate-actions { display: flex; gap: 0.6rem; width: 100%; }
+.login-gate-actions .btn-primary,
+.login-gate-actions .btn-secondary { width: auto; flex: 1; margin-top: 0; }
+
 /* ─── Section labels ─────────────────────────────────────────────── */
 .section-label {
   font-size: 0.75rem;
@@ -555,6 +591,9 @@ button, input, select, textarea { font: inherit; }
 }
 .stat-banner-label { font-size: 0.85rem; color: var(--text-muted); }
 .stat-banner-value { font-size: 1.4rem; font-weight: 800; color: var(--green-light); }
+
+.stat-banner--warn { border-left: 3px solid var(--warn); }
+.stat-banner--warn .stat-banner-value { color: var(--warn-light); }
 
 /* ─── Add / inline forms ─────────────────────────────────────────── */
 .add-toggle {
@@ -828,15 +867,6 @@ button, input, select, textarea { font: inherit; }
 
 .landing-cta-row { display: flex; flex-direction: column; gap: 0.6rem; width: 100%; }
 
-.landing-persona-grid {
-  display: flex;
-  flex-direction: column;
-  gap: 0.6rem;
-}
-
-.landing-persona-grid .role-option { cursor: default; }
-.landing-persona-grid .role-option:hover { border-color: var(--border); }
-
 .landing-features-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -851,7 +881,11 @@ button, input, select, textarea { font: inherit; }
   border: 1px solid var(--border);
   border-radius: var(--radius);
   padding: 1rem;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
 }
+
+.landing-feature-item:hover { border-color: var(--green-light); background: var(--surface-2); }
 
 .landing-feature-icon { font-size: 1.4rem; line-height: 1; }
 .landing-feature-label { font-size: 0.95rem; font-weight: 700; color: var(--green-light); }

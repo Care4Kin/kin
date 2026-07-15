@@ -3,6 +3,7 @@ import { useAuth } from '../../context/AuthContext'
 import { api } from '../../services/api'
 import { useResourceList } from '../../hooks/useResourceList'
 import FormMessage from '../../components/FormMessage'
+import LoggedOutGate from '../../components/LoggedOutGate'
 
 const TYPE_LABELS = { call: 'Phone Call', email: 'Email', text: 'Text', bill: 'Bill', other: 'Other' }
 
@@ -19,7 +20,8 @@ const FILTERS = [
 
 export default function Flags() {
   const [filter, setFilter] = useState('all')
-  const { circleId } = useAuth()
+  const { circleId, user, loading: authLoading } = useAuth()
+  const isCaregiver = user?.role === 'caregiver'
   const { items: flags, setItems: setFlags, loading, error } = useResourceList(() => api.getFlags(circleId), [circleId], !!circleId)
   const [showForm, setShowForm] = useState(false)
   const [form, setForm] = useState(emptyForm)
@@ -28,6 +30,8 @@ export default function Flags() {
   const [editingId, setEditingId] = useState(null)
   const [actionError, setActionError] = useState('')
 
+  if (authLoading) return null
+  if (!user) return <LoggedOutGate title="Suspicious Activity" description="Flag a scam call, email, or bill so your family can help you sort it out." />
   if (!circleId || loading) return <p className="page-status">Loading…</p>
   if (error) return <FormMessage variant="error" className="page-status page-status--error">{error}</FormMessage>
 
@@ -99,6 +103,8 @@ const visible = filter === 'all'
       <h1 className="page-title">Suspicious Activity</h1>
       <FormMessage variant="error" className="page-status page-status--error">{actionError}</FormMessage>
 
+      {isCaregiver && <FlagSummary flags={flags} />}
+
     <div className="filter-bar">
       {FILTERS.map(f => (
         <button
@@ -163,6 +169,18 @@ const visible = filter === 'all'
           </div>
         </section>
       )}
+    </div>
+  )
+}
+
+function FlagSummary({ flags }) {
+  const open = flags.filter(f => !f.is_resolved)
+  const highSeverity = open.filter(f => f.severity === 'high')
+
+  return (
+    <div className={`stat-banner ${highSeverity.length > 0 ? 'stat-banner--warn' : ''}`}>
+      <span className="stat-banner-label">{open.length} open · {highSeverity.length} high severity</span>
+      <span className="stat-banner-value" aria-hidden="true">{highSeverity.length > 0 ? '⚠' : '✓'}</span>
     </div>
   )
 }

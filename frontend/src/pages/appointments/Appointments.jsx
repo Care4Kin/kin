@@ -4,6 +4,7 @@ import { api } from '../../services/api'
 import { useResourceList } from '../../hooks/useResourceList'
 import InfoRow from '../../components/InfoRow'
 import FormMessage from '../../components/FormMessage'
+import LoggedOutGate from '../../components/LoggedOutGate'
 
 const emptyForm = { title: '', date: '', time: '', location: '', notes: '' }
 
@@ -14,7 +15,8 @@ function todayStr() {
 }
 
 export default function Appointments() {
-  const { circleId } = useAuth()
+  const { circleId, user, loading: authLoading } = useAuth()
+  const isCaregiver = user?.role === 'caregiver'
   const { items: appointments, setItems: setAppointments, loading, error } = useResourceList(() => api.getAppointments(circleId), [circleId], !!circleId)
   const [showForm, setShowForm] = useState(false)
   const [form, setForm] = useState(emptyForm)
@@ -22,6 +24,8 @@ export default function Appointments() {
   const [formError, setFormError] = useState('')
   const [actionError, setActionError] = useState('')
 
+  if (authLoading) return null
+  if (!user) return <LoggedOutGate title="Appointments" description="Keep track of upcoming visits and reminders so nothing gets missed." />
   if (!circleId || loading) return <p className="page-status">Loading appointments…</p>
   if (error) return <FormMessage variant="error" className="page-status page-status--error">{error}</FormMessage>
 
@@ -65,6 +69,8 @@ export default function Appointments() {
     <div className="page">
       <h1 className="page-title">Appointments</h1>
       <FormMessage variant="error" className="page-status page-status--error">{actionError}</FormMessage>
+
+      {isCaregiver && <AppointmentSummary appointments={appointments} />}
 
       {showForm ? (
         <form className="inline-form" onSubmit={handleAdd}>
@@ -111,6 +117,24 @@ export default function Appointments() {
         {appointments.length === 0 && <p className="page-status">No upcoming appointments yet.</p>}
         {appointments.map(a => <AppointmentCard key={a.appointment_id} appt={a} onDelete={handleDelete} />)}
       </div>
+    </div>
+  )
+}
+
+function AppointmentSummary({ appointments }) {
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  const upcoming = appointments
+    .filter(a => new Date(a.date + 'T00:00:00') >= today)
+    .sort((a, b) => a.date.localeCompare(b.date))
+  const next = upcoming[0]
+
+  return (
+    <div className="stat-banner">
+      <span className="stat-banner-label">{upcoming.length} upcoming{next ? ` · next: ${next.title}` : ''}</span>
+      <span className="stat-banner-value">
+        {next ? new Date(next.date + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '—'}
+      </span>
     </div>
   )
 }

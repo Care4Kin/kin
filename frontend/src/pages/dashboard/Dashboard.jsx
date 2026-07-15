@@ -3,6 +3,7 @@ import { Link, useLocation } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import { api } from '../../services/api'
 import { daysUntil } from '../../utils/date'
+import LoggedOutGate from '../../components/LoggedOutGate'
 
 const TIPS = [
   'You can add a bill by tapping Bills in the menu below.',
@@ -30,7 +31,7 @@ function getSignupTip() {
 }
 
 export default function Dashboard() {
-  const { user, circleId } = useAuth()
+  const { user, circleId, loading: authLoading } = useAuth()
   const location = useLocation()
   const justSignedUp = Boolean(location.state?.justSignedUp)
   const [counts, setCounts] = useState({})
@@ -71,6 +72,9 @@ export default function Dashboard() {
 
   const isCaregiver = user?.role === 'caregiver'
   const [tip] = useState(() => justSignedUp ? getSignupTip() : getTodaysTip())
+
+  if (authLoading) return null
+  if (!user) return <LoggedOutGate title="Dashboard" description="Your home base — bills, prescriptions, appointments, and more, all in one place, shared with your family." />
 
   return (
     <div className="page dashboard">

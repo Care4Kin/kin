@@ -34,13 +34,7 @@ export default function App() {
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/complete-signup" element={<CompleteSignup />} />
         <Route path="/" element={<Landing />} />
-        <Route
-          element={
-            <PrivateRoute>
-              <Layout />
-            </PrivateRoute>
-          }
-        >
+        <Route element={<Layout />}>
           <Route path="dashboard" element={<Dashboard />} />
           <Route path="bills" element={<Bills />} />
           <Route path="subscriptions" element={<Subscriptions />} />
@@ -50,7 +44,14 @@ export default function App() {
           <Route path="notes" element={<Notes />} />
           <Route path="appointments" element={<Appointments />} />
           <Route path="circle" element={<Circle />} />
-          <Route path="settings" element={<Settings />} />
+          <Route
+            path="settings"
+            element={
+              <PrivateRoute>
+                <Settings />
+              </PrivateRoute>
+            }
+          />
         </Route>
       </Routes>
     </BrowserRouter>
