@@ -40,7 +40,7 @@ export default function CompleteSignup() {
         security_answer: securityAnswer.trim() || null,
       })
       login({ user_id: data.user_id, role: data.role, full_name: data.full_name }, data.token)
-      navigate('/', { state: { justSignedUp: true } })
+      navigate('/dashboard', { state: { justSignedUp: true } })
     } catch (err) {
       setError(err.message)
     } finally {

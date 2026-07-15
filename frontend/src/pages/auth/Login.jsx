@@ -22,7 +22,7 @@ export default function Login() {
 
   function finishLogin(data) {
     login({ user_id: data.user_id, role: data.role, full_name: data.full_name }, data.token)
-    navigate('/')
+    navigate('/dashboard')
   }
 
   async function handleSubmit(e) {

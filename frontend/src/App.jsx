@@ -7,6 +7,7 @@ import Login from './pages/auth/Login'
 import Register from './pages/auth/Register'
 import ForgotPassword from './pages/auth/ForgotPassword'
 import CompleteSignup from './pages/auth/CompleteSignup'
+import Landing from './pages/landing/Landing'
 import Dashboard from './pages/dashboard/Dashboard'
 import Bills from './pages/bills/Bills'
 import Subscriptions from './pages/subscriptions/Subscriptions'
@@ -32,15 +33,15 @@ export default function App() {
         <Route path="/register" element={<Register />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/complete-signup" element={<CompleteSignup />} />
+        <Route path="/" element={<Landing />} />
         <Route
-          path="/"
           element={
             <PrivateRoute>
               <Layout />
             </PrivateRoute>
           }
         >
-          <Route index element={<Dashboard />} />
+          <Route path="dashboard" element={<Dashboard />} />
           <Route path="bills" element={<Bills />} />
           <Route path="subscriptions" element={<Subscriptions />} />
           <Route path="prescriptions" element={<Prescriptions />} />

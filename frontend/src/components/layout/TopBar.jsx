@@ -7,7 +7,7 @@ export default function TopBar() {
 
   return (
     <header className="top-bar">
-      <span className="top-bar-brand">Kin</span>
+      <Link to="/dashboard" className="top-bar-brand">Kin</Link>
       <div className="top-bar-right">
         {firstName && (
           <span className="top-bar-user">Hi, {firstName}</span>
