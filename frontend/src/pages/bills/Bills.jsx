@@ -126,7 +126,7 @@ export default function Bills() {
 
       {isCaregiver && <CategoryPieChart entries={billsToEntries(bills)} title="Spending by Category" />}
 
-      {isCaregiver && bank.spending.length > 0 && (
+      {bank.spending.length > 0 && (
         <CategoryPieChart
           entries={bank.spending.map(s => ({ category: s.category, amount: s.amount }))}
           title="Bank Spending by Category"
