@@ -38,6 +38,7 @@ const emptyForm = { name: '', category: 'bank', notes: '' }
 export default function Accounts() {
   const { circleId, user } = useAuth()
   const isElder = user?.role === 'elder'
+  const isCaregiver = user?.role === 'caregiver'
   const { items: accounts, setItems: setAccounts, loading, error } = useResourceList(() => api.getAccounts(circleId), [circleId], !!circleId)
   const [showForm, setShowForm] = useState(false)
   const [form, setForm] = useState(emptyForm)
@@ -109,6 +110,7 @@ export default function Accounts() {
     category: PLAID_TYPE_LABELS[type] || type,
     amount: items.reduce((sum, a) => sum + bankBalance(a), 0),
   }))
+  const bankTotal = bank.accounts.reduce((sum, a) => sum + bankBalance(a), 0)
 
   return (
     <div className="page">
@@ -131,7 +133,7 @@ export default function Accounts() {
 
         {bank.accounts.length === 0 ? (
           <p className="page-status">No banks connected yet.</p>
-        ) : (
+        ) : isCaregiver ? (
           <>
             {Object.keys(bankGrouped).length > 1 && (
               <CategoryPieChart entries={bankOverallEntries} title="Balance by Account Type" />
@@ -149,25 +151,20 @@ export default function Accounts() {
                 )}
 
                 <div className="card-list">
-                  {items.map(a => (
-                    <div key={a.account_id} className="info-card">
-                      <div className="info-card-header">
-                        <span className="info-card-title">{bankAccountLabel(a)}</span>
-                        {isElder && (
-                          <button className="action-btn action-btn--danger" onClick={() => bank.disconnect(a.plaid_item_id)} title="Disconnect this bank">
-                            Disconnect
-                          </button>
-                        )}
-                      </div>
-                      <p className="info-card-note">
-                        {a.institution_name || 'Bank'} · {a.subtype || a.type}
-                        {a.current_balance != null && ` · $${Number(a.current_balance).toFixed(2)} available`}
-                      </p>
-                    </div>
-                  ))}
+                  {items.map(a => <BankAccountCard key={a.account_id} account={a} isElder={isElder} onDisconnect={bank.disconnect} />)}
                 </div>
               </div>
             ))}
+          </>
+        ) : (
+          <>
+            <div className="stat-banner mb-md">
+              <span className="stat-banner-label">Total balance</span>
+              <span className="stat-banner-value">${bankTotal.toFixed(2)}</span>
+            </div>
+            <div className="card-list">
+              {bank.accounts.map(a => <BankAccountCard key={a.account_id} account={a} isElder={isElder} onDisconnect={bank.disconnect} />)}
+            </div>
           </>
         )}
       </section>
@@ -223,6 +220,25 @@ export default function Accounts() {
           </div>
         </section>
       ))}
+    </div>
+  )
+}
+
+function BankAccountCard({ account: a, isElder, onDisconnect }) {
+  return (
+    <div className="info-card">
+      <div className="info-card-header">
+        <span className="info-card-title">{bankAccountLabel(a)}</span>
+        {isElder && (
+          <button className="action-btn action-btn--danger" onClick={() => onDisconnect(a.plaid_item_id)} title="Disconnect this bank">
+            Disconnect
+          </button>
+        )}
+      </div>
+      <p className="info-card-note">
+        {a.institution_name || 'Bank'} · {a.subtype || a.type}
+        {a.current_balance != null && ` · $${Number(a.current_balance).toFixed(2)} available`}
+      </p>
     </div>
   )
 }

@@ -130,7 +130,7 @@ export default function Prescriptions() {
       {isCaregiver && <PrescriptionSummary rxs={rxs} />}
 
       <div className="card-list">
-        {rxs.map(rx => <RxCard key={rx.prescription_id} rx={rx} onDelete={handleDelete} onEdit={handleEditClick} />)}
+        {rxs.map(rx => <RxCard key={rx.prescription_id} rx={rx} isCaregiver={isCaregiver} onDelete={handleDelete} onEdit={handleEditClick} />)}
       </div>
     </div>
   )
@@ -148,12 +148,15 @@ function PrescriptionSummary({ rxs }) {
   )
 }
 
-function RxCard({ rx, onDelete, onEdit }) {
+function RxCard({ rx, isCaregiver, onDelete, onEdit }) {
+  const [expanded, setExpanded] = useState(false)
   const refill = rx.refill_date
     ? new Date(rx.refill_date + 'T00:00:00').toLocaleDateString('en-US', { month: 'long', day: 'numeric' })
     : null
   const daysLeft = rx.refill_date ? daysUntil(rx.refill_date) : null
   const urgent = daysLeft !== null && daysLeft <= 10
+  const hasDetails = Boolean(rx.dosage || rx.prescribing_doctor || rx.pharmacy_name || rx.notes)
+  const showDetails = isCaregiver || expanded
 
   return (
     <div className={`info-card ${urgent ? 'info-card--urgent' : ''}`}>
@@ -161,14 +164,25 @@ function RxCard({ rx, onDelete, onEdit }) {
         <span className="info-card-title">{rx.medication_name}</span>
         {urgent && <span className="badge badge--warn">Refill soon</span>}
       </div>
-      <div className="info-card-rows">
-        {rx.dosage && <InfoRow label="Dosage" value={rx.dosage} />}
-        {rx.prescribing_doctor && <InfoRow label="Doctor" value={rx.prescribing_doctor} />}
-        {rx.pharmacy_name && <InfoRow label="Pharmacy" value={rx.pharmacy_name} />}
-        {refill && <InfoRow label="Refill date" value={`${refill}${daysLeft !== null ? ` (${daysLeft} days)` : ''}`} />}
-        {rx.notes && <InfoRow label="Notes" value={rx.notes} />}
-      </div>
+      {refill && (
+        <p className="info-card-note">
+          {urgent ? 'Refill needed: ' : 'Next refill: '}{refill}{daysLeft !== null ? ` (${daysLeft} days)` : ''}
+        </p>
+      )}
+      {showDetails && (
+        <div className="info-card-rows">
+          {rx.dosage && <InfoRow label="Dosage" value={rx.dosage} />}
+          {rx.prescribing_doctor && <InfoRow label="Doctor" value={rx.prescribing_doctor} />}
+          {rx.pharmacy_name && <InfoRow label="Pharmacy" value={rx.pharmacy_name} />}
+          {rx.notes && <InfoRow label="Notes" value={rx.notes} />}
+        </div>
+      )}
       <div className="action-row">
+        {!isCaregiver && hasDetails && (
+          <button className="action-btn" aria-expanded={expanded} onClick={() => setExpanded(e => !e)}>
+            {expanded ? 'Hide details' : 'Show details'}
+          </button>
+        )}
         <button className="action-btn" onClick={() => onEdit(rx)} title="Edit this prescription">
           Edit
         </button>
