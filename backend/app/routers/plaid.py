@@ -23,6 +23,13 @@ from app.services.plaid_client import get_plaid_client, plaid_configured
 router = APIRouter()
 require_accounts_access = require_permission('can_view_accounts')
 
+# Plaid's personal_finance_category.primary values that look like recurring
+# bills vs. recurring subscriptions. Anything outside both sets (groceries,
+# transport, travel, etc.) is recurring-but-not-actionable, so it's excluded
+# from both detectors rather than guessed at.
+BILL_CATEGORIES = {'RENT_AND_UTILITIES', 'LOAN_PAYMENTS', 'MEDICAL', 'GOVERNMENT_AND_NON_PROFIT', 'BANK_FEES'}
+SUBSCRIPTION_CATEGORIES = {'ENTERTAINMENT', 'GENERAL_SERVICES'}
+
 def _require_plaid_configured():
     if not plaid_configured():
         raise HTTPException(400, 'Bank connections are not set up for this app yet')
@@ -138,12 +145,7 @@ def get_spending_breakdown(circle_id: int, db: Session = Depends(get_db), circle
     breakdown.sort(key=lambda r: r['amount'], reverse=True)
     return breakdown
 
-@router.get('/{circle_id}/plaid/subscriptions')
-def get_detected_subscriptions(circle_id: int, db: Session = Depends(get_db), circle=Depends(require_accounts_access)):
-    _require_plaid_configured()
-    client = get_plaid_client()
-    items = db.query(PlaidItem).filter(PlaidItem.circle_id == circle_id).all()
-
+def _detect_recurring_charges(client, items) -> list:
     groups = defaultdict(list)
     for item in items:
         for txn in _fetch_all_transactions(client, item.access_token):
@@ -153,7 +155,7 @@ def get_detected_subscriptions(circle_id: int, db: Session = Depends(get_db), ci
             key = (txn.get('merchant_name') or txn.get('name') or 'Unknown').strip().lower()
             groups[key].append(txn)
 
-    subscriptions = []
+    recurring = []
     for key, txns in groups.items():
         if len(txns) < 2:
             continue
@@ -162,8 +164,8 @@ def get_detected_subscriptions(circle_id: int, db: Session = Depends(get_db), ci
         if avg <= 0:
             continue
         # Only call it recurring if the amounts are consistent (a real subscription
-        # charges roughly the same amount each time) and it happened in more than
-        # one calendar month, not just multiple times in one week.
+        # or bill charges roughly the same amount each time) and it happened in
+        # more than one calendar month, not just multiple times in one week.
         within_tolerance = all(abs(a - avg) <= max(avg * 0.15, 1.0) for a in amounts)
         # Plaid returns `date` as a datetime.date object, not a string.
         months = {str(t['date'])[:7] for t in txns if t.get('date')}
@@ -171,15 +173,31 @@ def get_detected_subscriptions(circle_id: int, db: Session = Depends(get_db), ci
             continue
         display_name = txns[0].get('merchant_name') or txns[0].get('name') or key.title()
         dates = sorted([t.get('date') for t in txns if t.get('date')])
-        subscriptions.append({
+        category = (txns[0].get('personal_finance_category') or {}).get('primary') or 'OTHER'
+        recurring.append({
             'merchant': display_name,
             'average_amount': round(avg, 2),
             'occurrences': len(txns),
             'last_date': dates[-1] if dates else None,
+            'category': category,
         })
 
-    subscriptions.sort(key=lambda s: s['average_amount'], reverse=True)
-    return subscriptions
+    recurring.sort(key=lambda s: s['average_amount'], reverse=True)
+    return recurring
+
+@router.get('/{circle_id}/plaid/subscriptions')
+def get_detected_subscriptions(circle_id: int, db: Session = Depends(get_db), circle=Depends(require_accounts_access)):
+    _require_plaid_configured()
+    client = get_plaid_client()
+    items = db.query(PlaidItem).filter(PlaidItem.circle_id == circle_id).all()
+    return [r for r in _detect_recurring_charges(client, items) if r['category'] in SUBSCRIPTION_CATEGORIES]
+
+@router.get('/{circle_id}/plaid/bills')
+def get_detected_bills(circle_id: int, db: Session = Depends(get_db), circle=Depends(require_accounts_access)):
+    _require_plaid_configured()
+    client = get_plaid_client()
+    items = db.query(PlaidItem).filter(PlaidItem.circle_id == circle_id).all()
+    return [r for r in _detect_recurring_charges(client, items) if r['category'] in BILL_CATEGORIES]
 
 @router.delete('/{circle_id}/plaid/items/{plaid_item_id}')
 def remove_linked_item(

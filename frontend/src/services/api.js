@@ -100,5 +100,6 @@ export const api = {
   getPlaidAccounts: (circleId) => request('GET', `/api/circles/${circleId}/plaid/accounts`),
   getPlaidSpending: (circleId) => request('GET', `/api/circles/${circleId}/plaid/spending`),
   getPlaidSubscriptions: (circleId) => request('GET', `/api/circles/${circleId}/plaid/subscriptions`),
+  getPlaidDetectedBills: (circleId) => request('GET', `/api/circles/${circleId}/plaid/bills`),
   removePlaidItem: (circleId, plaidItemId) => request('DELETE', `/api/circles/${circleId}/plaid/items/${plaidItemId}`),
 }
