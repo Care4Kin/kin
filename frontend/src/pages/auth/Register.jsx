@@ -4,6 +4,7 @@ import { useAuth } from '../../context/AuthContext'
 import { api } from '../../services/api'
 import GoogleSignInButton from '../../components/auth/GoogleSignInButton'
 import FormMessage from '../../components/FormMessage'
+import RolePicker from '../../components/RolePicker'
 
 const SECURITY_QUESTIONS = [
   "What was your first pet's name?",
@@ -146,13 +147,7 @@ export default function Register() {
             />
           </div>
 
-          <div className="field-group">
-            <label htmlFor="role">I am a…</label>
-            <select id="role" name="role" value={form.role} onChange={handleChange}>
-              <option value="elder">Older Adult</option>
-              <option value="caregiver">Family Member / Caregiver</option>
-            </select>
-          </div>
+          <RolePicker value={form.role} onChange={role => setForm({ ...form, role })} />
 
           <div className="field-group">
             <label htmlFor="security_question">Security Question</label>
