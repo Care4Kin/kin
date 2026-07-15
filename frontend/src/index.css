@@ -98,6 +98,9 @@ button, input, select, textarea { font: inherit; }
   font-size: 1.2rem;
   color: var(--text-muted);
   line-height: 1;
+  padding: 0.6rem;
+  margin: -0.6rem;
+  border-radius: var(--radius-sm);
 }
 
 .top-bar-settings:hover { color: var(--green-light); }
