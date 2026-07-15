@@ -4,6 +4,8 @@ import { api } from '../../services/api'
 import { useResourceList } from '../../hooks/useResourceList'
 import { usePlaidBank } from '../../hooks/usePlaidBank'
 import CategoryPieChart from '../../components/CategoryPieChart'
+import DetectedBankItems from '../../components/DetectedBankItems'
+import { nextOccurrence } from '../../utils/date'
 
 export default function Bills() {
   const { circleId, user } = useAuth()
@@ -84,6 +86,15 @@ export default function Bills() {
     }
   }
 
+  async function handleAddDetected(item) {
+    const bill = await api.createBill(circleId, {
+      name: item.merchant,
+      amount: item.average_amount,
+      due_date: nextOccurrence(item.last_date),
+    })
+    setBills(prev => [...prev, bill])
+  }
+
   const unpaid = bills.filter(b => !b.is_paid)
   const paid   = bills.filter(b => b.is_paid)
 
@@ -132,6 +143,14 @@ export default function Bills() {
           title="Bank Spending by Category"
         />
       )}
+
+      <DetectedBankItems
+        items={bank.detectedBills}
+        existingNames={new Set(bills.map(b => b.name.trim().toLowerCase()))}
+        onAdd={handleAddDetected}
+        title="Detected From Your Bank"
+        hint="Recurring charges we noticed on a connected bank account that look like bills."
+      />
 
       {unpaid.length > 0 && (
         <section className="bill-section">

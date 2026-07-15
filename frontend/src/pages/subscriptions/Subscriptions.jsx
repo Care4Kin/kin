@@ -3,6 +3,7 @@ import { useAuth } from '../../context/AuthContext'
 import { api } from '../../services/api'
 import { useResourceList } from '../../hooks/useResourceList'
 import { usePlaidBank } from '../../hooks/usePlaidBank'
+import DetectedBankItems from '../../components/DetectedBankItems'
 
 export default function Subscriptions() {
   const { circleId } = useAuth()
@@ -60,6 +61,11 @@ export default function Subscriptions() {
     }
   }
 
+  async function handleAddDetected(item) {
+    const sub = await api.createSubscription(circleId, { name: item.merchant, monthly_cost: item.average_amount })
+    setSubs(prev => [...prev, sub])
+  }
+
   const active   = subs.filter(s => s.is_active)
   const inactive = subs.filter(s => !s.is_active)
   const total    = active.reduce((sum, s) => sum + Number(s.monthly_cost || 0), 0)
@@ -110,25 +116,14 @@ export default function Subscriptions() {
         </section>
       )}
 
-      {bank.subscriptions.length > 0 && (
-        <section className="mt-lg">
-          <h2 className="section-label">Detected From Your Bank</h2>
-          <p className="field-hint" style={{ marginBottom: '0.6rem' }}>
-            Recurring charges we noticed on a connected bank account — not added to your list above automatically.
-          </p>
-          <div className="card-list">
-            {bank.subscriptions.map(s => (
-              <div key={s.merchant} className="info-card">
-                <div className="info-card-header">
-                  <span className="info-card-title">{s.merchant}</span>
-                  <span className="bill-row-amount">${s.average_amount.toFixed(2)}</span>
-                </div>
-                <p className="info-card-note">Seen {s.occurrences} times · last on {s.last_date}</p>
-              </div>
-            ))}
-          </div>
-        </section>
-      )}
+      <DetectedBankItems
+        items={bank.subscriptions}
+        existingNames={new Set(subs.map(s => s.name.trim().toLowerCase()))}
+        onAdd={handleAddDetected}
+        title="Detected From Your Bank"
+        hint="Recurring charges we noticed on a connected bank account that look like subscriptions."
+        className="mt-lg"
+      />
     </div>
   )
 }

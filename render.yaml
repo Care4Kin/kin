@@ -10,6 +10,8 @@ services:
     runtime: python
     rootDir: backend
     plan: free
+    branch: master
+    autoDeploy: true
     buildCommand: pip install -r requirements.txt
     startCommand: alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port $PORT
     envVars:
@@ -45,6 +47,8 @@ services:
     name: kin-frontend
     runtime: static
     rootDir: frontend
+    branch: master
+    autoDeploy: true
     buildCommand: npm install && npm run build
     staticPublishPath: dist
     envVars:
