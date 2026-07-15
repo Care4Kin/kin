@@ -4,6 +4,7 @@ import { api } from '../../services/api'
 import { useResourceList } from '../../hooks/useResourceList'
 import { usePlaidBank } from '../../hooks/usePlaidBank'
 import CategoryPieChart from '../../components/CategoryPieChart'
+import FormMessage from '../../components/FormMessage'
 
 const CATEGORY_LABELS = {
   bank: 'Bank',
@@ -48,7 +49,7 @@ export default function Accounts() {
   const bank = usePlaidBank(circleId)
 
   if (!circleId || loading) return <p className="page-status">Loading accounts…</p>
-  if (error) return <p className="page-status page-status--error">{error}</p>
+  if (error) return <FormMessage variant="error" className="page-status page-status--error">{error}</FormMessage>
 
   async function handleAdd(e) {
     e.preventDefault()
@@ -112,7 +113,7 @@ export default function Accounts() {
   return (
     <div className="page">
       <h1 className="page-title">Important Accounts</h1>
-      {actionError && <p className="page-status page-status--error">{actionError}</p>}
+      <FormMessage variant="error" className="page-status page-status--error">{actionError}</FormMessage>
 
       <section className="mb-lg">
         <h2 className="section-label">Linked Bank Accounts</h2>
@@ -120,7 +121,7 @@ export default function Accounts() {
           Connect a real bank to see balances here automatically, plus spending by category on Bills and detected recurring charges on Subscriptions.
         </p>
 
-        {bank.error && <p className="auth-error mb-sm">{bank.error}</p>}
+        <FormMessage variant="error" className="auth-error mb-sm">{bank.error}</FormMessage>
 
         {isElder && (
           <button className="add-toggle" onClick={bank.connect} disabled={bank.connecting}>
@@ -187,14 +188,14 @@ export default function Accounts() {
             <label htmlFor="acct-notes">Notes</label>
             <input id="acct-notes" placeholder="No passwords — just helpful reminders" value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} />
           </div>
-          {formError && <p className="auth-error">{formError}</p>}
+          <FormMessage variant="error">{formError}</FormMessage>
           <div className="btn-row">
             <button type="submit" className="btn-primary" disabled={saving}>{saving ? 'Saving…' : 'Add Account'}</button>
             <button type="button" className="btn-secondary" onClick={() => { setShowForm(false); setFormError('') }}>Cancel</button>
           </div>
         </form>
       ) : (
-        <button className="add-toggle" onClick={() => setShowForm(true)}>+ Add an account</button>
+        <button className="add-toggle" aria-expanded={showForm} onClick={() => setShowForm(true)}>+ Add an account</button>
       )}
 
       {Object.entries(grouped).map(([category, items]) => (
@@ -264,7 +265,7 @@ function AccountEditForm({ account, onSave, onCancel }) {
         <label htmlFor={`edit-notes-${account.account_id}`}>Notes</label>
         <input id={`edit-notes-${account.account_id}`} value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} />
       </div>
-      {formError && <p className="auth-error">{formError}</p>}
+      <FormMessage variant="error">{formError}</FormMessage>
       <div className="btn-row">
         <button type="submit" className="btn-primary" disabled={saving}>{saving ? 'Saving…' : 'Save'}</button>
         <button type="button" className="btn-secondary" onClick={onCancel}>Cancel</button>

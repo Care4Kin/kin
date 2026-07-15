@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useNavigate, useLocation, Navigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import { api } from '../../services/api'
+import FormMessage from '../../components/FormMessage'
 
 const SECURITY_QUESTIONS = [
   "What was your first pet's name?",
@@ -48,7 +49,7 @@ export default function CompleteSignup() {
   }
 
   return (
-    <div className="auth-page">
+    <main className="auth-page">
       <div className="auth-card">
         <h1 className="auth-title">Finish Setting Up</h1>
         <p className="field-hint mb-md">
@@ -86,13 +87,13 @@ export default function CompleteSignup() {
             <input id="security_answer" type="text" value={securityAnswer} onChange={e => setSecurityAnswer(e.target.value)} />
           </div>
 
-          {error && <p className="auth-error">{error}</p>}
+          <FormMessage variant="error">{error}</FormMessage>
 
           <button type="submit" className="btn-primary" disabled={loading}>
             {loading ? 'Setting up…' : 'Finish'}
           </button>
         </form>
       </div>
-    </div>
+    </main>
   )
 }

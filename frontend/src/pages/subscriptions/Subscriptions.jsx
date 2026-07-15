@@ -4,6 +4,7 @@ import { api } from '../../services/api'
 import { useResourceList } from '../../hooks/useResourceList'
 import { usePlaidBank } from '../../hooks/usePlaidBank'
 import DetectedBankItems from '../../components/DetectedBankItems'
+import FormMessage from '../../components/FormMessage'
 
 export default function Subscriptions() {
   const { circleId } = useAuth()
@@ -16,7 +17,7 @@ export default function Subscriptions() {
   const [actionError, setActionError] = useState('')
 
   if (!circleId || loading) return <p className="page-status">Loading subscriptions…</p>
-  if (error) return <p className="page-status page-status--error">{error}</p>
+  if (error) return <FormMessage variant="error" className="page-status page-status--error">{error}</FormMessage>
 
   async function handleAdd(e) {
     e.preventDefault()
@@ -73,7 +74,7 @@ export default function Subscriptions() {
   return (
     <div className="page">
       <h1 className="page-title">Subscriptions</h1>
-      {actionError && <p className="page-status page-status--error">{actionError}</p>}
+      <FormMessage variant="error" className="page-status page-status--error">{actionError}</FormMessage>
 
       <div className="stat-banner">
         <span className="stat-banner-label">Monthly total</span>
@@ -90,14 +91,14 @@ export default function Subscriptions() {
             <label htmlFor="sub-cost">Monthly Cost</label>
             <input id="sub-cost" type="number" step="0.01" min="0" required value={form.monthly_cost} onChange={e => setForm({ ...form, monthly_cost: e.target.value })} />
           </div>
-          {formError && <p className="auth-error">{formError}</p>}
+          <FormMessage variant="error">{formError}</FormMessage>
           <div className="btn-row">
             <button type="submit" className="btn-primary" disabled={saving}>{saving ? 'Saving…' : 'Add Subscription'}</button>
             <button type="button" className="btn-secondary" onClick={() => { setShowForm(false); setFormError('') }}>Cancel</button>
           </div>
         </form>
       ) : (
-        <button className="add-toggle" onClick={() => setShowForm(true)}>+ Add a subscription</button>
+        <button className="add-toggle" aria-expanded={showForm} onClick={() => setShowForm(true)}>+ Add a subscription</button>
       )}
 
       <section>

@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import { api } from '../../services/api'
 import GoogleSignInButton from '../../components/auth/GoogleSignInButton'
+import FormMessage from '../../components/FormMessage'
 
 const SECURITY_QUESTIONS = [
   "What was your first pet's name?",
@@ -76,7 +77,7 @@ export default function Register() {
   }
 
   return (
-    <div className="auth-page">
+    <main className="auth-page">
       <div className="auth-card">
         <h1 className="auth-title">Sign Up</h1>
 
@@ -178,7 +179,7 @@ export default function Register() {
             />
           </div>
 
-          {error && <p className="auth-error">{error}</p>}
+          <FormMessage variant="error">{error}</FormMessage>
 
           <button type="submit" className="btn-primary" disabled={loading}>
             {loading ? 'Creating account…' : 'Sign Up'}
@@ -192,6 +193,6 @@ export default function Register() {
           <Link to="/login">Log In</Link>
         </p>
       </div>
-    </div>
+    </main>
   )
 }

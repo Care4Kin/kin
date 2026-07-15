@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { api } from '../../services/api'
+import FormMessage from '../../components/FormMessage'
 
 export default function ForgotPassword() {
   const [step, setStep] = useState('email')
@@ -48,7 +49,7 @@ export default function ForgotPassword() {
   }
 
   return (
-    <div className="auth-page">
+    <main className="auth-page">
       <div className="auth-card">
         <h1 className="auth-title">Forgot Password</h1>
 
@@ -72,7 +73,7 @@ export default function ForgotPassword() {
               />
             </div>
 
-            {error && <p className="auth-error">{error}</p>}
+            <FormMessage variant="error">{error}</FormMessage>
 
             <button type="submit" className="btn-primary" disabled={loading}>
               {loading ? 'Looking up…' : 'Continue'}
@@ -81,7 +82,7 @@ export default function ForgotPassword() {
         ) : (
           <form onSubmit={handleResetSubmit} className="auth-form">
             <div className="field-group">
-              <label>Security Question</label>
+              <span className="field-group-label">Security Question</span>
               <p className="field-hint">{question}</p>
             </div>
 
@@ -123,7 +124,7 @@ export default function ForgotPassword() {
               />
             </div>
 
-            {error && <p className="auth-error">{error}</p>}
+            <FormMessage variant="error">{error}</FormMessage>
 
             <button type="submit" className="btn-primary" disabled={loading}>
               {loading ? 'Updating…' : 'Reset Password'}
@@ -136,6 +137,6 @@ export default function ForgotPassword() {
           <Link to="/login">Log In</Link>
         </p>
       </div>
-    </div>
+    </main>
   )
 }

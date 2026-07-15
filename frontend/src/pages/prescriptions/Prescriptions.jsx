@@ -4,6 +4,7 @@ import { api } from '../../services/api'
 import { useResourceList } from '../../hooks/useResourceList'
 import InfoRow from '../../components/InfoRow'
 import { daysUntil } from '../../utils/date'
+import FormMessage from '../../components/FormMessage'
 
 const emptyForm = { medication_name: '', dosage: '', prescribing_doctor: '', pharmacy_name: '', refill_date: '', notes: '' }
 
@@ -19,7 +20,7 @@ export default function Prescriptions() {
   const [actionError, setActionError] = useState('')
 
   if (!circleId || loading) return <p className="page-status">Loading prescriptions…</p>
-  if (error) return <p className="page-status page-status--error">{error}</p>
+  if (error) return <FormMessage variant="error" className="page-status page-status--error">{error}</FormMessage>
 
   async function handleSubmit(e) {
     e.preventDefault()
@@ -82,7 +83,7 @@ export default function Prescriptions() {
   return (
     <div className="page">
       <h1 className="page-title">Prescriptions</h1>
-      {actionError && <p className="page-status page-status--error">{actionError}</p>}
+      <FormMessage variant="error" className="page-status page-status--error">{actionError}</FormMessage>
 
       {showForm ? (
         <form className="inline-form" onSubmit={handleSubmit}>
@@ -114,7 +115,7 @@ export default function Prescriptions() {
             <label htmlFor="rx-notes">Notes</label>
             <input id="rx-notes" value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} />
           </div>
-          {formError && <p className="auth-error">{formError}</p>}
+          <FormMessage variant="error">{formError}</FormMessage>
           <div className="btn-row">
             <button type="submit" className="btn-primary" disabled={saving}>
               {saving ? 'Saving…' : editingId ? 'Save Changes' : 'Add Prescription'}
@@ -123,7 +124,7 @@ export default function Prescriptions() {
           </div>
         </form>
       ) : (
-        <button className="add-toggle" onClick={() => { setForm(emptyForm); setEditingId(null); setShowForm(true) }}>+ Add a prescription</button>
+        <button className="add-toggle" aria-expanded={showForm} onClick={() => { setForm(emptyForm); setEditingId(null); setShowForm(true) }}>+ Add a prescription</button>
       )}
 
       {isCaregiver && <PrescriptionSummary rxs={rxs} />}
@@ -142,7 +143,7 @@ function PrescriptionSummary({ rxs }) {
   return (
     <div className="stat-banner">
       <span className="stat-banner-label">{active.length} active · {urgent.length} due soon</span>
-      <span className="stat-banner-value">{urgent.length > 0 ? '⚠' : '✓'}</span>
+      <span className="stat-banner-value" aria-hidden="true">{urgent.length > 0 ? '⚠' : '✓'}</span>
     </div>
   )
 }

@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useAuth } from '../../context/AuthContext'
 import { api } from '../../services/api'
 import { useResourceList } from '../../hooks/useResourceList'
+import FormMessage from '../../components/FormMessage'
 
 export default function Notes() {
   const { circleId, user } = useAuth()
@@ -12,7 +13,7 @@ export default function Notes() {
   const [actionError, setActionError] = useState('')
 
   if (!circleId || loading) return <p className="page-status">Loading notes…</p>
-  if (error) return <p className="page-status page-status--error">{error}</p>
+  if (error) return <FormMessage variant="error" className="page-status page-status--error">{error}</FormMessage>
 
   async function handleAdd(e) {
     e.preventDefault()
@@ -43,14 +44,14 @@ export default function Notes() {
   return (
     <div className="page">
       <h1 className="page-title">Shared Notes</h1>
-      {actionError && <p className="page-status page-status--error">{actionError}</p>}
+      <FormMessage variant="error" className="page-status page-status--error">{actionError}</FormMessage>
 
       <form className="inline-form" onSubmit={handleAdd}>
         <div className="field-group">
           <label htmlFor="note-content">Leave a message for your family</label>
           <input id="note-content" value={content} onChange={e => setContent(e.target.value)} placeholder="Type a note…" />
         </div>
-        {formError && <p className="auth-error">{formError}</p>}
+        <FormMessage variant="error">{formError}</FormMessage>
         <button type="submit" className="btn-primary" disabled={saving || !content.trim()}>{saving ? 'Posting…' : 'Post Note'}</button>
       </form>
 

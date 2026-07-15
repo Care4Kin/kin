@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useAuth } from '../../context/AuthContext'
 import { api } from '../../services/api'
 import { useFetch } from '../../hooks/useFetch'
+import FormMessage from '../../components/FormMessage'
 
 const PERMISSION_LABELS = {
   can_view_bills: 'Bills',
@@ -23,7 +24,7 @@ export default function Circle() {
   useEffect(() => { if (data) setCircle(data) }, [data])
 
   if (!circleId || loading) return <p className="page-status">Loading your circle…</p>
-  if (error) return <p className="page-status page-status--error">{error}</p>
+  if (error) return <FormMessage variant="error" className="page-status page-status--error">{error}</FormMessage>
   if (!circle) return null
 
   const isElder = user?.role === 'elder'
@@ -90,7 +91,7 @@ export default function Circle() {
   return (
     <div className="page">
       <h1 className="page-title">My Circle</h1>
-      {actionError && <p className="page-status page-status--error">{actionError}</p>}
+      <FormMessage variant="error" className="page-status page-status--error">{actionError}</FormMessage>
 
       <div className="info-card mb-md">
         <span className="info-card-title">{circle.elder.full_name}</span>
@@ -164,14 +165,14 @@ export default function Circle() {
               <p className="field-hint">If they already use Kin, they'll be added right away. If not, we'll email them an invitation to sign up — and they'll join your circle automatically.</p>
               <input id="invite-email" type="email" required value={inviteEmail} onChange={e => setInviteEmail(e.target.value)} />
             </div>
-            {inviteError && <p className="auth-error">{inviteError}</p>}
+            <FormMessage variant="error">{inviteError}</FormMessage>
             <div className="btn-row">
               <button type="submit" className="btn-primary" disabled={saving}>{saving ? 'Inviting…' : 'Send Invite'}</button>
               <button type="button" className="btn-secondary" onClick={() => { setShowInvite(false); setInviteError('') }}>Cancel</button>
             </div>
           </form>
         ) : (
-          <button className="add-toggle mt-md" onClick={() => setShowInvite(true)}>
+          <button className="add-toggle mt-md" aria-expanded={showInvite} onClick={() => setShowInvite(true)}>
             + Invite a family member
           </button>
         )

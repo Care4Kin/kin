@@ -6,6 +6,7 @@ import { usePlaidBank } from '../../hooks/usePlaidBank'
 import CategoryPieChart from '../../components/CategoryPieChart'
 import DetectedBankItems from '../../components/DetectedBankItems'
 import { nextOccurrence } from '../../utils/date'
+import FormMessage from '../../components/FormMessage'
 
 export default function Bills() {
   const { circleId, user } = useAuth()
@@ -20,7 +21,7 @@ export default function Bills() {
   const [actionError, setActionError] = useState('')
 
   if (!circleId || loading) return <p className="page-status">Loading bills…</p>
-  if (error) return <p className="page-status page-status--error">{error}</p>
+  if (error) return <FormMessage variant="error" className="page-status page-status--error">{error}</FormMessage>
 
   async function handleSubmit(e) {
     e.preventDefault()
@@ -101,7 +102,7 @@ export default function Bills() {
   return (
     <div className="page">
       <h1 className="page-title">Bills</h1>
-      {actionError && <p className="page-status page-status--error">{actionError}</p>}
+      <FormMessage variant="error" className="page-status page-status--error">{actionError}</FormMessage>
 
       {showForm ? (
         <form className="inline-form" onSubmit={handleSubmit}>
@@ -123,7 +124,7 @@ export default function Bills() {
             <label htmlFor="bill-category">Category</label>
             <input id="bill-category" placeholder="utility, housing, healthcare…" value={form.category} onChange={e => setForm({ ...form, category: e.target.value })} />
           </div>
-          {formError && <p className="auth-error">{formError}</p>}
+          <FormMessage variant="error">{formError}</FormMessage>
           <div className="btn-row">
             <button type="submit" className="btn-primary" disabled={saving}>
               {saving ? 'Saving…' : editingId ? 'Save Changes' : 'Add Bill'}
@@ -132,7 +133,7 @@ export default function Bills() {
           </div>
         </form>
       ) : (
-        <button className="add-toggle" onClick={() => { setForm({ name: '', amount: '', due_date: '', category: '' }); setEditingId(null); setShowForm(true) }}>+ Add a bill</button>
+        <button className="add-toggle" aria-expanded={showForm} onClick={() => { setForm({ name: '', amount: '', due_date: '', category: '' }); setEditingId(null); setShowForm(true) }}>+ Add a bill</button>
       )}
 
       {isCaregiver && <CategoryPieChart entries={billsToEntries(bills)} title="Spending by Category" />}

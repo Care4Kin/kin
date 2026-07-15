@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useAuth } from '../../context/AuthContext'
 import { api } from '../../services/api'
 import { useResourceList } from '../../hooks/useResourceList'
+import FormMessage from '../../components/FormMessage'
 
 const TYPE_LABELS = { call: 'Phone Call', email: 'Email', text: 'Text', bill: 'Bill', other: 'Other' }
 
@@ -28,7 +29,7 @@ export default function Flags() {
   const [actionError, setActionError] = useState('')
 
   if (!circleId || loading) return <p className="page-status">Loading…</p>
-  if (error) return <p className="page-status page-status--error">{error}</p>
+  if (error) return <FormMessage variant="error" className="page-status page-status--error">{error}</FormMessage>
 
   async function handleSubmit(e) {
     e.preventDefault()
@@ -96,7 +97,7 @@ const visible = filter === 'all'
   return (
     <div className="page">
       <h1 className="page-title">Suspicious Activity</h1>
-      {actionError && <p className="page-status page-status--error">{actionError}</p>}
+      <FormMessage variant="error" className="page-status page-status--error">{actionError}</FormMessage>
 
     <div className="filter-bar">
       {FILTERS.map(f => (
@@ -104,6 +105,7 @@ const visible = filter === 'all'
           key={f.value}
           className={`filter-btn ${filter === f.value ? 'filter-btn--active' : ''}`}
           onClick={() => setFilter(f.value)}
+          aria-pressed={filter === f.value}
         >
           {f.label}
         </button>
@@ -132,7 +134,7 @@ const visible = filter === 'all'
             <label htmlFor="flag-description">What did you notice?</label>
             <input id="flag-description" required value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} />
           </div>
-          {formError && <p className="auth-error">{formError}</p>}
+          <FormMessage variant="error">{formError}</FormMessage>
           <div className="btn-row">
             <button type="submit" className="btn-primary" disabled={saving}>
               {saving ? 'Saving…' : editingId ? 'Save Changes' : 'Flag It'}
@@ -141,7 +143,7 @@ const visible = filter === 'all'
           </div>
         </form>
       ) : (
-        <button className="add-toggle" onClick={() => { setForm(emptyForm); setEditingId(null); setShowForm(true) }}>+ Flag something suspicious</button>
+        <button className="add-toggle" aria-expanded={showForm} onClick={() => { setForm(emptyForm); setEditingId(null); setShowForm(true) }}>+ Flag something suspicious</button>
       )}
 
       {open.length > 0 && (

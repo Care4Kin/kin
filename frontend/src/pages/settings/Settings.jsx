@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import { api } from '../../services/api'
 import { useFetch } from '../../hooks/useFetch'
+import FormMessage from '../../components/FormMessage'
 
 const SECURITY_QUESTIONS = [
   "What was your first pet's name?",
@@ -17,7 +18,7 @@ export default function Settings() {
   const { data: me, loading, error } = useFetch(() => api.getMe(), [])
 
   if (loading) return <p className="page-status">Loading settings…</p>
-  if (error) return <p className="page-status page-status--error">{error}</p>
+  if (error) return <FormMessage variant="error" className="page-status page-status--error">{error}</FormMessage>
 
   function handleSignOut() {
     logout()
@@ -69,11 +70,11 @@ function ProfileSection({ me }) {
           <input id="settings-phone" type="tel" value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })} />
         </div>
         <div className="field-group">
-          <label>Email</label>
+          <span className="field-group-label">Email</span>
           <p className="field-hint">{me.email} (cannot be changed)</p>
         </div>
-        {error && <p className="auth-error">{error}</p>}
-        {message && <p className="field-hint settings-success">{message}</p>}
+        <FormMessage variant="error">{error}</FormMessage>
+        <FormMessage variant="success">{message}</FormMessage>
         <button type="submit" className="btn-primary" disabled={saving}>{saving ? 'Saving…' : 'Save Profile'}</button>
       </form>
     </section>
@@ -122,8 +123,8 @@ function PasswordSection() {
           <label htmlFor="confirm-new-password">Re-enter New Password</label>
           <input id="confirm-new-password" type="password" required value={form.confirm_password} onChange={e => setForm({ ...form, confirm_password: e.target.value })} />
         </div>
-        {error && <p className="auth-error">{error}</p>}
-        {message && <p className="field-hint settings-success">{message}</p>}
+        <FormMessage variant="error">{error}</FormMessage>
+        <FormMessage variant="success">{message}</FormMessage>
         <button type="submit" className="btn-primary" disabled={saving}>{saving ? 'Updating…' : 'Update Password'}</button>
       </form>
     </section>
@@ -167,8 +168,8 @@ function SecurityQuestionSection({ me }) {
           <label htmlFor="settings-answer">New Answer</label>
           <input id="settings-answer" required value={form.security_answer} onChange={e => setForm({ ...form, security_answer: e.target.value })} />
         </div>
-        {error && <p className="auth-error">{error}</p>}
-        {message && <p className="field-hint settings-success">{message}</p>}
+        <FormMessage variant="error">{error}</FormMessage>
+        <FormMessage variant="success">{message}</FormMessage>
         <button type="submit" className="btn-primary" disabled={saving}>{saving ? 'Saving…' : 'Update Security Question'}</button>
       </form>
     </section>

@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import { api } from '../../services/api'
 import GoogleSignInButton from '../../components/auth/GoogleSignInButton'
+import FormMessage from '../../components/FormMessage'
 
 export default function Login() {
   const [mode, setMode] = useState('email') // 'email' | 'phone'
@@ -81,7 +82,7 @@ export default function Login() {
   }
 
   return (
-    <div className="auth-page">
+    <main className="auth-page">
       <div className="auth-card">
         <h1 className="auth-title">Log In</h1>
 
@@ -122,7 +123,7 @@ export default function Login() {
               />
             </div>
 
-            {error && <p className="auth-error">{error}</p>}
+            <FormMessage variant="error">{error}</FormMessage>
 
             <Link to="/forgot-password" className="forgot-link">
               Forgot my password
@@ -148,7 +149,7 @@ export default function Login() {
               />
             </div>
 
-            {error && <p className="auth-error">{error}</p>}
+            <FormMessage variant="error">{error}</FormMessage>
 
             <button type="submit" className="btn-primary" disabled={loading}>
               {loading ? 'Sending…' : 'Send Code'}
@@ -171,7 +172,7 @@ export default function Login() {
               />
             </div>
 
-            {error && <p className="auth-error">{error}</p>}
+            <FormMessage variant="error">{error}</FormMessage>
 
             <button type="submit" className="btn-primary" disabled={loading}>
               {loading ? 'Checking…' : 'Log In'}
@@ -189,6 +190,6 @@ export default function Login() {
           <Link to="/register">Sign Up</Link>
         </p>
       </div>
-    </div>
+    </main>
   )
 }
