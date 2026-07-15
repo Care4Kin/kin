@@ -3,6 +3,7 @@ import { useAuth } from '../../context/AuthContext'
 import { api } from '../../services/api'
 import { useResourceList } from '../../hooks/useResourceList'
 import { usePlaidBank } from '../../hooks/usePlaidBank'
+import CategoryPieChart from '../../components/CategoryPieChart'
 
 const CATEGORY_LABELS = {
   bank: 'Bank',
@@ -11,6 +12,24 @@ const CATEGORY_LABELS = {
   government: 'Government',
   pharmacy: 'Pharmacy',
   other: 'Other',
+}
+
+// Plaid's own account `type` field — separate from the manual-account
+// `category` above, since linked accounts aren't user-categorized.
+const PLAID_TYPE_LABELS = {
+  depository: 'Checking & Savings',
+  credit: 'Credit Cards',
+  loan: 'Loans',
+  investment: 'Investments',
+  other: 'Other',
+}
+
+function bankAccountLabel(a) {
+  return `${a.name}${a.mask ? ` ••${a.mask}` : ''}`
+}
+
+function bankBalance(a) {
+  return a.current_balance != null ? Number(a.current_balance) : 0
 }
 
 const emptyForm = { name: '', category: 'bank', notes: '' }
@@ -78,6 +97,18 @@ export default function Accounts() {
     return acc
   }, {})
 
+  const bankGrouped = bank.accounts.reduce((acc, a) => {
+    const key = a.type || 'other'
+    if (!acc[key]) acc[key] = []
+    acc[key].push(a)
+    return acc
+  }, {})
+
+  const bankOverallEntries = Object.entries(bankGrouped).map(([type, items]) => ({
+    category: PLAID_TYPE_LABELS[type] || type,
+    amount: items.reduce((sum, a) => sum + bankBalance(a), 0),
+  }))
+
   return (
     <div className="page">
       <h1 className="page-title">Important Accounts</h1>
@@ -100,24 +131,43 @@ export default function Accounts() {
         {bank.accounts.length === 0 ? (
           <p className="page-status">No banks connected yet.</p>
         ) : (
-          <div className="card-list">
-            {bank.accounts.map(a => (
-              <div key={a.account_id} className="info-card">
-                <div className="info-card-header">
-                  <span className="info-card-title">{a.name} {a.mask ? `••${a.mask}` : ''}</span>
-                  {isElder && (
-                    <button className="action-btn action-btn--danger" onClick={() => bank.disconnect(a.plaid_item_id)} title="Disconnect this bank">
-                      Disconnect
-                    </button>
-                  )}
+          <>
+            {Object.keys(bankGrouped).length > 1 && (
+              <CategoryPieChart entries={bankOverallEntries} title="Balance by Account Type" />
+            )}
+
+            {Object.entries(bankGrouped).map(([type, items]) => (
+              <div key={type} className="mb-md">
+                <h3 className="section-label">{PLAID_TYPE_LABELS[type] || type}</h3>
+
+                {items.length > 1 && (
+                  <CategoryPieChart
+                    entries={items.map(a => ({ category: bankAccountLabel(a), amount: bankBalance(a) }))}
+                    title={`${PLAID_TYPE_LABELS[type] || type} Breakdown`}
+                  />
+                )}
+
+                <div className="card-list">
+                  {items.map(a => (
+                    <div key={a.account_id} className="info-card">
+                      <div className="info-card-header">
+                        <span className="info-card-title">{bankAccountLabel(a)}</span>
+                        {isElder && (
+                          <button className="action-btn action-btn--danger" onClick={() => bank.disconnect(a.plaid_item_id)} title="Disconnect this bank">
+                            Disconnect
+                          </button>
+                        )}
+                      </div>
+                      <p className="info-card-note">
+                        {a.institution_name || 'Bank'} · {a.subtype || a.type}
+                        {a.current_balance != null && ` · $${Number(a.current_balance).toFixed(2)} available`}
+                      </p>
+                    </div>
+                  ))}
                 </div>
-                <p className="info-card-note">
-                  {a.institution_name || 'Bank'} · {a.subtype || a.type}
-                  {a.current_balance != null && ` · $${Number(a.current_balance).toFixed(2)} available`}
-                </p>
               </div>
             ))}
-          </div>
+          </>
         )}
       </section>
 
