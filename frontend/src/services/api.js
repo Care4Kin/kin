@@ -17,14 +17,13 @@ async function request(method, path, body) {
 
   // A 401 on a request that DID send a token means the token itself is
   // invalid/expired — not a login-form rejection (those never send one).
-  // Clear the stale session and bounce to /login instead of surfacing a
-  // raw "Invalid token" error on whatever page happened to be open.
+  // Clear the stale session and reload in place: every page already knows
+  // how to render its logged-out state (a teaser + login prompt, or for
+  // Settings a redirect to /login) — reloading elsewhere would skip that.
   if (res.status === 401 && token) {
     localStorage.removeItem('token')
     localStorage.removeItem('user')
-    if (!window.location.pathname.startsWith('/login')) {
-      window.location.href = '/login'
-    }
+    window.location.reload()
     return new Promise(() => {})
   }
 
