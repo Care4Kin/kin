@@ -21,7 +21,7 @@ export default function Login() {
   }
 
   function finishLogin(data) {
-    login({ user_id: data.user_id, role: data.role, full_name: data.full_name }, data.token)
+    login({ user_id: data.user_id, role: data.role, full_name: data.full_name, email: data.email }, data.token)
     navigate('/dashboard')
   }
 

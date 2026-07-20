@@ -4,9 +4,10 @@ import { api } from '../../services/api'
 import { useResourceList } from '../../hooks/useResourceList'
 import FormMessage from '../../components/FormMessage'
 import LoggedOutGate from '../../components/LoggedOutGate'
+import NoCircleGate from '../../components/NoCircleGate'
 
 export default function Notes() {
-  const { circleId, user, loading: authLoading } = useAuth()
+  const { circleId, user, loading: authLoading, circleChecked } = useAuth()
   const { items: notes, setItems: setNotes, loading, error } = useResourceList(() => api.getNotes(circleId), [circleId], !!circleId)
   const [content, setContent] = useState('')
   const [saving, setSaving] = useState(false)
@@ -15,6 +16,7 @@ export default function Notes() {
 
   if (authLoading) return null
   if (!user) return <LoggedOutGate title="Shared Notes" description="Leave a message for your family — a simple way to stay in touch inside the app." />
+  if (circleChecked && !circleId) return <NoCircleGate title="Shared Notes" />
   if (!circleId || loading) return <p className="page-status">Loading notes…</p>
   if (error) return <FormMessage variant="error" className="page-status page-status--error">{error}</FormMessage>
 

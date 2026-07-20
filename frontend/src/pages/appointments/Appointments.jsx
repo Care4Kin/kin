@@ -5,6 +5,7 @@ import { useResourceList } from '../../hooks/useResourceList'
 import InfoRow from '../../components/InfoRow'
 import FormMessage from '../../components/FormMessage'
 import LoggedOutGate from '../../components/LoggedOutGate'
+import NoCircleGate from '../../components/NoCircleGate'
 
 const emptyForm = { title: '', date: '', time: '', location: '', notes: '' }
 
@@ -15,7 +16,7 @@ function todayStr() {
 }
 
 export default function Appointments() {
-  const { circleId, user, loading: authLoading } = useAuth()
+  const { circleId, user, loading: authLoading, circleChecked } = useAuth()
   const isCaregiver = user?.role === 'caregiver'
   const { items: appointments, setItems: setAppointments, loading, error } = useResourceList(() => api.getAppointments(circleId), [circleId], !!circleId)
   const [showForm, setShowForm] = useState(false)
@@ -26,6 +27,7 @@ export default function Appointments() {
 
   if (authLoading) return null
   if (!user) return <LoggedOutGate title="Appointments" description="Keep track of upcoming visits and reminders so nothing gets missed." />
+  if (circleChecked && !circleId) return <NoCircleGate title="Appointments" />
   if (!circleId || loading) return <p className="page-status">Loading appointments…</p>
   if (error) return <FormMessage variant="error" className="page-status page-status--error">{error}</FormMessage>
 

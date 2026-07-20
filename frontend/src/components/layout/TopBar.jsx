@@ -7,7 +7,7 @@ export default function TopBar() {
 
   return (
     <header className="top-bar">
-      <Link to={user ? '/dashboard' : '/'} className="top-bar-brand">Kin</Link>
+      <Link to="/" className="top-bar-brand">Kin</Link>
       <div className="top-bar-right">
         {user ? (
           <>

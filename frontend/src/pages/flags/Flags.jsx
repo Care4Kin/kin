@@ -4,6 +4,7 @@ import { api } from '../../services/api'
 import { useResourceList } from '../../hooks/useResourceList'
 import FormMessage from '../../components/FormMessage'
 import LoggedOutGate from '../../components/LoggedOutGate'
+import NoCircleGate from '../../components/NoCircleGate'
 
 const TYPE_LABELS = { call: 'Phone Call', email: 'Email', text: 'Text', bill: 'Bill', other: 'Other' }
 
@@ -20,7 +21,7 @@ const FILTERS = [
 
 export default function Flags() {
   const [filter, setFilter] = useState('all')
-  const { circleId, user, loading: authLoading } = useAuth()
+  const { circleId, user, loading: authLoading, circleChecked } = useAuth()
   const isCaregiver = user?.role === 'caregiver'
   const { items: flags, setItems: setFlags, loading, error } = useResourceList(() => api.getFlags(circleId), [circleId], !!circleId)
   const [showForm, setShowForm] = useState(false)
@@ -32,6 +33,7 @@ export default function Flags() {
 
   if (authLoading) return null
   if (!user) return <LoggedOutGate title="Suspicious Activity" description="Flag a scam call, email, or bill so your family can help you sort it out." />
+  if (circleChecked && !circleId) return <NoCircleGate title="Suspicious Activity" />
   if (!circleId || loading) return <p className="page-status">Loading…</p>
   if (error) return <FormMessage variant="error" className="page-status page-status--error">{error}</FormMessage>
 

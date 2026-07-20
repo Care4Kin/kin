@@ -27,6 +27,7 @@ class LoginOut(BaseModel):
     user_id: int
     role: str
     full_name: str
+    email: str
 
 class SecurityQuestionOut(BaseModel):
     security_question: str

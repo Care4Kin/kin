@@ -4,6 +4,7 @@ import { useAuth } from '../../context/AuthContext'
 import { api } from '../../services/api'
 import { daysUntil } from '../../utils/date'
 import LoggedOutGate from '../../components/LoggedOutGate'
+import NoCircleGate from '../../components/NoCircleGate'
 
 const TIPS = [
   'You can add a bill by tapping Bills in the menu below.',
@@ -31,7 +32,7 @@ function getSignupTip() {
 }
 
 export default function Dashboard() {
-  const { user, circleId, loading: authLoading } = useAuth()
+  const { user, circleId, loading: authLoading, circleChecked } = useAuth()
   const location = useLocation()
   const justSignedUp = Boolean(location.state?.justSignedUp)
   const [counts, setCounts] = useState({})
@@ -75,6 +76,7 @@ export default function Dashboard() {
 
   if (authLoading) return null
   if (!user) return <LoggedOutGate title="Dashboard" description="Your home base — bills, prescriptions, appointments, and more, all in one place, shared with your family." />
+  if (circleChecked && !circleId) return <NoCircleGate title="Dashboard" />
 
   return (
     <div className="page dashboard">

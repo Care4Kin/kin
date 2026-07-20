@@ -6,6 +6,7 @@ import { usePlaidBank } from '../../hooks/usePlaidBank'
 import DetectedBankItems from '../../components/DetectedBankItems'
 import FormMessage from '../../components/FormMessage'
 import LoggedOutGate from '../../components/LoggedOutGate'
+import NoCircleGate from '../../components/NoCircleGate'
 import { daysUntil } from '../../utils/date'
 
 function needsReview(sub) {
@@ -13,7 +14,7 @@ function needsReview(sub) {
 }
 
 export default function Subscriptions() {
-  const { circleId, user, loading: authLoading } = useAuth()
+  const { circleId, user, loading: authLoading, circleChecked } = useAuth()
   const isCaregiver = user?.role === 'caregiver'
   const { items: subs, setItems: setSubs, loading, error } = useResourceList(() => api.getSubscriptions(circleId), [circleId], !!circleId)
   const bank = usePlaidBank(circleId)
@@ -25,6 +26,7 @@ export default function Subscriptions() {
 
   if (authLoading) return null
   if (!user) return <LoggedOutGate title="Subscriptions" description="Keep track of monthly services so nothing gets forgotten or overpaid." />
+  if (circleChecked && !circleId) return <NoCircleGate title="Subscriptions" />
   if (!circleId || loading) return <p className="page-status">Loading subscriptions…</p>
   if (error) return <FormMessage variant="error" className="page-status page-status--error">{error}</FormMessage>
 

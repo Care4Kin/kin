@@ -52,7 +52,7 @@ export default function Register() {
         security_answer: form.security_answer,
       })
       const data = await api.login({ email: form.email, password: form.password })
-      login({ user_id: data.user_id, role: data.role, full_name: data.full_name }, data.token)
+      login({ user_id: data.user_id, role: data.role, full_name: data.full_name, email: data.email }, data.token)
       navigate('/dashboard', { state: { justSignedUp: true } })
     } catch (err) {
       setError(err.message)
@@ -70,7 +70,7 @@ export default function Register() {
         return
       }
       // Email already had an account — just log them in.
-      login({ user_id: data.user_id, role: data.role, full_name: data.full_name }, data.token)
+      login({ user_id: data.user_id, role: data.role, full_name: data.full_name, email: data.email }, data.token)
       navigate('/dashboard', { state: { justSignedUp: true } })
     } catch (err) {
       setError(err.message)

@@ -6,11 +6,12 @@ import InfoRow from '../../components/InfoRow'
 import { daysUntil } from '../../utils/date'
 import FormMessage from '../../components/FormMessage'
 import LoggedOutGate from '../../components/LoggedOutGate'
+import NoCircleGate from '../../components/NoCircleGate'
 
 const emptyForm = { medication_name: '', dosage: '', prescribing_doctor: '', pharmacy_name: '', refill_date: '', notes: '' }
 
 export default function Prescriptions() {
-  const { circleId, user, loading: authLoading } = useAuth()
+  const { circleId, user, loading: authLoading, circleChecked } = useAuth()
   const isCaregiver = user?.role === 'caregiver'
   const { items: rxs, setItems: setRxs, loading, error } = useResourceList(() => api.getPrescriptions(circleId), [circleId], !!circleId)
   const [showForm, setShowForm] = useState(false)
@@ -22,6 +23,7 @@ export default function Prescriptions() {
 
   if (authLoading) return null
   if (!user) return <LoggedOutGate title="Prescriptions" description="See upcoming refill dates so no one runs out of an important medication." />
+  if (circleChecked && !circleId) return <NoCircleGate title="Prescriptions" />
   if (!circleId || loading) return <p className="page-status">Loading prescriptions…</p>
   if (error) return <FormMessage variant="error" className="page-status page-status--error">{error}</FormMessage>
 

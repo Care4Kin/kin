@@ -8,9 +8,10 @@ import DetectedBankItems from '../../components/DetectedBankItems'
 import { nextOccurrence } from '../../utils/date'
 import FormMessage from '../../components/FormMessage'
 import LoggedOutGate from '../../components/LoggedOutGate'
+import NoCircleGate from '../../components/NoCircleGate'
 
 export default function Bills() {
-  const { circleId, user, loading: authLoading } = useAuth()
+  const { circleId, user, loading: authLoading, circleChecked } = useAuth()
   const isCaregiver = user?.role === 'caregiver'
   const { items: bills, setItems: setBills, loading, error } = useResourceList(() => api.getBills(circleId), [circleId], !!circleId)
   const bank = usePlaidBank(circleId)
@@ -23,6 +24,7 @@ export default function Bills() {
 
   if (authLoading) return null
   if (!user) return <LoggedOutGate title="Bills" description="Track what you owe and when it's due — you and your family always see the same list." />
+  if (circleChecked && !circleId) return <NoCircleGate title="Bills" />
   if (!circleId || loading) return <p className="page-status">Loading bills…</p>
   if (error) return <FormMessage variant="error" className="page-status page-status--error">{error}</FormMessage>
 

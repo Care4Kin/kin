@@ -22,7 +22,7 @@ export default function Settings() {
 
   function handleSignOut() {
     logout()
-    navigate('/login')
+    navigate('/')
   }
 
   return (
