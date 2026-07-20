@@ -6,29 +6,47 @@ import { daysUntil } from '../../utils/date'
 import LoggedOutGate from '../../components/LoggedOutGate'
 import NoCircleGate from '../../components/NoCircleGate'
 
-const TIPS = [
-  'You can add a bill by tapping Bills in the menu below.',
-  'Your family can only see what you choose to share with them.',
-  'Check your prescriptions tab before your next doctor visit.',
-  'If something feels like a scam, flag it — better safe than sorry.',
-  'You are always in charge of your circle. You can remove anyone at any time.',
-  "Fun fact: putting your password in the freezer does not make it more secure. A password manager does.",
-  "A real bank will never call asking for your password. When in doubt, hang up and call them back yourself.",
-  "Scammers love urgency. If a call or email is rushing you to act right now, that's your cue to slow down.",
+const GENERAL_TIPS = [
+  { text: 'Your family can only see what you choose to share with them.' },
+  { text: 'If something feels like a scam, flag it — better safe than sorry.' },
+  { text: 'A real bank will never call asking for your password. When in doubt, hang up and call them back yourself.' },
+  { text: "Scammers love urgency. If a call or email is rushing you to act right now, that's your cue to slow down." },
+  { text: 'Putting your password in the freezer does not make it more secure. A password manager does.' },
+  { text: 'No government agency will ever demand payment in gift cards. That is always a scam.' },
+  { text: "It's okay to hang up, take a breath, and call a family member before making a decision." },
+  { text: 'Caller ID can be faked. If a call feels off, hang up and call the number on the back of your card directly.' },
+]
+
+const ELDER_TIPS = [
+  { text: 'You can add a bill by tapping Bills in the menu below.' },
+  { text: 'Check your prescriptions tab before your next doctor visit.' },
+  { text: 'You are always in charge of your circle. You can remove anyone at any time.' },
+  { text: "I check my Suspicious Activity tab every time something feels off — it's saved me twice this year.", author: 'Dan, 60' },
+  { text: 'I like knowing my daughter can see my bills without me having to call her every time.', author: 'Margaret, 74' },
+  { text: 'Setting up my prescriptions here means I never show up at the pharmacy empty-handed.', author: 'Walter, 68' },
+]
+
+const CAREGIVER_TIPS = [
+  { text: 'Check the At a Glance summary each morning — it surfaces what needs attention first.' },
+  { text: 'Reviewing bills together, even briefly, helps catch anything unusual early.' },
+  { text: 'You can turn off any permission at any time if something no longer needs to be shared.' },
+  { text: "I set a two-minute weekly check-in on my mom's account — it's become part of our Sunday call.", author: 'Priya, caregiver' },
+  { text: 'Flags are not just for scams — use them to track anything that seems off, even small things.', author: 'Marcus, caregiver' },
 ]
 
 const SIGNUP_TIPS = [
-  "Welcome to Kin! Quick tip: no bank or government agency will ever ask for your password over the phone — not even us.",
-  "You're all set up. Fun fact: the freezer is a great place for ice cream, not passwords — a password manager works better.",
-  "Glad you're here. One habit that helps: if a call or text feels urgent and scary, that's exactly when to slow down and check with family.",
+  { text: 'Welcome to Kin! No bank or government agency will ever ask for your password over the phone — not even us.' },
+  { text: "You're all set up. The freezer is a great place for ice cream, not passwords — a password manager works better." },
+  { text: "Glad you're here. One habit that helps: if a call or text feels urgent and scary, that's exactly when to slow down and check with family." },
 ]
 
-function getTodaysTip() {
-  return TIPS[new Date().getDay() % TIPS.length]
+function getRandomTip(role) {
+  const pool = [...GENERAL_TIPS, ...(role === 'caregiver' ? CAREGIVER_TIPS : ELDER_TIPS)]
+  return pool[Math.floor(Math.random() * pool.length)]
 }
 
 function getSignupTip() {
-  return SIGNUP_TIPS[Math.floor(Math.random() * SIGNUP_TIPS.length) % SIGNUP_TIPS.length]
+  return SIGNUP_TIPS[Math.floor(Math.random() * SIGNUP_TIPS.length)]
 }
 
 export default function Dashboard() {
@@ -72,7 +90,7 @@ export default function Dashboard() {
   const accountsCount = (counts.accounts || 0) + bankCount
 
   const isCaregiver = user?.role === 'caregiver'
-  const [tip] = useState(() => justSignedUp ? getSignupTip() : getTodaysTip())
+  const [tip] = useState(() => justSignedUp ? getSignupTip() : getRandomTip(user?.role))
 
   if (authLoading) return null
   if (!user) return <LoggedOutGate title="Dashboard" description="Your home base — bills, prescriptions, appointments, and more, all in one place, shared with your family." />
@@ -82,7 +100,8 @@ export default function Dashboard() {
     <div className="page dashboard">
       <div className="tip-banner">
         <span className="tip-label">{justSignedUp ? 'Welcome' : 'Tip for today'}</span>
-        <p>{tip}</p>
+        <p>"{tip.text}"</p>
+        {tip.author && <p className="tip-author">— {tip.author}</p>}
       </div>
 
       {isCaregiver && data && <CaregiverSummary data={data} />}
@@ -93,7 +112,7 @@ export default function Dashboard() {
         <SummaryCard title="Subscriptions" description="Review your monthly services" href="/subscriptions" accent="green" count={counts.subscriptions} />
         <SummaryCard title="Appointments" description="Upcoming visits and reminders" href="/appointments" accent="green" count={counts.appointments} />
         <SummaryCard title="Important Accounts" description="Bank, insurance, healthcare and more" href="/accounts" accent="green" count={accountsCount} />
-        <SummaryCard title="Suspicious Activity" description="Flag a scam call, email, or bill" href="/flags" accent="warn" count={counts.flags} />
+        <SummaryCard title="Suspicious Activity" description="Flag a scam call, email, or bill" href="/flags" accent="warn" />
         <SummaryCard title="Shared Notes" description="Leave a message for your family" href="/notes" accent="green" count={counts.notes} />
         <SummaryCard title="My Circle" description="See who's helping and manage access" href="/circle" accent="green" count={counts.circle} />
       </div>
