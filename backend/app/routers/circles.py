@@ -7,7 +7,7 @@ from app.models.circle import FamilyCircle
 from app.models.circle_member import CircleMember
 from app.models.circle_invitation import CircleInvitation
 from app.models.user import User
-from app.schemas.circle import MemberInvite, MemberPermissionsUpdate
+from app.schemas.circle import MemberInvite, MemberPermissionsUpdate, DigestFrequencyUpdate
 from app.services.email import send_email
 from app.config import settings
 
@@ -225,3 +225,37 @@ def cancel_invitation(
     db.delete(invitation)
     db.commit()
     return {'message': 'Invitation cancelled'}
+
+@router.get('/{circle_id}/digest-frequency')
+def get_my_digest_frequency(
+    circle_id: int,
+    current_user: User = Depends(get_current_user),
+    circle=Depends(require_circle_access),
+    db: Session = Depends(get_db),
+):
+    member = db.query(CircleMember).filter(
+        CircleMember.circle_id == circle_id, CircleMember.caregiver_id == current_user.user_id
+    ).first()
+    if not member:
+        raise HTTPException(404, 'Digest preferences are only available to caregivers in a circle')
+    return {'digest_frequency': member.digest_frequency}
+
+@router.patch('/{circle_id}/digest-frequency')
+def update_my_digest_frequency(
+    circle_id: int,
+    body: DigestFrequencyUpdate,
+    current_user: User = Depends(get_current_user),
+    circle=Depends(require_circle_access),
+    db: Session = Depends(get_db),
+):
+    # Self-service by design -- a caregiver sets their own email cadence, so
+    # this isn't gated behind require_elder like the permission checkboxes.
+    member = db.query(CircleMember).filter(
+        CircleMember.circle_id == circle_id, CircleMember.caregiver_id == current_user.user_id
+    ).first()
+    if not member:
+        raise HTTPException(404, 'Digest preferences are only available to caregivers in a circle')
+    member.digest_frequency = body.digest_frequency
+    db.commit()
+    db.refresh(member)
+    return {'digest_frequency': member.digest_frequency}

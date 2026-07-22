@@ -1,9 +1,10 @@
-name: Weekly Caregiver Digest
+name: Caregiver Digest
 
 on:
   schedule:
-    # Mondays 14:00 UTC (~10am ET)
-    - cron: '0 14 * * 1'
+    # Runs daily -- each caregiver's own digest_frequency preference
+    # (set in Settings) decides who actually gets emailed each run.
+    - cron: '0 14 * * *'
   workflow_dispatch: {}
 
 jobs:

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import { api } from '../../services/api'
@@ -11,8 +11,16 @@ const SECURITY_QUESTIONS = [
   'What was the name of your first school?',
 ]
 
+const DIGEST_FREQUENCIES = [
+  { value: 'off', label: 'Off' },
+  { value: 'daily', label: 'Daily' },
+  { value: 'weekly', label: 'Weekly' },
+  { value: 'biweekly', label: 'Every 2 weeks' },
+  { value: 'monthly', label: 'Monthly' },
+]
+
 export default function Settings() {
-  const { logout } = useAuth()
+  const { user, circleId, logout } = useAuth()
   const navigate = useNavigate()
   const { data: me, loading, error } = useFetch(() => api.getMe(), [])
 
@@ -28,10 +36,55 @@ export default function Settings() {
     <div className="page">
       <h1 className="page-title">Settings</h1>
       <ProfileSection me={me} />
+      {user?.role === 'caregiver' && <DigestFrequencySection circleId={circleId} />}
       <PasswordSection />
       <SecurityQuestionSection me={me} />
       <button className="btn-secondary" style={{ width: '100%' }} onClick={handleSignOut}>Sign Out</button>
     </div>
+  )
+}
+
+function DigestFrequencySection({ circleId }) {
+  const { data, loading, error: loadError } = useFetch(() => api.getDigestFrequency(circleId), [circleId], !!circleId)
+  const [frequency, setFrequency] = useState(null)
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState('')
+  const [message, setMessage] = useState('')
+
+  useEffect(() => { if (data) setFrequency(data.digest_frequency) }, [data])
+
+  async function handleChange(e) {
+    const next = e.target.value
+    setFrequency(next)
+    setSaving(true)
+    setError('')
+    setMessage('')
+    try {
+      await api.updateDigestFrequency(circleId, next)
+      setMessage('Saved.')
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  if (loading || frequency === null) return null
+  if (loadError) return null
+
+  return (
+    <section className="inline-form">
+      <h2 className="section-label">Email Updates</h2>
+      <p className="field-hint">How often you'd like an AI-summarized email about bills, prescriptions, and anything flagged.</p>
+      <div className="field-group">
+        <label htmlFor="digest-frequency">Frequency</label>
+        <select id="digest-frequency" value={frequency} onChange={handleChange} disabled={saving}>
+          {DIGEST_FREQUENCIES.map(f => <option key={f.value} value={f.value}>{f.label}</option>)}
+        </select>
+      </div>
+      {error && <p className="auth-error">{error}</p>}
+      {message && <p className="field-hint settings-success">{message}</p>}
+    </section>
   )
 }
 
