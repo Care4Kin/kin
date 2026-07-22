@@ -16,11 +16,30 @@ from app.services.gemini_client import generate_digest_text, gemini_configured
 from app.services.email import send_email
 from app.utils import utcnow, as_aware
 
-LOOKBACK_DAYS = 7
 RX_URGENT_DAYS = 10
 
-def _gather_circle_data(circle_id: int, permissions: dict, db: Session) -> dict:
-    since = utcnow() - timedelta(days=LOOKBACK_DAYS)
+# Each caregiver picks their own cadence (Settings), so the job that calls
+# generate_and_send_digests() can run as often as it likes (daily is the
+# expectation) -- _is_due() below is what actually decides who gets emailed.
+FREQUENCY_DAYS = {
+    'daily': 1,
+    'weekly': 7,
+    'biweekly': 14,
+    'monthly': 30,
+}
+
+def _is_due(member: CircleMember) -> bool:
+    if member.digest_frequency == 'off':
+        return False
+    interval_days = FREQUENCY_DAYS.get(member.digest_frequency)
+    if interval_days is None:
+        return False
+    if member.last_digest_sent_at is None:
+        return True
+    return as_aware(member.last_digest_sent_at) <= utcnow() - timedelta(days=interval_days)
+
+def _gather_circle_data(circle_id: int, permissions: dict, lookback_days: int, db: Session) -> dict:
+    since = utcnow() - timedelta(days=lookback_days)
     today = date.today()
     data = {}
 
@@ -35,7 +54,7 @@ def _gather_circle_data(circle_id: int, permissions: dict, db: Session) -> dict:
             'unpaid_total': float(sum((b.amount for b in unpaid), Decimal('0'))),
             'overdue': [{'name': b.name, 'amount': float(b.amount), 'due_date': str(b.due_date)} for b in overdue],
             'due_within_7_days': [{'name': b.name, 'amount': float(b.amount), 'due_date': str(b.due_date)} for b in due_soon],
-            'added_this_week': [b.name for b in new],
+            'added_recently': [b.name for b in new],
         }
 
     if permissions['can_view_flags']:
@@ -44,7 +63,7 @@ def _gather_circle_data(circle_id: int, permissions: dict, db: Session) -> dict:
         new_flags = [f for f in flags if as_aware(f.created_at) >= since]
         data['suspicious_activity'] = {
             'open_count': len(open_flags),
-            'new_this_week': [{'type': f.type, 'description': f.description, 'severity': f.severity} for f in new_flags],
+            'added_recently': [{'type': f.type, 'description': f.description, 'severity': f.severity} for f in new_flags],
         }
 
     if permissions['can_view_prescriptions']:
@@ -60,7 +79,7 @@ def _gather_circle_data(circle_id: int, permissions: dict, db: Session) -> dict:
         new_accounts = [a for a in accounts if as_aware(a.created_at) >= since]
         data['accounts'] = {
             'total_count': len(accounts),
-            'added_this_week': [a.name for a in new_accounts],
+            'added_recently': [a.name for a in new_accounts],
         }
 
     # Subscriptions, appointments, and notes are shared with every circle
@@ -71,7 +90,7 @@ def _gather_circle_data(circle_id: int, permissions: dict, db: Session) -> dict:
     data['subscriptions'] = {
         'active_count': len(subs),
         'monthly_total': float(sum((s.monthly_cost for s in subs), Decimal('0'))),
-        'added_this_week': [s.name for s in new_subs],
+        'added_recently': [s.name for s in new_subs],
     }
 
     upcoming = db.query(Appointment).filter(
@@ -83,14 +102,17 @@ def _gather_circle_data(circle_id: int, permissions: dict, db: Session) -> dict:
     }
 
     data['as_of_date'] = str(today)
+    data['days_since_last_update'] = lookback_days
     return data
 
 def _build_prompt(elder_name: str, data: dict) -> str:
     return (
-        f"Write a short weekly email update for a family caregiver helping {elder_name}, "
+        f"Write a short email update for a family caregiver helping {elder_name}, "
         "in a warm, conversational tone -- like a quick note from a friend, not a status report. "
         "Use only the JSON data below -- do not invent details. The 'as_of_date' field is "
         "today's date, for judging what counts as overdue, due soon, or upcoming. "
+        "'added_recently' fields cover the 'days_since_last_update' days before as_of_date -- "
+        "phrase that as 'since your last update' rather than assuming it's a week. "
         "Only mention a topic if its data is present, and skip exact dates/dollar amounts for "
         "routine items -- save specifics for anything overdue or urgent. Keep it to 100-150 words, "
         "plain prose with no markdown headers or bullet lists, and lead with anything that needs "
@@ -102,16 +124,17 @@ def _build_prompt(elder_name: str, data: dict) -> str:
 def _render_digest_email(elder_name: str, summary_text: str) -> str:
     return (
         f"Hi,\n\n"
-        f"Here's this week's Kin update for {elder_name}:\n\n"
+        f"Here's your Kin update for {elder_name}:\n\n"
         f"{summary_text}\n\n"
         f"Log in to Kin for the full picture.\n\n"
         f"— The Kin Team"
     )
 
 def generate_and_send_digests(db: Session) -> dict:
-    """Send one AI-generated weekly digest email per accepted caregiver,
-    scoped to only the sections that caregiver's permissions allow them to
-    see. Returns counts for the caller to report back."""
+    """Send one AI-generated digest email to every caregiver who is due one,
+    based on their own digest_frequency preference, scoped to only the
+    sections that caregiver's permissions allow them to see. Returns counts
+    for the caller to report back."""
     if not gemini_configured():
         return {'sent': 0, 'skipped': 0, 'reason': 'Gemini API key not configured'}
 
@@ -127,6 +150,8 @@ def generate_and_send_digests(db: Session) -> dict:
         # isn't used as an access gate anywhere else in the app either.
         members = db.query(CircleMember).filter(CircleMember.circle_id == circle.circle_id).all()
         for member in members:
+            if not _is_due(member):
+                continue
             caregiver = db.query(User).filter(User.user_id == member.caregiver_id).first()
             if not caregiver:
                 continue
@@ -136,7 +161,8 @@ def generate_and_send_digests(db: Session) -> dict:
                 'can_view_prescriptions': member.can_view_prescriptions,
                 'can_view_accounts': member.can_view_accounts,
             }
-            data = _gather_circle_data(circle.circle_id, permissions, db)
+            lookback_days = FREQUENCY_DAYS[member.digest_frequency]
+            data = _gather_circle_data(circle.circle_id, permissions, lookback_days, db)
             prompt = _build_prompt(elder.full_name, data)
             try:
                 summary_text = generate_digest_text(prompt)
@@ -147,9 +173,11 @@ def generate_and_send_digests(db: Session) -> dict:
 
             send_email(
                 to=caregiver.email,
-                subject=f'Your weekly Kin update for {elder.full_name}',
+                subject=f'Your Kin update for {elder.full_name}',
                 body=_render_digest_email(elder.full_name, summary_text),
             )
+            member.last_digest_sent_at = utcnow()
+            db.commit()
             sent += 1
 
     return {'sent': sent, 'skipped': skipped}
