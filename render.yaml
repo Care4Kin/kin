@@ -42,6 +42,10 @@ services:
         sync: false
       - key: PLAID_ENV
         value: sandbox
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: INTERNAL_TASK_SECRET
+        generateValue: true
 
   - type: web
     name: kin-frontend
