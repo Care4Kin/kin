@@ -87,12 +87,14 @@ def _gather_circle_data(circle_id: int, permissions: dict, db: Session) -> dict:
 
 def _build_prompt(elder_name: str, data: dict) -> str:
     return (
-        f"Write a short weekly email update for a family caregiver helping {elder_name}. "
+        f"Write a short weekly email update for a family caregiver helping {elder_name}, "
+        "in a warm, conversational tone -- like a quick note from a friend, not a status report. "
         "Use only the JSON data below -- do not invent details. The 'as_of_date' field is "
         "today's date, for judging what counts as overdue, due soon, or upcoming. "
-        "Only mention a topic if its data is present. Keep it to 120-180 words, plain prose "
-        "(no markdown headers or bullet lists), warm but factual, and lead with anything that "
-        "needs attention (overdue/urgent items) before routine status. "
+        "Only mention a topic if its data is present, and skip exact dates/dollar amounts for "
+        "routine items -- save specifics for anything overdue or urgent. Keep it to 100-150 words, "
+        "plain prose with no markdown headers or bullet lists, and lead with anything that needs "
+        "attention before routine status. "
         f"Sign off is handled separately, so end right after the summary.\n\n"
         f"Data: {json.dumps(data, default=str)}"
     )
