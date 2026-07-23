@@ -15,6 +15,18 @@ async function request(method, path, body) {
     body: body ? JSON.stringify(body) : undefined,
   })
 
+  // A 401 on a request that DID send a token means the token itself is
+  // invalid/expired — not a login-form rejection (those never send one).
+  // Clear the stale session and reload in place: every page already knows
+  // how to render its logged-out state (a teaser + login prompt, or for
+  // Settings a redirect to /login) — reloading elsewhere would skip that.
+  if (res.status === 401 && token) {
+    localStorage.removeItem('token')
+    localStorage.removeItem('user')
+    window.location.reload()
+    return new Promise(() => {})
+  }
+
   if (!res.ok) {
     const err = await res.json().catch(() => ({ detail: res.statusText }))
     const message = Array.isArray(err.detail)

@@ -7,14 +7,20 @@ export default function TopBar() {
 
   return (
     <header className="top-bar">
-      <span className="top-bar-brand">Kin</span>
+      <Link to="/" className="top-bar-brand">Kin</Link>
       <div className="top-bar-right">
-        {firstName && (
-          <span className="top-bar-user">Hi, {firstName}</span>
+        {user ? (
+          <>
+            {firstName && (
+              <span className="top-bar-user">Hi, {firstName}</span>
+            )}
+            <Link to="/settings" className="top-bar-settings" title="Settings" aria-label="Settings">
+              ⚙
+            </Link>
+          </>
+        ) : (
+          <Link to="/login" className="top-bar-login">Log In</Link>
         )}
-        <Link to="/settings" className="top-bar-settings" title="Settings" aria-label="Settings">
-          ⚙
-        </Link>
       </div>
     </header>
   )

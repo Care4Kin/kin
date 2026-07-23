@@ -61,7 +61,7 @@ def login(body: LoginRequest, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.email == normalize_email(body.email)).first()
     if not user or not verify_password(body.password, user.password_hash):
         raise HTTPException(401, 'Invalid email or password')
-    return {'token': make_token(user.user_id), 'user_id': user.user_id, 'role': user.role, 'full_name': user.full_name}
+    return {'token': make_token(user.user_id), 'user_id': user.user_id, 'role': user.role, 'full_name': user.full_name, 'email': user.email}
 
 @router.post('/logout')
 def logout():
@@ -98,7 +98,7 @@ def verify_phone_code(body: PhoneVerifyCodeRequest, db: Session = Depends(get_db
     user.phone_verification_code_hash = None
     user.phone_verification_expires_at = None
     db.commit()
-    return {'token': make_token(user.user_id), 'user_id': user.user_id, 'role': user.role, 'full_name': user.full_name}
+    return {'token': make_token(user.user_id), 'user_id': user.user_id, 'role': user.role, 'full_name': user.full_name, 'email': user.email}
 
 def _verify_google_token(id_token_str: str) -> dict:
     from google.oauth2 import id_token as google_id_token
@@ -132,7 +132,7 @@ def google_auth(body: GoogleAuthRequest, db: Session = Depends(get_db)):
         user.google_sub = idinfo['sub']
         db.commit()
 
-    return {'token': make_token(user.user_id), 'user_id': user.user_id, 'role': user.role, 'full_name': user.full_name}
+    return {'token': make_token(user.user_id), 'user_id': user.user_id, 'role': user.role, 'full_name': user.full_name, 'email': user.email}
 
 @router.post('/google/complete', response_model=LoginOut)
 def google_complete(body: GoogleCompleteRequest, db: Session = Depends(get_db)):
@@ -158,7 +158,7 @@ def google_complete(body: GoogleCompleteRequest, db: Session = Depends(get_db)):
     db.refresh(user)
     claim_invitations(user, db)
 
-    return {'token': make_token(user.user_id), 'user_id': user.user_id, 'role': user.role, 'full_name': user.full_name}
+    return {'token': make_token(user.user_id), 'user_id': user.user_id, 'role': user.role, 'full_name': user.full_name, 'email': user.email}
 
 @router.get('/security-question', response_model=SecurityQuestionOut)
 def get_security_question(email: str, db: Session = Depends(get_db)):

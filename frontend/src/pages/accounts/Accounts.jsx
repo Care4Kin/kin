@@ -4,6 +4,9 @@ import { api } from '../../services/api'
 import { useResourceList } from '../../hooks/useResourceList'
 import { usePlaidBank } from '../../hooks/usePlaidBank'
 import CategoryPieChart from '../../components/CategoryPieChart'
+import FormMessage from '../../components/FormMessage'
+import LoggedOutGate from '../../components/LoggedOutGate'
+import NoCircleGate from '../../components/NoCircleGate'
 
 const CATEGORY_LABELS = {
   bank: 'Bank',
@@ -35,8 +38,9 @@ function bankBalance(a) {
 const emptyForm = { name: '', category: 'bank', notes: '' }
 
 export default function Accounts() {
-  const { circleId, user } = useAuth()
+  const { circleId, user, loading: authLoading, circleChecked } = useAuth()
   const isElder = user?.role === 'elder'
+  const isCaregiver = user?.role === 'caregiver'
   const { items: accounts, setItems: setAccounts, loading, error } = useResourceList(() => api.getAccounts(circleId), [circleId], !!circleId)
   const [showForm, setShowForm] = useState(false)
   const [form, setForm] = useState(emptyForm)
@@ -47,8 +51,11 @@ export default function Accounts() {
 
   const bank = usePlaidBank(circleId)
 
+  if (authLoading) return null
+  if (!user) return <LoggedOutGate title="Important Accounts" description="Keep bank, insurance, healthcare, and other key accounts in one place — no passwords, just helpful reminders." />
+  if (circleChecked && !circleId) return <NoCircleGate title="Important Accounts" />
   if (!circleId || loading) return <p className="page-status">Loading accounts…</p>
-  if (error) return <p className="page-status page-status--error">{error}</p>
+  if (error) return <FormMessage variant="error" className="page-status page-status--error">{error}</FormMessage>
 
   async function handleAdd(e) {
     e.preventDefault()
@@ -108,11 +115,12 @@ export default function Accounts() {
     category: PLAID_TYPE_LABELS[type] || type,
     amount: items.reduce((sum, a) => sum + bankBalance(a), 0),
   }))
+  const bankTotal = bank.accounts.reduce((sum, a) => sum + bankBalance(a), 0)
 
   return (
     <div className="page">
       <h1 className="page-title">Important Accounts</h1>
-      {actionError && <p className="page-status page-status--error">{actionError}</p>}
+      <FormMessage variant="error" className="page-status page-status--error">{actionError}</FormMessage>
 
       <section className="mb-lg">
         <h2 className="section-label">Linked Bank Accounts</h2>
@@ -120,7 +128,7 @@ export default function Accounts() {
           Connect a real bank to see balances here automatically, plus spending by category on Bills and detected recurring charges on Subscriptions.
         </p>
 
-        {bank.error && <p className="auth-error mb-sm">{bank.error}</p>}
+        <FormMessage variant="error" className="auth-error mb-sm">{bank.error}</FormMessage>
 
         {isElder && (
           <button className="add-toggle" onClick={bank.connect} disabled={bank.connecting}>
@@ -130,7 +138,7 @@ export default function Accounts() {
 
         {bank.accounts.length === 0 ? (
           <p className="page-status">No banks connected yet.</p>
-        ) : (
+        ) : isCaregiver ? (
           <>
             {Object.keys(bankGrouped).length > 1 && (
               <CategoryPieChart entries={bankOverallEntries} title="Balance by Account Type" />
@@ -148,25 +156,20 @@ export default function Accounts() {
                 )}
 
                 <div className="card-list">
-                  {items.map(a => (
-                    <div key={a.account_id} className="info-card">
-                      <div className="info-card-header">
-                        <span className="info-card-title">{bankAccountLabel(a)}</span>
-                        {isElder && (
-                          <button className="action-btn action-btn--danger" onClick={() => bank.disconnect(a.plaid_item_id)} title="Disconnect this bank">
-                            Disconnect
-                          </button>
-                        )}
-                      </div>
-                      <p className="info-card-note">
-                        {a.institution_name || 'Bank'} · {a.subtype || a.type}
-                        {a.current_balance != null && ` · $${Number(a.current_balance).toFixed(2)} available`}
-                      </p>
-                    </div>
-                  ))}
+                  {items.map(a => <BankAccountCard key={a.account_id} account={a} isElder={isElder} onDisconnect={bank.disconnect} />)}
                 </div>
               </div>
             ))}
+          </>
+        ) : (
+          <>
+            <div className="stat-banner mb-md">
+              <span className="stat-banner-label">Total balance</span>
+              <span className="stat-banner-value">${bankTotal.toFixed(2)}</span>
+            </div>
+            <div className="card-list">
+              {bank.accounts.map(a => <BankAccountCard key={a.account_id} account={a} isElder={isElder} onDisconnect={bank.disconnect} />)}
+            </div>
           </>
         )}
       </section>
@@ -187,14 +190,14 @@ export default function Accounts() {
             <label htmlFor="acct-notes">Notes</label>
             <input id="acct-notes" placeholder="No passwords — just helpful reminders" value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} />
           </div>
-          {formError && <p className="auth-error">{formError}</p>}
+          <FormMessage variant="error">{formError}</FormMessage>
           <div className="btn-row">
             <button type="submit" className="btn-primary" disabled={saving}>{saving ? 'Saving…' : 'Add Account'}</button>
             <button type="button" className="btn-secondary" onClick={() => { setShowForm(false); setFormError('') }}>Cancel</button>
           </div>
         </form>
       ) : (
-        <button className="add-toggle" onClick={() => setShowForm(true)}>+ Add an account</button>
+        <button className="add-toggle" aria-expanded={showForm} onClick={() => setShowForm(true)}>+ Add an account</button>
       )}
 
       {Object.entries(grouped).map(([category, items]) => (
@@ -222,6 +225,25 @@ export default function Accounts() {
           </div>
         </section>
       ))}
+    </div>
+  )
+}
+
+function BankAccountCard({ account: a, isElder, onDisconnect }) {
+  return (
+    <div className="info-card">
+      <div className="info-card-header">
+        <span className="info-card-title">{bankAccountLabel(a)}</span>
+        {isElder && (
+          <button className="action-btn action-btn--danger" onClick={() => onDisconnect(a.plaid_item_id)} title="Disconnect this bank">
+            Disconnect
+          </button>
+        )}
+      </div>
+      <p className="info-card-note">
+        {a.institution_name || 'Bank'} · {a.subtype || a.type}
+        {a.current_balance != null && ` · $${Number(a.current_balance).toFixed(2)} available`}
+      </p>
     </div>
   )
 }
@@ -264,7 +286,7 @@ function AccountEditForm({ account, onSave, onCancel }) {
         <label htmlFor={`edit-notes-${account.account_id}`}>Notes</label>
         <input id={`edit-notes-${account.account_id}`} value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} />
       </div>
-      {formError && <p className="auth-error">{formError}</p>}
+      <FormMessage variant="error">{formError}</FormMessage>
       <div className="btn-row">
         <button type="submit" className="btn-primary" disabled={saving}>{saving ? 'Saving…' : 'Save'}</button>
         <button type="button" className="btn-secondary" onClick={onCancel}>Cancel</button>

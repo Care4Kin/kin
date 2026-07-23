@@ -4,11 +4,14 @@ import { api } from '../../services/api'
 import { useResourceList } from '../../hooks/useResourceList'
 import InfoRow from '../../components/InfoRow'
 import { daysUntil } from '../../utils/date'
+import FormMessage from '../../components/FormMessage'
+import LoggedOutGate from '../../components/LoggedOutGate'
+import NoCircleGate from '../../components/NoCircleGate'
 
 const emptyForm = { medication_name: '', dosage: '', prescribing_doctor: '', pharmacy_name: '', refill_date: '', notes: '' }
 
 export default function Prescriptions() {
-  const { circleId, user } = useAuth()
+  const { circleId, user, loading: authLoading, circleChecked } = useAuth()
   const isCaregiver = user?.role === 'caregiver'
   const { items: rxs, setItems: setRxs, loading, error } = useResourceList(() => api.getPrescriptions(circleId), [circleId], !!circleId)
   const [showForm, setShowForm] = useState(false)
@@ -18,8 +21,11 @@ export default function Prescriptions() {
   const [editingId, setEditingId] = useState(null)
   const [actionError, setActionError] = useState('')
 
+  if (authLoading) return null
+  if (!user) return <LoggedOutGate title="Prescriptions" description="See upcoming refill dates so no one runs out of an important medication." />
+  if (circleChecked && !circleId) return <NoCircleGate title="Prescriptions" />
   if (!circleId || loading) return <p className="page-status">Loading prescriptions…</p>
-  if (error) return <p className="page-status page-status--error">{error}</p>
+  if (error) return <FormMessage variant="error" className="page-status page-status--error">{error}</FormMessage>
 
   async function handleSubmit(e) {
     e.preventDefault()
@@ -82,7 +88,7 @@ export default function Prescriptions() {
   return (
     <div className="page">
       <h1 className="page-title">Prescriptions</h1>
-      {actionError && <p className="page-status page-status--error">{actionError}</p>}
+      <FormMessage variant="error" className="page-status page-status--error">{actionError}</FormMessage>
 
       {showForm ? (
         <form className="inline-form" onSubmit={handleSubmit}>
@@ -114,7 +120,7 @@ export default function Prescriptions() {
             <label htmlFor="rx-notes">Notes</label>
             <input id="rx-notes" value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} />
           </div>
-          {formError && <p className="auth-error">{formError}</p>}
+          <FormMessage variant="error">{formError}</FormMessage>
           <div className="btn-row">
             <button type="submit" className="btn-primary" disabled={saving}>
               {saving ? 'Saving…' : editingId ? 'Save Changes' : 'Add Prescription'}
@@ -123,13 +129,13 @@ export default function Prescriptions() {
           </div>
         </form>
       ) : (
-        <button className="add-toggle" onClick={() => { setForm(emptyForm); setEditingId(null); setShowForm(true) }}>+ Add a prescription</button>
+        <button className="add-toggle" aria-expanded={showForm} onClick={() => { setForm(emptyForm); setEditingId(null); setShowForm(true) }}>+ Add a prescription</button>
       )}
 
       {isCaregiver && <PrescriptionSummary rxs={rxs} />}
 
       <div className="card-list">
-        {rxs.map(rx => <RxCard key={rx.prescription_id} rx={rx} onDelete={handleDelete} onEdit={handleEditClick} />)}
+        {rxs.map(rx => <RxCard key={rx.prescription_id} rx={rx} isCaregiver={isCaregiver} onDelete={handleDelete} onEdit={handleEditClick} />)}
       </div>
     </div>
   )
@@ -142,17 +148,20 @@ function PrescriptionSummary({ rxs }) {
   return (
     <div className="stat-banner">
       <span className="stat-banner-label">{active.length} active · {urgent.length} due soon</span>
-      <span className="stat-banner-value">{urgent.length > 0 ? '⚠' : '✓'}</span>
+      <span className="stat-banner-value" aria-hidden="true">{urgent.length > 0 ? '⚠' : '✓'}</span>
     </div>
   )
 }
 
-function RxCard({ rx, onDelete, onEdit }) {
+function RxCard({ rx, isCaregiver, onDelete, onEdit }) {
+  const [expanded, setExpanded] = useState(false)
   const refill = rx.refill_date
     ? new Date(rx.refill_date + 'T00:00:00').toLocaleDateString('en-US', { month: 'long', day: 'numeric' })
     : null
   const daysLeft = rx.refill_date ? daysUntil(rx.refill_date) : null
   const urgent = daysLeft !== null && daysLeft <= 10
+  const hasDetails = Boolean(rx.dosage || rx.prescribing_doctor || rx.pharmacy_name || rx.notes)
+  const showDetails = isCaregiver || expanded
 
   return (
     <div className={`info-card ${urgent ? 'info-card--urgent' : ''}`}>
@@ -160,14 +169,25 @@ function RxCard({ rx, onDelete, onEdit }) {
         <span className="info-card-title">{rx.medication_name}</span>
         {urgent && <span className="badge badge--warn">Refill soon</span>}
       </div>
-      <div className="info-card-rows">
-        {rx.dosage && <InfoRow label="Dosage" value={rx.dosage} />}
-        {rx.prescribing_doctor && <InfoRow label="Doctor" value={rx.prescribing_doctor} />}
-        {rx.pharmacy_name && <InfoRow label="Pharmacy" value={rx.pharmacy_name} />}
-        {refill && <InfoRow label="Refill date" value={`${refill}${daysLeft !== null ? ` (${daysLeft} days)` : ''}`} />}
-        {rx.notes && <InfoRow label="Notes" value={rx.notes} />}
-      </div>
+      {refill && (
+        <p className="info-card-note">
+          {urgent ? 'Refill needed: ' : 'Next refill: '}{refill}{daysLeft !== null ? ` (${daysLeft} days)` : ''}
+        </p>
+      )}
+      {showDetails && (
+        <div className="info-card-rows">
+          {rx.dosage && <InfoRow label="Dosage" value={rx.dosage} />}
+          {rx.prescribing_doctor && <InfoRow label="Doctor" value={rx.prescribing_doctor} />}
+          {rx.pharmacy_name && <InfoRow label="Pharmacy" value={rx.pharmacy_name} />}
+          {rx.notes && <InfoRow label="Notes" value={rx.notes} />}
+        </div>
+      )}
       <div className="action-row">
+        {!isCaregiver && hasDetails && (
+          <button className="action-btn" aria-expanded={expanded} onClick={() => setExpanded(e => !e)}>
+            {expanded ? 'Hide details' : 'Show details'}
+          </button>
+        )}
         <button className="action-btn" onClick={() => onEdit(rx)} title="Edit this prescription">
           Edit
         </button>
