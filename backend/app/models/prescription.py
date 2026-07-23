@@ -10,6 +10,8 @@ class Prescription(Base):
     dosage = Column(Text)
     prescribing_doctor = Column(Text)
     pharmacy_name = Column(Text)
+    pharmacy_phone = Column(Text)
+    schedule_days = Column(Text)  # comma-separated day codes: mon,tue,wed,thu,fri,sat,sun; null = not tracked on the weekly board
     refill_date = Column(Date)
     is_active = Column(Boolean, default=True)
     notes = Column(Text)

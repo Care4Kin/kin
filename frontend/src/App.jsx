@@ -19,6 +19,7 @@ import Appointments from './pages/appointments/Appointments'
 import AskKin from './pages/ask-kin/AskKin'
 import Circle from './pages/circle/Circle'
 import Settings from './pages/settings/Settings'
+import Feedback from './pages/feedback/Feedback'
 
 function PrivateRoute({ children }) {
   const { user, loading } = useAuth()
@@ -51,6 +52,14 @@ export default function App() {
             element={
               <PrivateRoute>
                 <Settings />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="feedback"
+            element={
+              <PrivateRoute>
+                <Feedback />
               </PrivateRoute>
             }
           />

@@ -1,6 +1,7 @@
-// Validated categorical palette (dark-surface step, see dataviz skill) — fixed
-// order so slice color stays stable as amounts change from render to render.
-const CHART_COLORS = ['#3987e5', '#199e70', '#c98500', '#008300', '#9085e9', '#e66767', '#d55181']
+// Validated categorical palette (see dataviz skill) — fixed order so slice
+// color stays stable as amounts change from render to render. Values come
+// from the --chart-1..7 tokens, which are re-defined per theme in index.css.
+const CHART_COLORS = ['var(--chart-1)', 'var(--chart-2)', 'var(--chart-3)', 'var(--chart-4)', 'var(--chart-5)', 'var(--chart-6)', 'var(--chart-7)']
 const MAX_SLICES = 7
 
 export default function CategoryPieChart({ entries, title = 'Spending by Category' }) {

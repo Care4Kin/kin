@@ -5,7 +5,7 @@ import { useResourceList } from '../../hooks/useResourceList'
 import { usePlaidBank } from '../../hooks/usePlaidBank'
 import CategoryPieChart from '../../components/CategoryPieChart'
 import DetectedBankItems from '../../components/DetectedBankItems'
-import { nextOccurrence } from '../../utils/date'
+import { nextOccurrence, daysUntil } from '../../utils/date'
 import FormMessage from '../../components/FormMessage'
 import LoggedOutGate from '../../components/LoggedOutGate'
 import NoCircleGate from '../../components/NoCircleGate'
@@ -177,8 +177,9 @@ export default function Bills() {
 
 function BillRow({ bill, onTogglePaid, onDelete, onEdit }) {
   const due = new Date(bill.due_date + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+  const isLate = !bill.is_paid && daysUntil(bill.due_date) < 0
   return (
-    <div className={`bill-row row-stacked ${bill.is_paid ? 'bill-row--paid' : ''}`}>
+    <div className={`bill-row row-stacked ${bill.is_paid ? 'bill-row--paid' : ''} ${isLate ? 'bill-row--late' : ''}`}>
       <div className="row-between">
         <div className="bill-row-info">
           <span className="bill-row-name">{bill.name}</span>
@@ -186,9 +187,9 @@ function BillRow({ bill, onTogglePaid, onDelete, onEdit }) {
         </div>
         <div className="bill-row-meta">
           <span className="bill-row-amount">${Number(bill.amount || 0).toFixed(2)}</span>
-          <span className="bill-row-due">Due {due}</span>
-          <span className={`bill-pill ${bill.is_paid ? 'bill-pill--paid' : 'bill-pill--unpaid'}`}>
-            {bill.is_paid ? 'Paid' : 'Unpaid'}
+          <span className="bill-row-due">{isLate ? `Was due ${due}` : `Due ${due}`}</span>
+          <span className={`bill-pill ${bill.is_paid ? 'bill-pill--paid' : isLate ? 'bill-pill--late' : 'bill-pill--unpaid'}`}>
+            {bill.is_paid ? 'Paid' : isLate ? 'Late' : 'Unpaid'}
           </span>
         </div>
       </div>

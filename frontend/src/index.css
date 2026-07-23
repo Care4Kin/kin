@@ -1,28 +1,165 @@
 /* ─── Design tokens ─────────────────────────────────────────────── */
+/* Structural tokens only — color lives entirely in the 5 [data-theme]
+   blocks below so the whole app re-skins from a single attribute on
+   <html> (set by ThemeContext / the FOUC-prevention script in index.html).
+   Radius is deliberately small/"squarish" across every theme. */
 :root {
-  /* Dark green "family tree" palette. Values chosen and checked against
-     WCAG 2.1 AA contrast (4.5:1 text / 3:1 UI) for the pairings actually
-     used below — see comments on individual rules for the tighter cases. */
-  --bg:              #0A1F0F; /* deep near-black green — page background */
-  --surface:         #1C1C1C; /* charcoal — card background */
-  --surface-2:       #2E2E2E; /* charcoal — input/hover background */
-  --border:          #769888; /* muted sage — passes 3:1 on bg, surface, AND surface-2 (min 4.28:1) */
-  --green-dark:      #1B4332; /* dark forest green — banners */
-  --green-mid:       #2D6A4F; /* mid green — fill-only backgrounds (buttons) */
-  --green-mid-hover: #388160; /* hover shade for mid-green fills; keeps white text AA */
-  --green-light:     #52B788; /* fresh green — accents, borders, links on dark bg */
-  --green-pale:      #D8F3DC; /* pale green — high-emphasis text on green-dark */
-  --warn:            #C0392B; /* dark red — decorative/large-text only on dark bg */
-  --warn-light:      #E57373; /* red — safe for small text on dark backgrounds */
-  --warn-pale:       #F9E0DE; /* light pink card background for auth errors */
-  --warn-on-pale:    #A93226; /* darker red — 5.3:1 on warn-pale, safe for normal-size error text */
-  --text:            #FFFFFF;
-  --text-muted:      #95D5B2; /* light green — secondary text, passes AA everywhere */
   --font:         system-ui, -apple-system, sans-serif;
-  --radius:       12px;
-  --radius-sm:    8px;
+  --radius:       6px;
+  --radius-sm:    4px;
   --bottom-nav-h: 72px;
   --top-bar-h:    56px;
+}
+
+/* Every pairing below is checked against WCAG 2.1 AA (4.5:1 text / 3:1 UI)
+   using the app's relative-luminance verification script — all real
+   text/background and UI-component/background usages pass, most at AAA. */
+
+/* ─── A3 · White + Emerald (light) ───────────────────────────────── */
+[data-theme="white-emerald"] {
+  --bg:              #FFFFFF;
+  --surface:         #EFFAF4;
+  --surface-2:       #E1F3E9;
+  --border:          #4E7864;
+  --green-dark:      #D8F0E1;
+  --green-mid:       #017A50;
+  --green-mid-hover: #02724D;
+  --green-light:     #04724C;
+  --green-pale:      #0B5D3A;
+  --warn:            #B5301D;
+  --warn-border:     #C1341F;
+  --warn-light:      #A32C1A;
+  --warn-muted:      #F3C9C0;
+  --warn-pale:       #FBEAE7;
+  --warn-on-pale:    #8F2A19;
+  --text:            #0F2A1C;
+  --text-muted:      #3D6553;
+  --text-on-accent:  #FFFFFF;
+  --chart-1: #2a78d6; --chart-2: #1baf7a; --chart-3: #eda100; --chart-4: #008300;
+  --chart-5: #4a3aa7; --chart-6: #e34948; --chart-7: #e87ba4;
+}
+
+/* ─── D1 · Sunset Coral (light) ───────────────────────────────────── */
+/* Warm coral as the hero accent instead of the usual green — the warn
+   family is kept a distinctly darker, purer red than the coral accent so
+   "Late"/flag styling still reads as more urgent than an ordinary button. */
+[data-theme="sunset-coral"] {
+  --bg:              #FFF7F2;
+  --surface:         #FFFFFF;
+  --surface-2:       #F5E6DA;
+  --border:          #8A5C48;
+  --green-dark:      #FBE4D8;
+  --green-mid:       #B84F37;
+  --green-mid-hover: #A03D28;
+  --green-light:     #A03D28;
+  --green-pale:      #7A2E1C;
+  --warn:            #A5312B;
+  --warn-border:     #B23D2F;
+  --warn-light:      #93281F;
+  --warn-muted:      #F5DAD2;
+  --warn-pale:       #FBE5E0;
+  --warn-on-pale:    #7A2018;
+  --text:            #3A241B;
+  --text-muted:      #6B4A3A;
+  --text-on-accent:  #FFFFFF;
+  --chart-1: #2a78d6; --chart-2: #1baf7a; --chart-3: #eda100; --chart-4: #008300;
+  --chart-5: #4a3aa7; --chart-6: #e34948; --chart-7: #e87ba4;
+}
+
+/* ─── B2 · Sage & Cream (light, default) ─────────────────────────── */
+[data-theme="sage-cream"] {
+  --bg:              #EFEAD8;
+  --surface:         #FFFFFF;
+  --surface-2:       #E7E1CC;
+  --border:          #5C6E56;
+  --green-dark:      #E3EEE0;
+  --green-mid:       #4B7A5B;
+  --green-mid-hover: #3E6A4C;
+  --green-light:     #3A6047;
+  --green-pale:      #2F5A3F;
+  --warn:            #A5472F;
+  --warn-border:     #B85B3F;
+  --warn-light:      #8A3620;
+  --warn-muted:      #F0DCD2;
+  --warn-pale:       #F8E9E1;
+  --warn-on-pale:    #7A2E1A;
+  --text:            #26382C;
+  --text-muted:      #4F6353;
+  --text-on-accent:  #FFFFFF;
+  --chart-1: #2a78d6; --chart-2: #1baf7a; --chart-3: #eda100; --chart-4: #008300;
+  --chart-5: #4a3aa7; --chart-6: #e34948; --chart-7: #e87ba4;
+}
+
+/* ─── C2 · Soft Blue Slate (light) ───────────────────────────────── */
+[data-theme="soft-blue-slate"] {
+  --bg:              #F3F7FB;
+  --surface:         #FFFFFF;
+  --surface-2:       #E7EFF6;
+  --border:          #5A6E85;
+  --green-dark:      #DCEAF5;
+  --green-mid:       #2B5F8A;
+  --green-mid-hover: #234C6E;
+  --green-light:     #234C6E;
+  --green-pale:      #1F4664;
+  --warn:            #B23A2E;
+  --warn-border:     #C24E3F;
+  --warn-light:      #9A2F23;
+  --warn-muted:      #F1DCD7;
+  --warn-pale:       #FBEAE6;
+  --warn-on-pale:    #8A2A1F;
+  --text:            #1B2A3A;
+  --text-muted:      #516276;
+  --text-on-accent:  #FFFFFF;
+  --chart-1: #2a78d6; --chart-2: #1baf7a; --chart-3: #eda100; --chart-4: #008300;
+  --chart-5: #4a3aa7; --chart-6: #e34948; --chart-7: #e87ba4;
+}
+
+/* ─── C3 · Lavender Charcoal (dark) ───────────────────────────────── */
+[data-theme="lavender-charcoal"] {
+  --bg:              #1E1B2E;
+  --surface:         #2A2640;
+  --surface-2:       #352F50;
+  --border:          #8E86B4;
+  --green-dark:      #362F52;
+  --green-mid:       #6E56C4;
+  --green-mid-hover: #745DC6;
+  --green-light:     #9C86E0;
+  --green-pale:      #E4DDF5;
+  --warn:            #B5473A;
+  --warn-border:     #C15C4A;
+  --warn-light:      #E39B8A;
+  --warn-muted:      #402A38;
+  --warn-pale:       #F5DEDC;
+  --warn-on-pale:    #8B2E22;
+  --text:            #FFFFFF;
+  --text-muted:      #C6BEE0;
+  --text-on-accent:  #FFFFFF;
+  --chart-1: #3987e5; --chart-2: #199e70; --chart-3: #c98500; --chart-4: #008300;
+  --chart-5: #9085e9; --chart-6: #e66767; --chart-7: #d55181;
+}
+
+/* ─── D2 · Navy & Gold (dark) ─────────────────────────────────────── */
+[data-theme="navy-gold"] {
+  --bg:              #0E1B33;
+  --surface:         #182747;
+  --surface-2:       #22335A;
+  --border:          #7C90B8;
+  --green-dark:      #16305C;
+  --green-mid:       #1F3E73;
+  --green-mid-hover: #2A4E8C;
+  --green-light:     #E3B341;
+  --green-pale:      #F5DFA0;
+  --warn:            #A94636;
+  --warn-border:     #BD5A47;
+  --warn-light:      #E38B7A;
+  --warn-muted:      #3A2530;
+  --warn-pale:       #F6DFDA;
+  --warn-on-pale:    #8B2E22;
+  --text:            #FFFFFF;
+  --text-muted:      #B9C6E0;
+  --text-on-accent:  #FFFFFF;
+  --chart-1: #3987e5; --chart-2: #199e70; --chart-3: #c98500; --chart-4: #008300;
+  --chart-5: #9085e9; --chart-6: #e66767; --chart-7: #d55181;
 }
 
 /* ─── Reset ─────────────────────────────────────────────────────── */
@@ -207,7 +344,8 @@ button, input, select, textarea { font: inherit; }
 }
 
 .field-group input,
-.field-group select {
+.field-group select,
+.field-group textarea {
   background: var(--surface-2);
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
@@ -218,8 +356,15 @@ button, input, select, textarea { font: inherit; }
   width: 100%;
 }
 
+.field-group textarea {
+  resize: vertical;
+  min-height: 6rem;
+  line-height: 1.5;
+}
+
 .field-group input:focus-visible,
-.field-group select:focus-visible {
+.field-group select:focus-visible,
+.field-group textarea:focus-visible {
   outline: none;
   border-color: var(--green-light);
   box-shadow: 0 0 0 3px rgba(82, 183, 136, 0.35);
@@ -257,7 +402,7 @@ button, input, select, textarea { font: inherit; }
 
 .auth-mode-toggle button.active {
   background: var(--green-mid);
-  color: #fff;
+  color: var(--text-on-accent);
 }
 
 .google-signin-button {
@@ -289,6 +434,17 @@ button, input, select, textarea { font: inherit; }
 .role-option input[type="radio"] { position: absolute; opacity: 0; }
 .role-option-title { font-size: 1rem; font-weight: 700; color: var(--text); text-transform: none; letter-spacing: normal; }
 .role-option-desc { font-size: 0.85rem; color: var(--text-muted); text-transform: none; letter-spacing: normal; }
+
+.theme-swatch {
+  display: flex;
+  width: 100%;
+  height: 28px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  margin-bottom: 0.35rem;
+}
+.theme-swatch span { display: block; width: 38%; height: 100%; margin-left: auto; }
 
 .forgot-link {
   font-size: 0.9rem;
@@ -322,7 +478,7 @@ button, input, select, textarea { font: inherit; }
 /* ─── Buttons ────────────────────────────────────────────────────── */
 .btn-primary {
   background: var(--green-mid);
-  color: #fff;
+  color: var(--text-on-accent);
   border: none;
   border-radius: var(--radius-sm);
   padding: 0.85rem 1.5rem;
@@ -388,6 +544,9 @@ button, input, select, textarea { font: inherit; }
   padding: 1rem;
   cursor: pointer;
   transition: border-color 0.15s, background 0.15s;
+  /* Fixed height so every card matches — titles are kept short enough to
+     stay on one line, so this only needs to cover a 2-line description. */
+  min-height: 6.5rem;
 }
 
 .summary-card-count {
@@ -395,7 +554,7 @@ button, input, select, textarea { font: inherit; }
   top: 0.65rem;
   right: 0.65rem;
   background: var(--green-mid);
-  color: #fff;
+  color: var(--text-on-accent);
   font-size: 0.75rem;
   font-weight: 800;
   min-width: 1.5rem;
@@ -411,8 +570,8 @@ button, input, select, textarea { font: inherit; }
 
 .summary-card:hover { border-color: var(--green-light); background: var(--surface-2); }
 
-.summary-card--warn { border-left: 3px solid var(--warn); }
-.summary-card--warn:hover { border-color: var(--warn); }
+.summary-card--warn { border-left: 3px solid var(--warn-border); }
+.summary-card--warn:hover { border-color: var(--warn-border); }
 
 .summary-card h2 {
   font-size: 1rem;
@@ -427,6 +586,7 @@ button, input, select, textarea { font: inherit; }
   font-size: 0.8rem;
   color: var(--text-muted);
   line-height: 1.4;
+  min-height: calc(1.4em * 2); /* reserve 2 lines so every card matches the tallest, regardless of description length */
 }
 
 /* ─── Generic page ───────────────────────────────────────────────── */
@@ -500,6 +660,7 @@ button, input, select, textarea { font: inherit; }
 }
 
 .bill-row--paid { opacity: 0.55; }
+.bill-row--late { border-left: 3px solid var(--warn-border); }
 
 .bill-row-info { display: flex; flex-direction: column; gap: 0.2rem; }
 .bill-row-name { font-weight: 600; font-size: 1rem; }
@@ -526,7 +687,8 @@ button, input, select, textarea { font: inherit; }
 }
 
 .bill-pill--paid   { background: var(--green-dark); color: var(--green-pale); }
-.bill-pill--unpaid { background: #3d1e1e; color: var(--warn-light); }
+.bill-pill--unpaid { background: var(--warn-muted); color: var(--warn-light); }
+.bill-pill--late    { background: var(--warn); color: var(--text-on-accent); }
 
 /* ─── Card list ──────────────────────────────────────────────────── */
 .card-list { display: flex; flex-direction: column; gap: 0.6rem; }
@@ -541,7 +703,7 @@ button, input, select, textarea { font: inherit; }
   gap: 0.5rem;
 }
 
-.info-card--urgent { border-left: 3px solid var(--warn); }
+.info-card--urgent { border-left: 3px solid var(--warn-border); }
 
 .info-card-header {
   display: flex;
@@ -572,6 +734,8 @@ button, input, select, textarea { font: inherit; }
 }
 .info-row-value { font-size: 0.9rem; color: var(--text); }
 
+.phone-link { color: var(--green-light); text-decoration: underline; font-weight: 600; }
+
 /* ─── Badges ─────────────────────────────────────────────────────── */
 .badge {
   font-size: 0.7rem;
@@ -582,7 +746,7 @@ button, input, select, textarea { font: inherit; }
   letter-spacing: 0.04em;
   flex-shrink: 0;
 }
-.badge--warn { background: #3d1e1e; color: var(--warn-light); }
+.badge--warn { background: var(--warn-muted); color: var(--warn-light); }
 .badge--ok   { background: var(--green-dark); color: var(--green-pale); }
 
 /* ─── Stat banner ────────────────────────────────────────────────── */
@@ -599,7 +763,7 @@ button, input, select, textarea { font: inherit; }
 .stat-banner-label { font-size: 0.85rem; color: var(--text-muted); }
 .stat-banner-value { font-size: 1.4rem; font-weight: 800; color: var(--green-light); }
 
-.stat-banner--warn { border-left: 3px solid var(--warn); }
+.stat-banner--warn { border-left: 3px solid var(--warn-border); }
 .stat-banner--warn .stat-banner-value { color: var(--warn-light); }
 
 /* ─── Add / inline forms ─────────────────────────────────────────── */
@@ -695,6 +859,58 @@ button, input, select, textarea { font: inherit; }
   accent-color: var(--green-light);
 }
 
+/* ─── Day picker (prescription schedule form) ────────────────────── */
+.day-picker {
+  display: flex;
+  gap: 0.4rem;
+  margin-top: 0.25rem;
+}
+
+.day-picker-option {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 2.75rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+  color: var(--text-muted);
+  font-weight: 700;
+  cursor: pointer;
+  position: relative;
+}
+
+.day-picker-option input[type="checkbox"] { position: absolute; opacity: 0; }
+.day-picker-option:hover { border-color: var(--green-light); }
+.day-picker-option:focus-within { outline: 2px solid var(--green-light); outline-offset: 2px; }
+.day-picker-option--active { background: var(--green-mid); border-color: var(--green-mid); color: var(--text-on-accent); }
+
+/* ─── Weekly pill tracker strip ──────────────────────────────────── */
+.pill-week-strip {
+  display: flex;
+  gap: 0.35rem;
+  margin-top: 0.5rem;
+}
+
+.pill-week-day {
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.7rem;
+  font-weight: 700;
+  background: var(--surface-2);
+  color: var(--text-muted);
+  border: 1px solid var(--border);
+}
+
+.pill-week-day--unscheduled { opacity: 0.3; }
+.pill-week-day--taken { background: var(--green-mid); color: var(--text-on-accent); border-color: var(--green-mid); }
+.pill-week-day--today { border-color: var(--green-light); border-width: 2px; }
+
 /* ─── Caregiver "At a Glance" summary ────────────────────────────── */
 .caregiver-summary { margin-bottom: 1.5rem; }
 
@@ -714,7 +930,7 @@ button, input, select, textarea { font: inherit; }
   gap: 0.15rem;
 }
 
-.stat-tile--warn { border-left: 3px solid var(--warn); }
+.stat-tile--warn { border-left: 3px solid var(--warn-border); }
 
 .stat-tile-value { font-size: 1.3rem; font-weight: 800; color: var(--text); }
 .stat-tile-label {
@@ -752,7 +968,7 @@ button, input, select, textarea { font: inherit; }
 .filter-btn--active {
   background: var(--green-mid);
   border-color: var(--green-mid);
-  color: #fff;
+  color: var(--text-on-accent);
 }
 
 /* ─── Spacing utilities ──────────────────────────────────────────── */

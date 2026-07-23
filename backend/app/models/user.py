@@ -9,6 +9,7 @@ class User(Base):
     password_hash = Column(Text, nullable=False)
     full_name = Column(Text, nullable=False)
     role = Column(String(20), nullable=False)
+    theme = Column(String(30), nullable=False, default='sage-cream')
     phone = Column(Text)
     security_question = Column(Text)
     security_answer_hash = Column(Text)

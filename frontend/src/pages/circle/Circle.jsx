@@ -100,8 +100,15 @@ export default function Circle() {
 
       <div className="info-card mb-md">
         <span className="info-card-title">{circle.elder.full_name}</span>
-        <p className="info-card-note">The elder in this circle. Everyone below can only see what's checked off for them — never more.</p>
+        <p className="info-card-note">The elder in this circle. Each person listed below can only see what's checked off for them individually — never more.</p>
       </div>
+
+      {isElder && (
+        <div className="tip-banner mb-md">
+          <span className="tip-label">You're in control</span>
+          <p>You are the only one with complete access to your account. You choose who and what they are allowed to access or see.</p>
+        </div>
+      )}
 
       <h2 className="section-label">Family &amp; Caregivers</h2>
       <div className="card-list">
