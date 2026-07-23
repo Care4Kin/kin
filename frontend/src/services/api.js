@@ -104,4 +104,7 @@ export const api = {
   getPlaidSubscriptions: (circleId) => request('GET', `/api/circles/${circleId}/plaid/subscriptions`),
   getPlaidDetectedBills: (circleId) => request('GET', `/api/circles/${circleId}/plaid/bills`),
   removePlaidItem: (circleId, plaidItemId) => request('DELETE', `/api/circles/${circleId}/plaid/items/${plaidItemId}`),
+
+  // Ask Kin
+  askKin: (circleId, data) => request('POST', `/api/circles/${circleId}/ask-kin`, data),
 }

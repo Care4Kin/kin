@@ -780,3 +780,94 @@ button, input, select, textarea { font: inherit; }
 .pie-chart-swatch { width: 0.7rem; height: 0.7rem; border-radius: 3px; flex-shrink: 0; }
 .pie-chart-legend-label { text-transform: capitalize; color: var(--text); flex: 1; }
 .pie-chart-legend-value { color: var(--text-muted); font-variant-numeric: tabular-nums; }
+
+/* ─── Ask Kin (chat) ──────────────────────────────────────────────── */
+.ask-kin-page { padding-bottom: calc(4.5rem + 1rem); }
+
+.chat-suggestions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 1.25rem;
+}
+
+.chat-chip {
+  align-self: flex-start;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  color: var(--green-light);
+  font-size: 0.85rem;
+  padding: 0.5rem 0.9rem;
+  cursor: pointer;
+  text-align: left;
+}
+.chat-chip:hover { border-color: var(--green-light); }
+
+.chat-thread {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  margin-bottom: 1rem;
+}
+
+.chat-bubble {
+  max-width: 85%;
+  padding: 0.7rem 1rem;
+  border-radius: var(--radius);
+  font-size: 0.95rem;
+  line-height: 1.45;
+}
+
+.chat-bubble--user {
+  align-self: flex-end;
+  background: var(--green-mid);
+  color: #fff;
+  border-bottom-right-radius: 4px;
+}
+
+.chat-bubble--model {
+  align-self: flex-start;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-bottom-left-radius: 4px;
+}
+
+.chat-bubble--pending { color: var(--text-muted); font-style: italic; }
+
+.chat-input-bar {
+  position: fixed;
+  bottom: var(--bottom-nav-h);
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: 480px;
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+  padding: 0.75rem 1.25rem;
+  display: flex;
+  gap: 0.6rem;
+  z-index: 90;
+}
+
+.chat-input-bar input {
+  flex: 1;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 0.75rem 1rem;
+  color: var(--text);
+  font-size: 1rem;
+}
+
+.chat-input-bar input:focus {
+  outline: none;
+  border-color: var(--green-light);
+}
+
+.chat-input-bar button {
+  width: auto;
+  margin-top: 0;
+  padding: 0.75rem 1.25rem;
+}
