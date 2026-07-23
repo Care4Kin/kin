@@ -16,6 +16,7 @@ import Accounts from './pages/accounts/Accounts'
 import Flags from './pages/flags/Flags'
 import Notes from './pages/notes/Notes'
 import Appointments from './pages/appointments/Appointments'
+import AskKin from './pages/ask-kin/AskKin'
 import Circle from './pages/circle/Circle'
 import Settings from './pages/settings/Settings'
 
@@ -43,6 +44,7 @@ export default function App() {
           <Route path="flags" element={<Flags />} />
           <Route path="notes" element={<Notes />} />
           <Route path="appointments" element={<Appointments />} />
+          <Route path="ask-kin" element={<AskKin />} />
           <Route path="circle" element={<Circle />} />
           <Route
             path="settings"

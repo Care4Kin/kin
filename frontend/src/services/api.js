@@ -64,6 +64,8 @@ export const api = {
   removeMember: (circleId, membershipId) => request('DELETE', `/api/circles/${circleId}/members/${membershipId}`),
   updateMemberPermissions: (circleId, membershipId, data) => request('PATCH', `/api/circles/${circleId}/members/${membershipId}`, data),
   cancelInvitation: (circleId, invitationId) => request('DELETE', `/api/circles/${circleId}/invitations/${invitationId}`),
+  getDigestFrequency: (circleId) => request('GET', `/api/circles/${circleId}/digest-frequency`),
+  updateDigestFrequency: (circleId, digest_frequency) => request('PATCH', `/api/circles/${circleId}/digest-frequency`, { digest_frequency }),
 
   // Bills
   getBills: (circleId, params) => request('GET', `/api/circles/${circleId}/bills${params || ''}`),
@@ -114,4 +116,7 @@ export const api = {
   getPlaidSubscriptions: (circleId) => request('GET', `/api/circles/${circleId}/plaid/subscriptions`),
   getPlaidDetectedBills: (circleId) => request('GET', `/api/circles/${circleId}/plaid/bills`),
   removePlaidItem: (circleId, plaidItemId) => request('DELETE', `/api/circles/${circleId}/plaid/items/${plaidItemId}`),
+
+  // Ask Kin
+  askKin: (circleId, data) => request('POST', `/api/circles/${circleId}/ask-kin`, data),
 }

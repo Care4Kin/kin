@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Literal, Optional
 from pydantic import BaseModel
 
 class MemberInvite(BaseModel):
@@ -13,3 +13,8 @@ class MemberPermissionsUpdate(BaseModel):
     can_view_prescriptions: Optional[bool] = None
     can_view_accounts: Optional[bool] = None
     can_view_flags: Optional[bool] = None
+
+DigestFrequency = Literal['off', 'daily', 'weekly', 'biweekly', 'monthly']
+
+class DigestFrequencyUpdate(BaseModel):
+    digest_frequency: DigestFrequency

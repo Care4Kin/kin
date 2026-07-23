@@ -17,5 +17,7 @@ class Settings(BaseSettings):
     plaid_client_id: str = ''
     plaid_secret: str = ''
     plaid_env: str = 'sandbox'
+    gemini_api_key: str = ''
+    internal_task_secret: str = ''
 
 settings = Settings()

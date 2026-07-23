@@ -1,0 +1,17 @@
+name: Caregiver Digest
+
+on:
+  schedule:
+    # Runs daily -- each caregiver's own digest_frequency preference
+    # (set in Settings) decides who actually gets emailed each run.
+    - cron: '0 14 * * *'
+  workflow_dispatch: {}
+
+jobs:
+  send-digest:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger digest send
+        run: |
+          curl -sf -X POST "${{ secrets.KIN_BACKEND_URL }}/api/internal/digests/send" \
+            -H "X-Internal-Secret: ${{ secrets.KIN_INTERNAL_SECRET }}"
