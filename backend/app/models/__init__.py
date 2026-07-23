@@ -6,7 +6,9 @@ from app.models.bill import Bill
 from app.models.subscription import Subscription
 from app.models.account import Account
 from app.models.prescription import Prescription
+from app.models.pill_log import PillLog
 from app.models.flag import Flag
 from app.models.note import Note
 from app.models.appointment import Appointment
 from app.models.plaid_item import PlaidItem
+from app.models.feedback_message import FeedbackMessage

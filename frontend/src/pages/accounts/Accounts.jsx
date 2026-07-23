@@ -17,6 +17,10 @@ const CATEGORY_LABELS = {
   other: 'Other',
 }
 
+// Healthcare shown first — many users want quick access to pull up card
+// details, so it shouldn't depend on whichever order accounts were added in.
+const CATEGORY_ORDER = ['healthcare', 'bank', 'insurance', 'pharmacy', 'government', 'other']
+
 // Plaid's own account `type` field — separate from the manual-account
 // `category` above, since linked accounts aren't user-categorized.
 const PLAID_TYPE_LABELS = {
@@ -200,7 +204,9 @@ export default function Accounts() {
         <button className="add-toggle" aria-expanded={showForm} onClick={() => setShowForm(true)}>+ Add an account</button>
       )}
 
-      {Object.entries(grouped).map(([category, items]) => (
+      {Object.entries(grouped)
+        .sort(([a], [b]) => CATEGORY_ORDER.indexOf(a) - CATEGORY_ORDER.indexOf(b))
+        .map(([category, items]) => (
         <section key={category} className="mb-lg">
           <h2 className="section-label">{CATEGORY_LABELS[category] || category}</h2>
           <div className="card-list">

@@ -108,12 +108,12 @@ export default function Dashboard() {
 
       <div className="dashboard-grid">
         <SummaryCard title="Bills" description="Track what you owe and when it's due" href="/bills" accent="green" count={counts.bills} />
+        <SummaryCard title="Key Accounts" description="Bank, insurance, healthcare and more" href="/accounts" accent="green" count={accountsCount} />
         <SummaryCard title="Prescriptions" description="See upcoming refill dates" href="/prescriptions" accent="green" count={counts.prescriptions} />
         <SummaryCard title="Subscriptions" description="Review your monthly services" href="/subscriptions" accent="green" count={counts.subscriptions} />
         <SummaryCard title="Appointments" description="Upcoming visits and reminders" href="/appointments" accent="green" count={counts.appointments} />
-        <SummaryCard title="Important Accounts" description="Bank, insurance, healthcare and more" href="/accounts" accent="green" count={accountsCount} />
         <SummaryCard title="Ask Kin" description="Ask about bills, meds, subscriptions & more" href="/ask-kin" accent="green" />
-        <SummaryCard title="Suspicious Activity" description="Flag a scam call, email, or bill" href="/flags" accent="warn" />
+        <SummaryCard title="Flags" description="Flag a scam call, email, or bill" href="/flags" accent="warn" />
         <SummaryCard title="Shared Notes" description="Leave a message for your family" href="/notes" accent="green" count={counts.notes} />
         <SummaryCard title="My Circle" description="See who's helping and manage access" href="/circle" accent="green" count={counts.circle} />
       </div>

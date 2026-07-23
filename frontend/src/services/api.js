@@ -84,6 +84,9 @@ export const api = {
   createPrescription: (circleId, data) => request('POST', `/api/circles/${circleId}/prescriptions`, data),
   updatePrescription: (circleId, rxId, data) => request('PATCH', `/api/circles/${circleId}/prescriptions/${rxId}`, data),
   deletePrescription: (circleId, rxId) => request('DELETE', `/api/circles/${circleId}/prescriptions/${rxId}`),
+  getPillsTakenWeek: (circleId) => request('GET', `/api/circles/${circleId}/prescriptions/taken-week`),
+  markPillTaken: (circleId, rxId, takenDate) => request('POST', `/api/circles/${circleId}/prescriptions/${rxId}/taken${takenDate ? `?taken_date=${takenDate}` : ''}`),
+  unmarkPillTaken: (circleId, rxId, takenDate) => request('DELETE', `/api/circles/${circleId}/prescriptions/${rxId}/taken${takenDate ? `?taken_date=${takenDate}` : ''}`),
 
   // Accounts
   getAccounts: (circleId) => request('GET', `/api/circles/${circleId}/accounts`),
@@ -119,4 +122,8 @@ export const api = {
 
   // Ask Kin
   askKin: (circleId, data) => request('POST', `/api/circles/${circleId}/ask-kin`, data),
+
+  // Feedback (private per-user messages to the dev team)
+  getFeedback: () => request('GET', '/api/feedback'),
+  sendFeedback: (content) => request('POST', '/api/feedback', { content }),
 }

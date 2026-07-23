@@ -1,15 +1,31 @@
 import { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
+import { useTheme } from '../../context/ThemeContext'
 import { api } from '../../services/api'
 import { useFetch } from '../../hooks/useFetch'
 import FormMessage from '../../components/FormMessage'
+
+const THEME_GROUPS = [
+  { label: 'Light mode', themes: [
+    { id: 'white-emerald', label: 'White + Emerald', bg: '#FFFFFF', accent: '#017A50' },
+    { id: 'sage-cream', label: 'Default · Sage & Cream', bg: '#EFEAD8', accent: '#4B7A5B' },
+    { id: 'soft-blue-slate', label: 'Soft Blue Slate', bg: '#F3F7FB', accent: '#2B5F8A' },
+    { id: 'sunset-coral', label: 'Sunset Coral', bg: '#FFF7F2', accent: '#B84F37' },
+  ] },
+  { label: 'Dark mode', themes: [
+    { id: 'lavender-charcoal', label: 'Lavender Charcoal', bg: '#1E1B2E', accent: '#6E56C4' },
+    { id: 'navy-gold', label: 'Navy & Gold', bg: '#0E1B33', accent: '#1F3E73' },
+  ] },
+]
 
 const SECURITY_QUESTIONS = [
   "What was your first pet's name?",
   'What city were you born in?',
   "What is your mother's maiden name?",
   'What was the name of your first school?',
+  `What is the name of your current caregiver?`,
+  ""
 ]
 
 const DIGEST_FREQUENCIES = [
@@ -36,10 +52,16 @@ export default function Settings() {
   return (
     <div className="page">
       <h1 className="page-title">Settings</h1>
+      <AppearanceSection />
       <ProfileSection me={me} />
       {user?.role === 'caregiver' && <DigestFrequencySection circleId={circleId} />}
       <PasswordSection />
       <SecurityQuestionSection me={me} />
+      <section className="inline-form">
+        <h2 className="section-label">Feedback</h2>
+        <p className="field-hint mb-sm">Disagree with something, or find it uncomfortable? Tell the Kin team directly and privately.</p>
+        <Link to="/feedback" className="btn-secondary" style={{ display: 'block', textAlign: 'center', width: '100%' }}>Send Feedback</Link>
+      </section>
       <button className="btn-secondary" style={{ width: '100%' }} onClick={handleSignOut}>Sign Out</button>
     </div>
   )
@@ -85,6 +107,45 @@ function DigestFrequencySection({ circleId }) {
       </div>
       {error && <p className="auth-error">{error}</p>}
       {message && <p className="field-hint settings-success">{message}</p>}
+    </section>
+  )
+}
+
+function AppearanceSection() {
+  const { theme, setTheme } = useTheme()
+  const [error, setError] = useState('')
+
+  async function handleSelect(id) {
+    if (id === theme) return
+    setError('')
+    try {
+      await setTheme(id)
+    } catch (err) {
+      setError(err.message)
+    }
+  }
+
+  return (
+    <section className="inline-form">
+      <h2 className="section-label">Appearance</h2>
+      <p className="field-hint mb-sm">Pick the colors that are easiest on your eyes. Changes apply right away.</p>
+      {THEME_GROUPS.map(group => (
+        <fieldset className="field-group" key={group.label}>
+          <legend>{group.label}</legend>
+          <div className="role-choice">
+            {group.themes.map(t => (
+              <label key={t.id} className={`role-option ${theme === t.id ? 'role-option--active' : ''}`}>
+                <input type="radio" name="theme" value={t.id} checked={theme === t.id} onChange={() => handleSelect(t.id)} />
+                <span className="theme-swatch" style={{ background: t.bg }} aria-hidden="true">
+                  <span style={{ background: t.accent }} />
+                </span>
+                <span className="role-option-title">{t.label}</span>
+              </label>
+            ))}
+          </div>
+        </fieldset>
+      ))}
+      <FormMessage variant="error">{error}</FormMessage>
     </section>
   )
 }

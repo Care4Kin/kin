@@ -7,6 +7,8 @@ class PrescriptionCreate(BaseModel):
     dosage: Optional[str] = None
     prescribing_doctor: Optional[str] = None
     pharmacy_name: Optional[str] = None
+    pharmacy_phone: Optional[str] = None
+    schedule_days: Optional[str] = None
     refill_date: Optional[date] = None
     notes: Optional[str] = None
 
@@ -15,6 +17,8 @@ class PrescriptionUpdate(BaseModel):
     dosage: Optional[str] = None
     prescribing_doctor: Optional[str] = None
     pharmacy_name: Optional[str] = None
+    pharmacy_phone: Optional[str] = None
+    schedule_days: Optional[str] = None
     refill_date: Optional[date] = None
     is_active: Optional[bool] = None
     notes: Optional[str] = None

@@ -2,6 +2,7 @@ from pydantic import BaseModel
 from typing import Literal, Optional
 
 Role = Literal['elder', 'caregiver']
+Theme = Literal['white-emerald', 'sage-cream', 'soft-blue-slate', 'sunset-coral', 'lavender-charcoal', 'navy-gold']
 
 class RegisterRequest(BaseModel):
     email: str
@@ -42,12 +43,14 @@ class UserProfileOut(BaseModel):
     email: str
     full_name: str
     role: str
+    theme: str
     phone: Optional[str] = None
     security_question: Optional[str] = None
 
 class ProfileUpdateRequest(BaseModel):
     full_name: Optional[str] = None
     phone: Optional[str] = None
+    theme: Optional[Theme] = None
 
 class ChangePasswordRequest(BaseModel):
     current_password: str
