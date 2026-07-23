@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import FormMessage from './FormMessage'
 
 // Shows recurring bank charges (detected bills or subscriptions) that
 // aren't in the caller's real list yet, each with an Add button that turns
@@ -27,7 +28,7 @@ export default function DetectedBankItems({ items, existingNames, onAdd, title, 
     <section className={`mb-lg ${className}`}>
       <h2 className="section-label">{title}</h2>
       {hint && <p className="field-hint mb-sm">{hint}</p>}
-      {error && <p className="auth-error mb-sm">{error}</p>}
+      <FormMessage variant="error" className="auth-error mb-sm">{error}</FormMessage>
       <div className="card-list">
         {addable.map(item => (
           <div key={item.merchant} className="info-card">

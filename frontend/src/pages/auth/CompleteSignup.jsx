@@ -2,6 +2,8 @@ import { useState } from 'react'
 import { useNavigate, useLocation, Navigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import { api } from '../../services/api'
+import FormMessage from '../../components/FormMessage'
+import RolePicker from '../../components/RolePicker'
 
 const SECURITY_QUESTIONS = [
   "What was your first pet's name?",
@@ -38,8 +40,8 @@ export default function CompleteSignup() {
         security_question: securityAnswer.trim() ? securityQuestion : null,
         security_answer: securityAnswer.trim() || null,
       })
-      login({ user_id: data.user_id, role: data.role, full_name: data.full_name }, data.token)
-      navigate('/', { state: { justSignedUp: true } })
+      login({ user_id: data.user_id, role: data.role, full_name: data.full_name, email: data.email }, data.token)
+      navigate('/dashboard', { state: { justSignedUp: true } })
     } catch (err) {
       setError(err.message)
     } finally {
@@ -48,7 +50,7 @@ export default function CompleteSignup() {
   }
 
   return (
-    <div className="auth-page">
+    <main className="auth-page">
       <div className="auth-card">
         <h1 className="auth-title">Finish Setting Up</h1>
         <p className="field-hint mb-md">
@@ -57,21 +59,7 @@ export default function CompleteSignup() {
         </p>
 
         <form onSubmit={handleSubmit} className="auth-form">
-          <div className="field-group">
-            <label>I am a…</label>
-            <div className="role-choice">
-              <label className={`role-option ${role === 'elder' ? 'role-option--active' : ''}`}>
-                <input type="radio" name="role" value="elder" checked={role === 'elder'} onChange={() => setRole('elder')} />
-                <span className="role-option-title">Older Adult</span>
-                <span className="role-option-desc">I want my family to help me keep track of things</span>
-              </label>
-              <label className={`role-option ${role === 'caregiver' ? 'role-option--active' : ''}`}>
-                <input type="radio" name="role" value="caregiver" checked={role === 'caregiver'} onChange={() => setRole('caregiver')} />
-                <span className="role-option-title">Family Member / Caregiver</span>
-                <span className="role-option-desc">I want to help a loved one stay on top of things</span>
-              </label>
-            </div>
-          </div>
+          <RolePicker value={role} onChange={setRole} />
 
           <div className="field-group">
             <label htmlFor="security_question">Security Question (optional)</label>
@@ -86,13 +74,13 @@ export default function CompleteSignup() {
             <input id="security_answer" type="text" value={securityAnswer} onChange={e => setSecurityAnswer(e.target.value)} />
           </div>
 
-          {error && <p className="auth-error">{error}</p>}
+          <FormMessage variant="error">{error}</FormMessage>
 
           <button type="submit" className="btn-primary" disabled={loading}>
             {loading ? 'Setting up…' : 'Finish'}
           </button>
         </form>
       </div>
-    </div>
+    </main>
   )
 }

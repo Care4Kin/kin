@@ -6,7 +6,7 @@
   --bg:              #0A1F0F; /* deep near-black green — page background */
   --surface:         #1C1C1C; /* charcoal — card background */
   --surface-2:       #2E2E2E; /* charcoal — input/hover background */
-  --border:          #5A7A68; /* muted sage — passes 3:1 on both bg and surface */
+  --border:          #769888; /* muted sage — passes 3:1 on bg, surface, AND surface-2 (min 4.28:1) */
   --green-dark:      #1B4332; /* dark forest green — banners */
   --green-mid:       #2D6A4F; /* mid green — fill-only backgrounds (buttons) */
   --green-mid-hover: #388160; /* hover shade for mid-green fills; keeps white text AA */
@@ -27,6 +27,15 @@
 
 /* ─── Reset ─────────────────────────────────────────────────────── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+fieldset, legend { border: none; }
+
+/* ─── Focus visibility ───────────────────────────────────────────── */
+/* One consistent, highly-visible keyboard-focus treatment app-wide.
+   :focus-visible (not :focus) so mouse/touch clicks don't show a ring. */
+:focus-visible {
+  outline: 2px solid var(--green-light);
+  outline-offset: 2px;
+}
 
 body {
   font-family: var(--font);
@@ -89,9 +98,23 @@ button, input, select, textarea { font: inherit; }
   font-size: 1.2rem;
   color: var(--text-muted);
   line-height: 1;
+  padding: 0.6rem;
+  margin: -0.6rem;
+  border-radius: var(--radius-sm);
 }
 
 .top-bar-settings:hover { color: var(--green-light); }
+
+.top-bar-login {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--green-light);
+  padding: 0.5rem 0.75rem;
+  margin: -0.5rem -0.75rem;
+  border-radius: var(--radius-sm);
+}
+
+.top-bar-login:hover { background: var(--surface-2); }
 
 /* ─── Main content ───────────────────────────────────────────────── */
 .main-content {
@@ -173,7 +196,9 @@ button, input, select, textarea { font: inherit; }
   gap: 0.35rem;
 }
 
-.field-group label {
+.field-group label,
+.field-group legend,
+.field-group .field-group-label {
   font-size: 0.9rem;
   font-weight: 600;
   color: var(--text-muted);
@@ -193,10 +218,11 @@ button, input, select, textarea { font: inherit; }
   width: 100%;
 }
 
-.field-group input:focus,
-.field-group select:focus {
+.field-group input:focus-visible,
+.field-group select:focus-visible {
   outline: none;
   border-color: var(--green-light);
+  box-shadow: 0 0 0 3px rgba(82, 183, 136, 0.35);
 }
 
 .field-group select option { background: var(--surface-2); }
@@ -258,6 +284,7 @@ button, input, select, textarea { font: inherit; }
 
 .role-option:hover { border-color: var(--green-light); }
 .role-option--active { border-color: var(--green-light); background: var(--green-dark); }
+.role-option:focus-within { outline: 2px solid var(--green-light); outline-offset: 2px; }
 
 .role-option input[type="radio"] { position: absolute; opacity: 0; }
 .role-option-title { font-size: 1rem; font-weight: 700; color: var(--text); text-transform: none; letter-spacing: normal; }
@@ -422,6 +449,31 @@ button, input, select, textarea { font: inherit; }
 
 .page-status--error { color: var(--warn-light); }
 
+.page-description {
+  font-size: 0.95rem;
+  color: var(--text-muted);
+  line-height: 1.5;
+  margin-bottom: 1.5rem;
+}
+
+.page-title + .page-description { margin-top: -0.6rem; }
+
+/* ─── Logged-out page teaser ──────────────────────────────────────── */
+.login-gate {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  align-items: flex-start;
+}
+
+.login-gate-actions { display: flex; gap: 0.6rem; width: 100%; }
+.login-gate-actions .btn-primary,
+.login-gate-actions .btn-secondary { width: auto; flex: 1; margin-top: 0; }
+
 /* ─── Section labels ─────────────────────────────────────────────── */
 .section-label {
   font-size: 0.75rem;
@@ -546,6 +598,9 @@ button, input, select, textarea { font: inherit; }
 }
 .stat-banner-label { font-size: 0.85rem; color: var(--text-muted); }
 .stat-banner-value { font-size: 1.4rem; font-weight: 800; color: var(--green-light); }
+
+.stat-banner--warn { border-left: 3px solid var(--warn); }
+.stat-banner--warn .stat-banner-value { color: var(--warn-light); }
 
 /* ─── Add / inline forms ─────────────────────────────────────────── */
 .add-toggle {
@@ -781,6 +836,74 @@ button, input, select, textarea { font: inherit; }
 .pie-chart-legend-label { text-transform: capitalize; color: var(--text); flex: 1; }
 .pie-chart-legend-value { color: var(--text-muted); font-variant-numeric: tabular-nums; }
 
+/* ─── Landing page ────────────────────────────────────────────────── */
+.landing-page {
+  max-width: 480px;
+  margin: 0 auto;
+  padding: 2rem 1.25rem 3rem;
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.landing-hero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 1rem;
+}
+
+.landing-hero--closing { gap: 0.85rem; padding-top: 0.5rem; border-top: 1px solid var(--border); }
+
+.landing-tagline {
+  font-size: 1.7rem;
+  font-weight: 800;
+  line-height: 1.25;
+  color: var(--text);
+}
+
+.landing-tagline--sm { font-size: 1.3rem; }
+
+.landing-subhead {
+  font-size: 1rem;
+  line-height: 1.55;
+  color: var(--text-muted);
+  max-width: 34ch;
+}
+
+.landing-cta-row { display: flex; flex-direction: column; gap: 0.6rem; width: 100%; }
+
+.landing-features-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.85rem;
+}
+
+.landing-feature-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1rem;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.landing-feature-item:hover { border-color: var(--green-light); background: var(--surface-2); }
+
+.landing-feature-icon { font-size: 1.4rem; line-height: 1; }
+.landing-feature-label { font-size: 0.95rem; font-weight: 700; color: var(--green-light); }
+.landing-feature-desc { font-size: 0.8rem; color: var(--text-muted); line-height: 1.4; }
+
+.landing-footer {
+  text-align: center;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
 /* ─── Ask Kin (chat) ──────────────────────────────────────────────── */
 .ask-kin-page { padding-bottom: calc(4.5rem + 1rem); }
 
@@ -822,7 +945,7 @@ button, input, select, textarea { font: inherit; }
 .chat-bubble--user {
   align-self: flex-end;
   background: var(--green-mid);
-  color: #fff;
+  color: var(--text-on-accent);
   border-bottom-right-radius: 4px;
 }
 

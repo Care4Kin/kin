@@ -3,6 +3,8 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import { api } from '../../services/api'
 import GoogleSignInButton from '../../components/auth/GoogleSignInButton'
+import FormMessage from '../../components/FormMessage'
+import RolePicker from '../../components/RolePicker'
 
 const SECURITY_QUESTIONS = [
   "What was your first pet's name?",
@@ -50,8 +52,8 @@ export default function Register() {
         security_answer: form.security_answer,
       })
       const data = await api.login({ email: form.email, password: form.password })
-      login({ user_id: data.user_id, role: data.role, full_name: data.full_name }, data.token)
-      navigate('/', { state: { justSignedUp: true } })
+      login({ user_id: data.user_id, role: data.role, full_name: data.full_name, email: data.email }, data.token)
+      navigate('/dashboard', { state: { justSignedUp: true } })
     } catch (err) {
       setError(err.message)
     } finally {
@@ -68,15 +70,15 @@ export default function Register() {
         return
       }
       // Email already had an account — just log them in.
-      login({ user_id: data.user_id, role: data.role, full_name: data.full_name }, data.token)
-      navigate('/', { state: { justSignedUp: true } })
+      login({ user_id: data.user_id, role: data.role, full_name: data.full_name, email: data.email }, data.token)
+      navigate('/dashboard', { state: { justSignedUp: true } })
     } catch (err) {
       setError(err.message)
     }
   }
 
   return (
-    <div className="auth-page">
+    <main className="auth-page">
       <div className="auth-card">
         <h1 className="auth-title">Sign Up</h1>
 
@@ -145,13 +147,7 @@ export default function Register() {
             />
           </div>
 
-          <div className="field-group">
-            <label htmlFor="role">I am a…</label>
-            <select id="role" name="role" value={form.role} onChange={handleChange}>
-              <option value="elder">Older Adult</option>
-              <option value="caregiver">Family Member / Caregiver</option>
-            </select>
-          </div>
+          <RolePicker value={form.role} onChange={role => setForm({ ...form, role })} />
 
           <div className="field-group">
             <label htmlFor="security_question">Security Question</label>
@@ -178,7 +174,7 @@ export default function Register() {
             />
           </div>
 
-          {error && <p className="auth-error">{error}</p>}
+          <FormMessage variant="error">{error}</FormMessage>
 
           <button type="submit" className="btn-primary" disabled={loading}>
             {loading ? 'Creating account…' : 'Sign Up'}
@@ -192,6 +188,6 @@ export default function Register() {
           <Link to="/login">Log In</Link>
         </p>
       </div>
-    </div>
+    </main>
   )
 }

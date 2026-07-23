@@ -16,6 +16,11 @@ function ensureCircle(userData) {
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null)
   const [circleId, setCircleId] = useState(null)
+  // Distinguishes "still checking for a circle" from "checked, and there
+  // isn't one" — circleId alone can't tell those apart, since it's null in
+  // both cases. Pages use this to show a real message instead of an
+  // infinite loading state when a caregiver has no circle to join yet.
+  const [circleChecked, setCircleChecked] = useState(false)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -24,7 +29,10 @@ export function AuthProvider({ children }) {
     if (token && stored) {
       const u = JSON.parse(stored)
       setUser(u)
-      ensureCircle(u).then(c => setCircleId(c.circle_id)).catch(() => {}).finally(() => setLoading(false))
+      ensureCircle(u)
+        .then(c => setCircleId(c.circle_id))
+        .catch(() => {})
+        .finally(() => { setCircleChecked(true); setLoading(false) })
     } else {
       setLoading(false)
     }
@@ -34,7 +42,11 @@ export function AuthProvider({ children }) {
     localStorage.setItem('token', token)
     localStorage.setItem('user', JSON.stringify(userData))
     setUser(userData)
-    ensureCircle(userData).then(c => setCircleId(c.circle_id)).catch(() => {})
+    setCircleChecked(false)
+    ensureCircle(userData)
+      .then(c => setCircleId(c.circle_id))
+      .catch(() => {})
+      .finally(() => setCircleChecked(true))
   }
 
   function logout() {
@@ -43,10 +55,11 @@ export function AuthProvider({ children }) {
     localStorage.removeItem('user')
     setUser(null)
     setCircleId(null)
+    setCircleChecked(false)
   }
 
   return (
-    <AuthContext.Provider value={{ user, circleId, login, logout, loading }}>
+    <AuthContext.Provider value={{ user, circleId, circleChecked, login, logout, loading }}>
       {children}
     </AuthContext.Provider>
   )

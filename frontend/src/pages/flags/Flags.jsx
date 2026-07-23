@@ -2,6 +2,9 @@ import { useState } from 'react'
 import { useAuth } from '../../context/AuthContext'
 import { api } from '../../services/api'
 import { useResourceList } from '../../hooks/useResourceList'
+import FormMessage from '../../components/FormMessage'
+import LoggedOutGate from '../../components/LoggedOutGate'
+import NoCircleGate from '../../components/NoCircleGate'
 
 const TYPE_LABELS = { call: 'Phone Call', email: 'Email', text: 'Text', bill: 'Bill', other: 'Other' }
 
@@ -18,7 +21,8 @@ const FILTERS = [
 
 export default function Flags() {
   const [filter, setFilter] = useState('all')
-  const { circleId } = useAuth()
+  const { circleId, user, loading: authLoading, circleChecked } = useAuth()
+  const isCaregiver = user?.role === 'caregiver'
   const { items: flags, setItems: setFlags, loading, error } = useResourceList(() => api.getFlags(circleId), [circleId], !!circleId)
   const [showForm, setShowForm] = useState(false)
   const [form, setForm] = useState(emptyForm)
@@ -27,8 +31,11 @@ export default function Flags() {
   const [editingId, setEditingId] = useState(null)
   const [actionError, setActionError] = useState('')
 
+  if (authLoading) return null
+  if (!user) return <LoggedOutGate title="Suspicious Activity" description="Flag a scam call, email, or bill so your family can help you sort it out." />
+  if (circleChecked && !circleId) return <NoCircleGate title="Suspicious Activity" />
   if (!circleId || loading) return <p className="page-status">Loading…</p>
-  if (error) return <p className="page-status page-status--error">{error}</p>
+  if (error) return <FormMessage variant="error" className="page-status page-status--error">{error}</FormMessage>
 
   async function handleSubmit(e) {
     e.preventDefault()
@@ -96,7 +103,9 @@ const visible = filter === 'all'
   return (
     <div className="page">
       <h1 className="page-title">Suspicious Activity</h1>
-      {actionError && <p className="page-status page-status--error">{actionError}</p>}
+      <FormMessage variant="error" className="page-status page-status--error">{actionError}</FormMessage>
+
+      {isCaregiver && <FlagSummary flags={flags} />}
 
     <div className="filter-bar">
       {FILTERS.map(f => (
@@ -104,6 +113,7 @@ const visible = filter === 'all'
           key={f.value}
           className={`filter-btn ${filter === f.value ? 'filter-btn--active' : ''}`}
           onClick={() => setFilter(f.value)}
+          aria-pressed={filter === f.value}
         >
           {f.label}
         </button>
@@ -132,7 +142,7 @@ const visible = filter === 'all'
             <label htmlFor="flag-description">What did you notice?</label>
             <input id="flag-description" required value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} />
           </div>
-          {formError && <p className="auth-error">{formError}</p>}
+          <FormMessage variant="error">{formError}</FormMessage>
           <div className="btn-row">
             <button type="submit" className="btn-primary" disabled={saving}>
               {saving ? 'Saving…' : editingId ? 'Save Changes' : 'Flag It'}
@@ -141,7 +151,7 @@ const visible = filter === 'all'
           </div>
         </form>
       ) : (
-        <button className="add-toggle" onClick={() => { setForm(emptyForm); setEditingId(null); setShowForm(true) }}>+ Flag something suspicious</button>
+        <button className="add-toggle" aria-expanded={showForm} onClick={() => { setForm(emptyForm); setEditingId(null); setShowForm(true) }}>+ Flag something suspicious</button>
       )}
 
       {open.length > 0 && (
@@ -161,6 +171,18 @@ const visible = filter === 'all'
           </div>
         </section>
       )}
+    </div>
+  )
+}
+
+function FlagSummary({ flags }) {
+  const open = flags.filter(f => !f.is_resolved)
+  const highSeverity = open.filter(f => f.severity === 'high')
+
+  return (
+    <div className={`stat-banner ${highSeverity.length > 0 ? 'stat-banner--warn' : ''}`}>
+      <span className="stat-banner-label">{open.length} open · {highSeverity.length} high severity</span>
+      <span className="stat-banner-value" aria-hidden="true">{highSeverity.length > 0 ? '⚠' : '✓'}</span>
     </div>
   )
 }
