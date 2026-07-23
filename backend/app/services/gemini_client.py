@@ -1,5 +1,8 @@
+from typing import Literal
+
 from google import genai
 from google.genai import types
+from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from app.config import settings
@@ -90,3 +93,28 @@ def answer_kin_question(
         ),
     )
     return response.text.strip()
+
+class FlagRiskAssessment(BaseModel):
+    risk_level: Literal['low', 'medium', 'high']
+    explanation: str
+    suggested_action: str
+
+def assess_flag_risk(flag_type: str, description: str) -> FlagRiskAssessment:
+    prompt = (
+        f"A family member reported this as a {flag_type}: \"{description}\". "
+        "Assess how closely this matches a common scam pattern (for example a "
+        "grandparent scam, tech support scam, gift card scam, or phishing "
+        "attempt) in plain language a non-technical elder or caregiver can "
+        "understand. If it doesn't look scam-related, say so plainly and rate "
+        "it low. Give a short suggested next step."
+    )
+    client = genai.Client(api_key=settings.gemini_api_key)
+    response = client.models.generate_content(
+        model='gemini-flash-latest',
+        contents=prompt,
+        config=types.GenerateContentConfig(
+            response_mime_type='application/json',
+            response_schema=FlagRiskAssessment,
+        ),
+    )
+    return response.parsed
