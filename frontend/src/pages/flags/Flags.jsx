@@ -172,10 +172,22 @@ function FlagCard({ flag, onResolve, onEdit, onDelete }) {
         <span className="info-card-title">{TYPE_LABELS[flag.type] || flag.type}</span>
         <div style={{ display: 'flex', gap: '0.4rem' }}>
           {flag.severity === 'high' && <span className="badge badge--warn">High severity</span>}
+          {flag.ai_risk_level && (
+            <span className={`badge ${flag.ai_risk_level === 'low' ? 'badge--ok' : 'badge--warn'}`}>
+              {flag.ai_risk_level === 'low' ? 'Low risk' : flag.ai_risk_level === 'medium' ? 'Medium risk' : 'High risk'}
+            </span>
+          )}
           {flag.is_resolved && <span className="badge badge--ok">Resolved</span>}
         </div>
       </div>
       <p className="info-card-note">{flag.description}</p>
+      {flag.ai_explanation && (
+        <div className="flag-ai-assessment">
+          <span className="tip-label">AI risk read</span>
+          <p>{flag.ai_explanation}</p>
+          {flag.ai_suggested_action && <p className="flag-ai-action"><strong>Suggested next step:</strong> {flag.ai_suggested_action}</p>}
+        </div>
+      )}
       <div className="action-row">
         <button className="action-btn" onClick={() => onResolve(flag)} title={flag.is_resolved ? 'Reopen this flag' : 'Mark this as resolved'}>
           {flag.is_resolved ? 'Reopen' : 'Mark Resolved'}

@@ -871,3 +871,18 @@ button, input, select, textarea { font: inherit; }
   margin-top: 0;
   padding: 0.75rem 1.25rem;
 }
+
+/* ─── Flag AI risk assessment ─────────────────────────────────────── */
+.flag-ai-assessment {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 0.75rem 0.85rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.flag-ai-assessment p { font-size: 0.9rem; color: var(--text); line-height: 1.45; }
+
+.flag-ai-action { color: var(--text-muted); }
