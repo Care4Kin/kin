@@ -4,10 +4,14 @@ import { api } from '../services/api'
 
 const ThemeContext = createContext(null)
 const DEFAULT_THEME = 'sage-cream'
+const VALID_THEMES = ['white-emerald', 'sage-cream', 'soft-blue-slate', 'sunset-coral', 'lavender-charcoal', 'navy-gold']
 
 export function ThemeProvider({ children }) {
   const { user, loading: authLoading } = useAuth()
-  const [theme, setThemeState] = useState(() => localStorage.getItem('theme') || DEFAULT_THEME)
+  const [theme, setThemeState] = useState(() => {
+    const stored = localStorage.getItem('theme')
+    return VALID_THEMES.includes(stored) ? stored : DEFAULT_THEME
+  })
 
   // AuthContext's `user` only carries the login-response shape (no theme) —
   // fetch the full profile once we know who's logged in.
@@ -19,7 +23,7 @@ export function ThemeProvider({ children }) {
       return
     }
     api.getMe().then(me => {
-      const resolved = me.theme || DEFAULT_THEME
+      const resolved = VALID_THEMES.includes(me.theme) ? me.theme : DEFAULT_THEME
       setThemeState(resolved)
       localStorage.setItem('theme', resolved)
     }).catch(() => {})

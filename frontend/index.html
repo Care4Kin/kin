@@ -7,7 +7,9 @@
     <title>Kin</title>
     <script>
       (function () {
-        var theme = localStorage.getItem('theme') || 'sage-cream'
+        var VALID_THEMES = ['white-emerald', 'sage-cream', 'soft-blue-slate', 'sunset-coral', 'lavender-charcoal', 'navy-gold']
+        var theme = localStorage.getItem('theme')
+        if (VALID_THEMES.indexOf(theme) === -1) theme = 'sage-cream'
         document.documentElement.setAttribute('data-theme', theme)
       })()
     </script>

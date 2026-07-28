@@ -38,6 +38,10 @@ class ResetPasswordRequest(BaseModel):
     security_answer: str
     new_password: str
 
+class SecurityLoginRequest(BaseModel):
+    email: str
+    security_answer: str
+
 class UserProfileOut(BaseModel):
     user_id: int
     email: str

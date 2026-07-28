@@ -1,6 +1,7 @@
 from datetime import date, timedelta
 from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 from app.database import get_db
 from app.middleware.auth import require_permission
@@ -66,12 +67,15 @@ def mark_taken(circle_id: int, prescription_id: int, taken_date: Optional[date] 
     _get_rx(circle_id, prescription_id, db)
     target = taken_date or date.today()
     monday, sunday = _week_bounds()
-    if not (monday <= target <= sunday):
+    if not (monday - timedelta(days=1) <= target <= sunday + timedelta(days=1)):
         raise HTTPException(400, 'Date must be within the current week')
     existing = db.query(PillLog).filter(PillLog.prescription_id == prescription_id, PillLog.taken_date == target).first()
     if not existing:
         db.add(PillLog(prescription_id=prescription_id, taken_date=target))
-        db.commit()
+        try:
+            db.commit()
+        except IntegrityError:
+            db.rollback()
     return {'message': 'Marked as taken'}
 
 @router.delete('/{circle_id}/prescriptions/{prescription_id}/taken')
@@ -79,7 +83,7 @@ def unmark_taken(circle_id: int, prescription_id: int, taken_date: Optional[date
     _get_rx(circle_id, prescription_id, db)
     target = taken_date or date.today()
     monday, sunday = _week_bounds()
-    if not (monday <= target <= sunday):
+    if not (monday - timedelta(days=1) <= target <= sunday + timedelta(days=1)):
         raise HTTPException(400, 'Date must be within the current week')
     db.query(PillLog).filter(PillLog.prescription_id == prescription_id, PillLog.taken_date == target).delete()
     db.commit()

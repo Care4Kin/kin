@@ -95,6 +95,7 @@ export default function Dashboard() {
   if (authLoading) return null
   if (!user) return <LoggedOutGate title="Dashboard" description="Your home base — bills, prescriptions, appointments, and more, all in one place, shared with your family." />
   if (circleChecked && !circleId) return <NoCircleGate title="Dashboard" />
+  if (!circleId) return <p className="page-status">Loading…</p>
 
   return (
     <div className="page dashboard">

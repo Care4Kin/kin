@@ -47,6 +47,7 @@ export const api = {
   logout: () => request('POST', '/api/auth/logout'),
   getSecurityQuestion: (email) => request('GET', `/api/auth/security-question?email=${encodeURIComponent(email)}`),
   resetPassword: (data) => request('POST', '/api/auth/reset-password', data),
+  loginWithSecurityQuestion: (data) => request('POST', '/api/auth/security-question/login', data),
   getMe: () => request('GET', '/api/auth/me'),
   updateProfile: (data) => request('PATCH', '/api/auth/me', data),
   changePassword: (data) => request('POST', '/api/auth/change-password', data),

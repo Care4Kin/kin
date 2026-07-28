@@ -10,7 +10,7 @@ from app.middleware.auth import get_current_user
 from app.models.user import User
 from app.schemas.user import (
     RegisterRequest, LoginRequest, UserOut, LoginOut,
-    SecurityQuestionOut, ResetPasswordRequest,
+    SecurityQuestionOut, ResetPasswordRequest, SecurityLoginRequest,
     UserProfileOut, ProfileUpdateRequest, ChangePasswordRequest, SecurityQuestionUpdateRequest,
     PhoneSendCodeRequest, PhoneVerifyCodeRequest, GoogleAuthRequest, GoogleCompleteRequest,
 )
@@ -32,9 +32,39 @@ def normalize_answer(answer: str) -> str:
 def normalize_email(email: str) -> str:
     return email.strip().lower()
 
+def normalize_phone(phone: str) -> str:
+    digits = ''.join(c for c in phone if c.isdigit())
+    if phone.strip().startswith('+'):
+        return '+' + digits
+    if len(digits) == 10:
+        return '+1' + digits
+    return '+' + digits
+
 def make_token(user_id: int) -> str:
     expire = datetime.now(timezone.utc) + timedelta(minutes=settings.access_token_expire_minutes)
     return jwt.encode({'sub': str(user_id), 'exp': expire}, settings.secret_key, algorithm=settings.algorithm)
+
+MAX_SECURITY_ATTEMPTS = 5
+SECURITY_LOCKOUT_MINUTES = 15
+
+def _check_security_lockout(user: User):
+    if user.security_question_locked_until:
+        locked_until = user.security_question_locked_until
+        if locked_until.tzinfo is None:
+            locked_until = locked_until.replace(tzinfo=timezone.utc)
+        if locked_until > datetime.now(timezone.utc):
+            raise HTTPException(429, 'Too many incorrect answers. Please try again later.')
+
+def _record_failed_security_attempt(user: User, db: Session):
+    user.security_question_attempts = (user.security_question_attempts or 0) + 1
+    if user.security_question_attempts >= MAX_SECURITY_ATTEMPTS:
+        user.security_question_locked_until = datetime.now(timezone.utc) + timedelta(minutes=SECURITY_LOCKOUT_MINUTES)
+    db.commit()
+
+def _clear_security_attempts(user: User, db: Session):
+    user.security_question_attempts = 0
+    user.security_question_locked_until = None
+    db.commit()
 
 @router.post('/register', response_model=UserOut, status_code=201)
 def register(body: RegisterRequest, db: Session = Depends(get_db)):
@@ -46,7 +76,7 @@ def register(body: RegisterRequest, db: Session = Depends(get_db)):
         password_hash=hash_password(body.password),
         full_name=body.full_name,
         role=body.role,
-        phone=body.phone,
+        phone=normalize_phone(body.phone) if body.phone else None,
         security_question=body.security_question,
         security_answer_hash=hash_password(normalize_answer(body.security_answer)) if body.security_answer else None,
     )
@@ -71,19 +101,22 @@ def logout():
 def send_phone_code(body: PhoneSendCodeRequest, db: Session = Depends(get_db)):
     if not twilio_configured():
         raise HTTPException(400, 'Phone sign-in is not set up for this app yet')
-    user = db.query(User).filter(User.phone == body.phone).first()
+    phone = normalize_phone(body.phone)
+    user = db.query(User).filter(User.phone == phone).first()
     if not user:
         raise HTTPException(404, 'No account found with that phone number')
     code = f'{secrets.randbelow(1_000_000):06d}'
     user.phone_verification_code_hash = hash_password(code)
     user.phone_verification_expires_at = datetime.now(timezone.utc) + timedelta(minutes=5)
     db.commit()
-    send_sms(body.phone, f'Your Kin verification code is {code}. It expires in 5 minutes.')
+    sent = send_sms(phone, f'Your Kin verification code is {code}. It expires in 5 minutes.')
+    if not sent:
+        raise HTTPException(502, 'We could not send that text — please check the number and try again')
     return {'message': 'Code sent'}
 
 @router.post('/phone/verify-code', response_model=LoginOut)
 def verify_phone_code(body: PhoneVerifyCodeRequest, db: Session = Depends(get_db)):
-    user = db.query(User).filter(User.phone == body.phone).first()
+    user = db.query(User).filter(User.phone == normalize_phone(body.phone)).first()
     if not user or not user.phone_verification_code_hash or not user.phone_verification_expires_at:
         raise HTTPException(401, 'Invalid or expired code')
     expires_at = user.phone_verification_expires_at
@@ -172,11 +205,26 @@ def reset_password(body: ResetPasswordRequest, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.email == normalize_email(body.email)).first()
     if not user or not user.security_answer_hash:
         raise HTTPException(404, 'No security question found for that email')
+    _check_security_lockout(user)
     if not verify_password(normalize_answer(body.security_answer), user.security_answer_hash):
+        _record_failed_security_attempt(user, db)
         raise HTTPException(401, 'That answer does not match')
+    _clear_security_attempts(user, db)
     user.password_hash = hash_password(body.new_password)
     db.commit()
     return {'message': 'Password updated'}
+
+@router.post('/security-question/login', response_model=LoginOut)
+def login_with_security_question(body: SecurityLoginRequest, db: Session = Depends(get_db)):
+    user = db.query(User).filter(User.email == normalize_email(body.email)).first()
+    if not user or not user.security_answer_hash:
+        raise HTTPException(404, 'No security question found for that email')
+    _check_security_lockout(user)
+    if not verify_password(normalize_answer(body.security_answer), user.security_answer_hash):
+        _record_failed_security_attempt(user, db)
+        raise HTTPException(401, 'That answer does not match')
+    _clear_security_attempts(user, db)
+    return {'token': make_token(user.user_id), 'user_id': user.user_id, 'role': user.role, 'full_name': user.full_name, 'email': user.email}
 
 @router.get('/me', response_model=UserProfileOut)
 def get_me(current_user: User = Depends(get_current_user)):
@@ -185,6 +233,8 @@ def get_me(current_user: User = Depends(get_current_user)):
 @router.patch('/me', response_model=UserProfileOut)
 def update_me(body: ProfileUpdateRequest, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     updates = body.model_dump(exclude_unset=True)
+    if 'phone' in updates:
+        updates['phone'] = normalize_phone(updates['phone']) if updates['phone'] else None
     if 'phone' in updates and updates['phone'] != current_user.phone:
         if updates['phone'] and db.query(User).filter(
             User.phone == updates['phone'], User.user_id != current_user.user_id

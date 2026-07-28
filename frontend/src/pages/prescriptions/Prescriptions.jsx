@@ -21,6 +21,7 @@ export default function Prescriptions() {
   const [editingId, setEditingId] = useState(null)
   const [actionError, setActionError] = useState('')
   const [takenWeek, setTakenWeek] = useState({})
+  const [pendingToggles, setPendingToggles] = useState(new Set())
 
   useEffect(() => {
     if (!circleId) return
@@ -110,6 +111,9 @@ export default function Prescriptions() {
   }
 
   async function handleTogglePill(rx, dateStr) {
+    const key = `${rx.prescription_id}:${dateStr}`
+    if (pendingToggles.has(key)) return
+    setPendingToggles(prev => new Set(prev).add(key))
     setActionError('')
     const wasTaken = Boolean(takenWeek[rx.prescription_id]?.has(dateStr))
     setTakenWeek(prev => {
@@ -127,6 +131,8 @@ export default function Prescriptions() {
         wasTaken ? next[rx.prescription_id].add(dateStr) : next[rx.prescription_id].delete(dateStr)
         return next
       })
+    } finally {
+      setPendingToggles(prev => { const next = new Set(prev); next.delete(key); return next })
     }
   }
 
@@ -198,7 +204,7 @@ export default function Prescriptions() {
 
       {isCaregiver && <PrescriptionSummary rxs={rxs} />}
 
-      <WeeklyPillBoard rxs={rxs} takenWeek={takenWeek} onToggle={handleTogglePill} />
+      <WeeklyPillBoard rxs={rxs} takenWeek={takenWeek} pendingToggles={pendingToggles} onToggle={handleTogglePill} />
 
       <div className="card-list">
         {rxs.map(rx => <RxCard key={rx.prescription_id} rx={rx} isCaregiver={isCaregiver} onDelete={handleDelete} onEdit={handleEditClick} />)}
@@ -219,7 +225,7 @@ function PrescriptionSummary({ rxs }) {
   )
 }
 
-function WeeklyPillBoard({ rxs, takenWeek, onToggle }) {
+function WeeklyPillBoard({ rxs, takenWeek, pendingToggles, onToggle }) {
   const scheduled = rxs.filter(rx => rx.is_active !== false && rx.schedule_days)
   if (scheduled.length === 0) return null
 
@@ -242,6 +248,7 @@ function WeeklyPillBoard({ rxs, takenWeek, onToggle }) {
                   <input
                     type="checkbox"
                     checked={Boolean(takenWeek[rx.prescription_id]?.has(todayDate))}
+                    disabled={pendingToggles.has(`${rx.prescription_id}:${todayDate}`)}
                     onChange={() => onToggle(rx, todayDate)}
                   />
                   {rx.medication_name}{rx.dosage ? ` — ${rx.dosage}` : ''}
