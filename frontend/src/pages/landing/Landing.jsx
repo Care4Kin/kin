@@ -1,15 +1,16 @@
 import { Link } from 'react-router-dom'
+import { DollarSign, Repeat, Pill, Landmark, Calendar, Flag, FileText, Users } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
 
 const FEATURES = [
-  { icon: '💵', label: 'Bills', desc: "Track what you owe and when it's due", href: '/bills' },
-  { icon: '🔁', label: 'Subscriptions', desc: 'Review your monthly services', href: '/subscriptions' },
-  { icon: '💊', label: 'Prescriptions', desc: 'See upcoming refill dates', href: '/prescriptions' },
-  { icon: '🏦', label: 'Important Accounts', desc: 'Bank, insurance, healthcare and more', href: '/accounts' },
-  { icon: '📅', label: 'Appointments', desc: 'Upcoming visits and reminders', href: '/appointments' },
-  { icon: '🚩', label: 'Suspicious Activity', desc: 'Flag a scam call, email, or bill', href: '/flags' },
-  { icon: '📝', label: 'Shared Notes', desc: 'Leave a message for your family', href: '/notes' },
-  { icon: '👥', label: 'Family Circle', desc: "See who's helping and manage access", href: '/circle' },
+  { icon: DollarSign, label: 'Bills', desc: "Track what you owe and when it's due", href: '/bills' },
+  { icon: Repeat, label: 'Subscriptions', desc: 'Review your monthly services', href: '/subscriptions' },
+  { icon: Pill, label: 'Prescriptions', desc: 'See upcoming refill dates', href: '/prescriptions' },
+  { icon: Landmark, label: 'Important Accounts', desc: 'Bank, insurance, healthcare and more', href: '/accounts' },
+  { icon: Calendar, label: 'Appointments', desc: 'Upcoming visits and reminders', href: '/appointments' },
+  { icon: Flag, label: 'Suspicious Activity', desc: 'Flag a scam call, email, or bill', href: '/flags' },
+  { icon: FileText, label: 'Shared Notes', desc: 'Leave a message for your family', href: '/notes' },
+  { icon: Users, label: 'Family Circle', desc: "See who's helping and manage access", href: '/circle' },
 ]
 
 function Cta() {
@@ -43,7 +44,7 @@ export default function Landing() {
         <div className="landing-features-grid">
           {FEATURES.map(f => (
             <Link key={f.label} to={f.href} className="landing-feature-item">
-              <span className="landing-feature-icon" aria-hidden="true">{f.icon}</span>
+              <f.icon className="landing-feature-icon" aria-hidden="true" size={26} strokeWidth={1.75} />
               <span className="landing-feature-label">{f.label}</span>
               <span className="landing-feature-desc">{f.desc}</span>
             </Link>

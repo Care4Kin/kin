@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom'
+import { Settings } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
 
 export default function TopBar() {
@@ -15,7 +16,7 @@ export default function TopBar() {
               <span className="top-bar-user">Hi, {firstName}</span>
             )}
             <Link to="/settings" className="top-bar-settings" title="Settings" aria-label="Settings">
-              ⚙
+              <Settings size={20} strokeWidth={2} aria-hidden="true" />
             </Link>
           </>
         ) : (

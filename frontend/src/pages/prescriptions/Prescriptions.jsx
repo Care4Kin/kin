@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { AlertTriangle, Check } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
 import { api } from '../../services/api'
 import { useResourceList } from '../../hooks/useResourceList'
@@ -214,7 +215,9 @@ function PrescriptionSummary({ rxs }) {
   return (
     <div className="stat-banner">
       <span className="stat-banner-label">{active.length} active · {urgent.length} due soon</span>
-      <span className="stat-banner-value" aria-hidden="true">{urgent.length > 0 ? '⚠' : '✓'}</span>
+      <span className="stat-banner-value" aria-hidden="true">
+        {urgent.length > 0 ? <AlertTriangle size={24} strokeWidth={2} /> : <Check size={24} strokeWidth={2} />}
+      </span>
     </div>
   )
 }
