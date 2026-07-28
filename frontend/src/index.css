@@ -1,14 +1,14 @@
 /* ─── Design tokens ─────────────────────────────────────────────── */
-/* Structural tokens only — color lives entirely in the 5 [data-theme]
+/* Structural tokens only — color lives entirely in the 6 [data-theme]
    blocks below so the whole app re-skins from a single attribute on
-   <html> (set by ThemeContext / the FOUC-prevention script in index.html).
-   Radius is deliberately small/"squarish" across every theme. */
+   <html> (set by ThemeContext / the FOUC-prevention script in index.html). */
 :root {
   --font:         system-ui, -apple-system, sans-serif;
-  --radius:       6px;
-  --radius-sm:    4px;
+  --radius:       10px;
+  --radius-sm:    8px;
   --bottom-nav-h: 72px;
   --top-bar-h:    56px;
+  --sidebar-w:    220px;
 }
 
 /* Every pairing below is checked against WCAG 2.1 AA (4.5:1 text / 3:1 UI)
@@ -232,9 +232,9 @@ button, input, select, textarea { font: inherit; }
 }
 
 .top-bar-settings {
-  font-size: 1.2rem;
+  display: flex;
+  align-items: center;
   color: var(--text-muted);
-  line-height: 1;
   padding: 0.6rem;
   margin: -0.6rem;
   border-radius: var(--radius-sm);
@@ -292,8 +292,68 @@ button, input, select, textarea { font: inherit; }
   color: var(--green-light);
 }
 
-.bottom-nav-icon { font-size: 1.4rem; line-height: 1; }
+.bottom-nav-icon { flex-shrink: 0; }
 .bottom-nav-label { font-size: 0.7rem; font-weight: 600; letter-spacing: 0.03em; }
+
+/* ─── Sidebar (desktop) ──────────────────────────────────────────── */
+.sidebar-nav {
+  display: none;
+}
+
+.sidebar-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.65rem 0.85rem;
+  border-radius: var(--radius-sm);
+  color: var(--text-muted);
+  transition: color 0.15s, background 0.15s;
+}
+
+.sidebar-nav-item.active,
+.sidebar-nav-item:hover {
+  color: var(--green-light);
+  background: var(--surface-2);
+}
+
+.sidebar-nav-icon { flex-shrink: 0; }
+.sidebar-nav-label { font-size: 0.9rem; font-weight: 600; }
+
+/* ─── Desktop layout (≥1024px) ───────────────────────────────────── */
+@media (min-width: 1024px) {
+  .app-shell {
+    max-width: 1200px;
+  }
+
+  .top-bar {
+    max-width: 1200px;
+  }
+
+  .bottom-nav {
+    display: none;
+  }
+
+  .app-body {
+    display: flex;
+    align-items: flex-start;
+    gap: 2rem;
+  }
+
+  .sidebar-nav {
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+    width: var(--sidebar-w);
+    gap: 0.25rem;
+    position: sticky;
+    top: calc(var(--top-bar-h) + 1.25rem);
+    padding-top: 1.25rem;
+  }
+
+  .main-content {
+    padding-bottom: 1.25rem;
+  }
+}
 
 /* ─── Auth pages ─────────────────────────────────────────────────── */
 .auth-page {
@@ -481,16 +541,17 @@ button, input, select, textarea { font: inherit; }
   color: var(--text-on-accent);
   border: none;
   border-radius: var(--radius-sm);
-  padding: 0.85rem 1.5rem;
+  padding: 0.8rem 1.5rem;
   font-size: 1rem;
-  font-weight: 700;
+  font-weight: 600;
   cursor: pointer;
   width: 100%;
-  transition: background 0.15s;
+  transition: background 0.15s, transform 0.15s;
   margin-top: 0.25rem;
 }
 
-.btn-primary:hover { background: var(--green-mid-hover); }
+.btn-primary:hover { background: var(--green-mid-hover); transform: translateY(-1px); }
+.btn-primary:active { transform: translateY(0); }
 .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
 
 /* ─── Dashboard ──────────────────────────────────────────────────── */
@@ -543,7 +604,7 @@ button, input, select, textarea { font: inherit; }
   border-radius: var(--radius);
   padding: 1rem;
   cursor: pointer;
-  transition: border-color 0.15s, background 0.15s;
+  transition: border-color 0.15s, background 0.15s, transform 0.15s;
   /* Fixed height so every card matches — titles are kept short enough to
      stay on one line, so this only needs to cover a 2-line description. */
   min-height: 6.5rem;
@@ -568,7 +629,7 @@ button, input, select, textarea { font: inherit; }
 
 .summary-card--warn .summary-card-count { background: var(--warn); }
 
-.summary-card:hover { border-color: var(--green-light); background: var(--surface-2); }
+.summary-card:hover { border-color: var(--green-light); background: var(--surface-2); transform: translateY(-1px); }
 
 .summary-card--warn { border-left: 3px solid var(--warn-border); }
 .summary-card--warn:hover { border-color: var(--warn-border); }
@@ -739,7 +800,7 @@ button, input, select, textarea { font: inherit; }
 /* ─── Badges ─────────────────────────────────────────────────────── */
 .badge {
   font-size: 0.7rem;
-  font-weight: 700;
+  font-weight: 600;
   padding: 0.2rem 0.55rem;
   border-radius: 99px;
   text-transform: uppercase;
@@ -761,7 +822,7 @@ button, input, select, textarea { font: inherit; }
   margin-bottom: 1.25rem;
 }
 .stat-banner-label { font-size: 0.85rem; color: var(--text-muted); }
-.stat-banner-value { font-size: 1.4rem; font-weight: 800; color: var(--green-light); }
+.stat-banner-value { display: flex; align-items: center; color: var(--green-light); }
 
 .stat-banner--warn { border-left: 3px solid var(--warn-border); }
 .stat-banner--warn .stat-banner-value { color: var(--warn-light); }
@@ -812,12 +873,14 @@ button, input, select, textarea { font: inherit; }
   color: var(--text);
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
-  padding: 0.85rem 1.5rem;
+  padding: 0.8rem 1.5rem;
   font-size: 1rem;
-  font-weight: 700;
+  font-weight: 600;
   cursor: pointer;
+  transition: border-color 0.15s, transform 0.15s;
 }
-.btn-secondary:hover { border-color: var(--green-light); }
+.btn-secondary:hover { border-color: var(--green-light); transform: translateY(-1px); }
+.btn-secondary:active { transform: translateY(0); }
 
 /* ─── Small action buttons (mark paid, resolve, delete) ──────────── */
 .action-row { display: flex; gap: 0.5rem; margin-top: 0.4rem; }
@@ -1105,12 +1168,12 @@ button, input, select, textarea { font: inherit; }
   border-radius: var(--radius);
   padding: 1rem;
   cursor: pointer;
-  transition: border-color 0.15s, background 0.15s;
+  transition: border-color 0.15s, background 0.15s, transform 0.15s;
 }
 
-.landing-feature-item:hover { border-color: var(--green-light); background: var(--surface-2); }
+.landing-feature-item:hover { border-color: var(--green-light); background: var(--surface-2); transform: translateY(-1px); }
 
-.landing-feature-icon { font-size: 1.4rem; line-height: 1; }
+.landing-feature-icon { color: var(--green-light); flex-shrink: 0; }
 .landing-feature-label { font-size: 0.95rem; font-weight: 700; color: var(--green-light); }
 .landing-feature-desc { font-size: 0.8rem; color: var(--text-muted); line-height: 1.4; }
 
