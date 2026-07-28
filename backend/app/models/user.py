@@ -13,6 +13,8 @@ class User(Base):
     phone = Column(Text)
     security_question = Column(Text)
     security_answer_hash = Column(Text)
+    security_question_attempts = Column(Integer, nullable=False, server_default='0')
+    security_question_locked_until = Column(TIMESTAMP(timezone=True))
     phone_verified = Column(Boolean, nullable=False, server_default='false')
     phone_verification_code_hash = Column(Text)
     phone_verification_expires_at = Column(TIMESTAMP(timezone=True))

@@ -6,11 +6,15 @@ import GoogleSignInButton from '../../components/auth/GoogleSignInButton'
 import FormMessage from '../../components/FormMessage'
 
 export default function Login() {
-  const [mode, setMode] = useState('email') // 'email' | 'phone'
+  const [mode, setMode] = useState('email') // 'email' | 'phone' | 'question'
   const [form, setForm] = useState({ email: '', password: '' })
   const [phone, setPhone] = useState('')
   const [code, setCode] = useState('')
   const [codeSent, setCodeSent] = useState(false)
+  const [questionEmail, setQuestionEmail] = useState('')
+  const [question, setQuestion] = useState('')
+  const [questionAnswer, setQuestionAnswer] = useState('')
+  const [questionFetched, setQuestionFetched] = useState(false)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const { login } = useAuth()
@@ -67,6 +71,35 @@ export default function Login() {
     }
   }
 
+  async function handleFetchQuestion(e) {
+    e.preventDefault()
+    setError('')
+    setLoading(true)
+    try {
+      const data = await api.getSecurityQuestion(questionEmail)
+      setQuestion(data.security_question)
+      setQuestionFetched(true)
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  async function handleQuestionLogin(e) {
+    e.preventDefault()
+    setError('')
+    setLoading(true)
+    try {
+      const data = await api.loginWithSecurityQuestion({ email: questionEmail, security_answer: questionAnswer })
+      finishLogin(data)
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setLoading(false)
+    }
+  }
+
   async function handleGoogleCredential(idToken) {
     setError('')
     try {
@@ -92,6 +125,9 @@ export default function Login() {
           </button>
           <button type="button" className={mode === 'phone' ? 'active' : ''} onClick={() => { setMode('phone'); setError('') }}>
             Phone
+          </button>
+          <button type="button" className={mode === 'question' ? 'active' : ''} onClick={() => { setMode('question'); setError('') }}>
+            Security Question
           </button>
         </div>
 
@@ -133,7 +169,8 @@ export default function Login() {
               {loading ? 'Logging in…' : 'Log In'}
             </button>
           </form>
-        ) : !codeSent ? (
+        ) : mode === 'phone' ? (
+          !codeSent ? (
           <form onSubmit={handleSendCode} className="auth-form">
             <div className="field-group">
               <label htmlFor="phone">Phone Number</label>
@@ -179,6 +216,57 @@ export default function Login() {
             </button>
             <button type="button" className="btn-secondary" onClick={() => { setCodeSent(false); setCode(''); setPhone(''); setError('') }}>
               Use a different number
+            </button>
+          </form>
+          )
+        ) : !questionFetched ? (
+          <form onSubmit={handleFetchQuestion} className="auth-form">
+            <div className="field-group">
+              <label htmlFor="question-email">Email</label>
+              <p className="field-hint">We'll show your security question — no password needed.</p>
+              <input
+                id="question-email"
+                name="question-email"
+                type="email"
+                autoComplete="username"
+                value={questionEmail}
+                onChange={e => setQuestionEmail(e.target.value)}
+                required
+              />
+            </div>
+
+            <FormMessage variant="error">{error}</FormMessage>
+
+            <button type="submit" className="btn-primary" disabled={loading}>
+              {loading ? 'Looking up…' : 'Continue'}
+            </button>
+          </form>
+        ) : (
+          <form onSubmit={handleQuestionLogin} className="auth-form">
+            <div className="field-group">
+              <span className="field-group-label">Security Question</span>
+              <p className="field-hint">{question}</p>
+            </div>
+
+            <div className="field-group">
+              <label htmlFor="question-answer">Your Answer</label>
+              <input
+                id="question-answer"
+                name="question-answer"
+                type="text"
+                value={questionAnswer}
+                onChange={e => setQuestionAnswer(e.target.value)}
+                required
+              />
+            </div>
+
+            <FormMessage variant="error">{error}</FormMessage>
+
+            <button type="submit" className="btn-primary" disabled={loading}>
+              {loading ? 'Checking…' : 'Log In'}
+            </button>
+            <button type="button" className="btn-secondary" onClick={() => { setQuestionFetched(false); setQuestionAnswer(''); setQuestionEmail(''); setError('') }}>
+              Use a different email
             </button>
           </form>
         )}

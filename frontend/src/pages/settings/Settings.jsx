@@ -25,7 +25,6 @@ const SECURITY_QUESTIONS = [
   "What is your mother's maiden name?",
   'What was the name of your first school?',
   `What is the name of your current caregiver?`,
-  ""
 ]
 
 const DIGEST_FREQUENCIES = [

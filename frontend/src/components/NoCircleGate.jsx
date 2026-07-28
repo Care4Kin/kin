@@ -1,14 +1,16 @@
 import { useAuth } from '../context/AuthContext'
 
 export default function NoCircleGate({ title }) {
-  const { user } = useAuth()
+  const { user, circleError } = useAuth()
   const isElder = user?.role === 'elder'
 
   return (
     <div className="page">
       <h1 className="page-title">{title}</h1>
       <div className="login-gate">
-        {isElder ? (
+        {circleError ? (
+          <p className="field-hint">Something went wrong loading your family circle. Check your connection and try refreshing — if this keeps happening, let us know.</p>
+        ) : isElder ? (
           <p className="field-hint">Something went wrong setting up your family circle. Try refreshing the page — if this keeps happening, let us know.</p>
         ) : (
           <>

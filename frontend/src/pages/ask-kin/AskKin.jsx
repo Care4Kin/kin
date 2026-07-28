@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { useAuth } from '../../context/AuthContext'
 import { api } from '../../services/api'
+import LoggedOutGate from '../../components/LoggedOutGate'
+import NoCircleGate from '../../components/NoCircleGate'
 
 const SUGGESTIONS = [
   "When's my next bill due?",
@@ -10,12 +12,15 @@ const SUGGESTIONS = [
 ]
 
 export default function AskKin() {
-  const { circleId } = useAuth()
+  const { circleId, user, loading: authLoading, circleChecked } = useAuth()
   const [messages, setMessages] = useState([])
   const [input, setInput] = useState('')
   const [sending, setSending] = useState(false)
   const [error, setError] = useState('')
 
+  if (authLoading) return null
+  if (!user) return <LoggedOutGate title="Ask Kin" description="Ask about bills, prescriptions, subscriptions, and more — get quick answers without digging through the app." />
+  if (circleChecked && !circleId) return <NoCircleGate title="Ask Kin" />
   if (!circleId) return <p className="page-status">Loading…</p>
 
   async function send(text) {

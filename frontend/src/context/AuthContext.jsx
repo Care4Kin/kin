@@ -21,17 +21,29 @@ export function AuthProvider({ children }) {
   // both cases. Pages use this to show a real message instead of an
   // infinite loading state when a caregiver has no circle to join yet.
   const [circleChecked, setCircleChecked] = useState(false)
+  // True only when the circle lookup itself failed (network/server error) —
+  // as opposed to the expected "no circle assigned yet" case — so gates can
+  // show "something went wrong" instead of the misleading "not invited yet".
+  const [circleError, setCircleError] = useState(false)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     const token = localStorage.getItem('token')
     const stored = localStorage.getItem('user')
     if (token && stored) {
-      const u = JSON.parse(stored)
+      let u
+      try {
+        u = JSON.parse(stored)
+      } catch {
+        localStorage.removeItem('token')
+        localStorage.removeItem('user')
+        setLoading(false)
+        return
+      }
       setUser(u)
       ensureCircle(u)
-        .then(c => setCircleId(c.circle_id))
-        .catch(() => {})
+        .then(c => { setCircleId(c.circle_id); setCircleError(false) })
+        .catch(err => setCircleError(err?.status !== 404))
         .finally(() => { setCircleChecked(true); setLoading(false) })
     } else {
       setLoading(false)
@@ -44,8 +56,8 @@ export function AuthProvider({ children }) {
     setUser(userData)
     setCircleChecked(false)
     ensureCircle(userData)
-      .then(c => setCircleId(c.circle_id))
-      .catch(() => {})
+      .then(c => { setCircleId(c.circle_id); setCircleError(false) })
+      .catch(err => setCircleError(err?.status !== 404))
       .finally(() => setCircleChecked(true))
   }
 
@@ -56,10 +68,11 @@ export function AuthProvider({ children }) {
     setUser(null)
     setCircleId(null)
     setCircleChecked(false)
+    setCircleError(false)
   }
 
   return (
-    <AuthContext.Provider value={{ user, circleId, circleChecked, login, logout, loading }}>
+    <AuthContext.Provider value={{ user, circleId, circleChecked, circleError, login, logout, loading }}>
       {children}
     </AuthContext.Provider>
   )
