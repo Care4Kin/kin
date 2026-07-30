@@ -220,6 +220,66 @@ button, input, select, textarea { font: inherit; }
   letter-spacing: -0.5px;
 }
 
+/* ─── Kin animated logo (K · tree · N) ───────────────────────────── */
+/* Everything is drawn in currentColor = the theme accent, so the mark
+   recolors with every theme. Sized via a single font-size knob per variant. */
+.kin-logo-link { display: inline-flex; text-decoration: none; }
+
+.kin-logo {
+  display: inline-flex;
+  align-items: flex-end;
+  gap: 0.03em;
+  line-height: 1;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  color: var(--green-light);
+}
+
+.kin-logo--sm { font-size: 1.6rem; }
+.kin-logo--lg { font-size: 3.4rem; }
+
+.kin-logo-letter {
+  display: inline-block;
+  color: currentColor;
+  animation: kin-rise 0.5s cubic-bezier(0.2, 0.75, 0.25, 1) both;
+}
+.kin-logo-k { animation-delay: 0s; }
+.kin-logo-n { animation-delay: 0.18s; }
+
+.kin-logo-tree {
+  width: 0.86em;
+  height: 1.42em;               /* taller than the letters so the canopy rises above */
+  fill: currentColor;
+  margin: 0 -0.05em -0.02em;    /* tuck the trunk against K / N, sit on the baseline */
+  transform-origin: 50% 84%;    /* grow up from the trunk base */
+  animation: kin-grow 0.55s cubic-bezier(0.2, 0.75, 0.25, 1) both;
+  animation-delay: 0.09s;
+}
+.kin-logo-roots {
+  stroke: currentColor;
+  stroke-width: 4;
+  stroke-linecap: round;
+  fill: none;
+}
+
+@keyframes kin-rise {
+  from { opacity: 0; transform: translateY(0.55em); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes kin-grow {
+  from { opacity: 0; transform: scale(0.4); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .kin-logo-letter,
+  .kin-logo-tree {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
+}
+
 .top-bar-user {
   font-size: 0.9rem;
   color: var(--text-muted);
@@ -352,6 +412,34 @@ button, input, select, textarea { font: inherit; }
 
   .main-content {
     padding-bottom: 1.25rem;
+  }
+
+  /* ── Pages fill the wider desktop content area ──────────────────── */
+  /* Home summary cards: 2 cols on mobile → 3 across on desktop */
+  .dashboard-grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+  }
+
+  /* Caregiver "At a Glance": the 4 tiles sit on one row instead of 2×2 */
+  .caregiver-stats {
+    grid-template-columns: repeat(4, 1fr);
+  }
+
+  /* Stacked card lists become a 2-up grid so they don't leave the right
+     half of the screen empty */
+  .card-list {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.75rem;
+    align-items: start;
+  }
+
+  /* Forms and single inline panels shouldn't stretch to the full ~950px —
+     wide text inputs are harder to scan. Cap them at a comfortable width. */
+  .inline-form,
+  .stat-banner {
+    max-width: 680px;
   }
 }
 
@@ -1116,13 +1204,116 @@ button, input, select, textarea { font: inherit; }
 .pie-chart-legend-value { color: var(--text-muted); font-variant-numeric: tabular-nums; }
 
 /* ─── Landing page ────────────────────────────────────────────────── */
+/* Mobile: a single centered column (the rails are hidden). Desktop: three
+   zones — left rail | center (this same column) | right login panel. */
 .landing-page {
-  max-width: 480px;
+  display: flex;
+  justify-content: center;
+  gap: 2rem;
+  max-width: 1180px;
   margin: 0 auto;
   padding: 2rem 1.25rem 3rem;
+  align-items: flex-start;
+}
+
+.landing-center {
+  width: 100%;
+  max-width: 480px;
+  flex-shrink: 0;
   display: flex;
   flex-direction: column;
   gap: 2rem;
+}
+
+/* Both side rails are desktop-only enrichment. */
+.landing-left,
+.landing-right { display: none; }
+
+@media (min-width: 1024px) {
+  .landing-left {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+    width: 300px;
+    flex-shrink: 0;
+  }
+  .landing-right {
+    display: block;
+    width: 320px;
+    flex-shrink: 0;
+    position: sticky;
+    top: 2rem;
+  }
+}
+
+/* Left-rail cards */
+.landing-rail-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.1rem 1.25rem;
+}
+
+.landing-steps { list-style: none; display: flex; flex-direction: column; gap: 0.9rem; margin-top: 0.5rem; }
+.landing-step { display: flex; gap: 0.75rem; align-items: flex-start; }
+.landing-step-num {
+  flex-shrink: 0;
+  width: 1.6rem;
+  height: 1.6rem;
+  border-radius: 50%;
+  background: var(--green-mid);
+  color: var(--text-on-accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 0.85rem;
+}
+.landing-step-title { display: block; font-weight: 700; font-size: 0.9rem; color: var(--text); }
+.landing-step-desc { display: block; font-size: 0.8rem; color: var(--text-muted); line-height: 1.4; }
+
+.landing-trust { list-style: none; display: flex; flex-direction: column; gap: 0.85rem; margin-top: 0.5rem; }
+.landing-trust-item { display: flex; gap: 0.65rem; align-items: flex-start; }
+.landing-trust-icon { color: var(--green-light); flex-shrink: 0; margin-top: 0.1rem; }
+.landing-trust-title { display: block; font-weight: 700; font-size: 0.9rem; color: var(--text); }
+.landing-trust-desc { display: block; font-size: 0.8rem; color: var(--text-muted); line-height: 1.4; }
+
+.landing-testimonials { display: flex; flex-direction: column; gap: 1rem; margin-top: 0.5rem; }
+.landing-quote { margin: 0; }
+.landing-quote blockquote { margin: 0; font-size: 0.9rem; font-style: italic; color: var(--text); line-height: 1.5; }
+.landing-quote figcaption { margin-top: 0.35rem; font-size: 0.8rem; font-weight: 600; color: var(--text-muted); }
+
+/* Right-rail inline login panel */
+.landing-login-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.5rem;
+}
+.landing-login-title { font-size: 1.3rem; font-weight: 800; color: var(--text); margin-bottom: 1rem; }
+.landing-login-card form { display: flex; flex-direction: column; gap: 0.85rem; }
+.landing-login-more {
+  display: block;
+  text-align: center;
+  font-size: 0.85rem;
+  color: var(--green-light);
+  text-decoration: underline;
+  margin-top: 0.85rem;
+}
+.landing-login-divider {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin: 1.1rem 0 0.85rem;
+  color: var(--text-muted);
+  font-size: 0.8rem;
+}
+.landing-login-divider::before,
+.landing-login-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
 }
 
 .landing-hero {
