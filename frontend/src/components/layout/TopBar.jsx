@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import { Settings } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
+import KinLogo from '../KinLogo'
 
 export default function TopBar() {
   const { user } = useAuth()
@@ -8,7 +9,7 @@ export default function TopBar() {
 
   return (
     <header className="top-bar">
-      <Link to="/" className="top-bar-brand">Kin</Link>
+      <KinLogo size="sm" to="/" />
       <div className="top-bar-right">
         {user ? (
           <>
