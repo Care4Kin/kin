@@ -3,15 +3,21 @@ import { usePlaidLink } from 'react-plaid-link'
 import { api } from '../services/api'
 
 // Shared by every page that shows linked-bank data (Important Accounts, Bills,
-// Subscriptions). Only Important Accounts actually calls connect()/disconnect() —
+// Subscriptions, Flags). Only Important Accounts actually calls connect()/disconnect() —
 // the others just read accounts/spending/subscriptions. usePlaidLink is a no-op
 // until linkToken is set, so pages that never connect don't load anything extra.
-export function usePlaidBank(circleId) {
+//
+// includeFlags opts into the suspicious-transaction feed, which runs an AI risk
+// check per candidate transaction and is much slower than everything else here.
+// Only Flags.jsx passes this -- Bills/Subscriptions don't use that data, so they
+// shouldn't pay for the extra API/LLM calls on every page load.
+export function usePlaidBank(circleId, { includeFlags = false } = {}) {
   const [accounts, setAccounts] = useState([])
   const [spending, setSpending] = useState([])
   const [subscriptions, setSubscriptions] = useState([])
   const [detectedBills, setDetectedBills] = useState([])
   const [detectedFlags, setDetectedFlags] = useState([])
+  const [flagsLoading, setFlagsLoading] = useState(includeFlags)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [linkToken, setLinkToken] = useState(null)
@@ -21,25 +27,37 @@ export function usePlaidBank(circleId) {
     if (!circleId) return
     setLoading(true)
     setError('')
-    try {
-      const [acc, spend, subs, bills, flags] = await Promise.all([
-        api.getPlaidAccounts(circleId),
-        api.getPlaidSpending(circleId),
-        api.getPlaidSubscriptions(circleId),
-        api.getPlaidDetectedBills(circleId),
-        api.getPlaidDetectedFlags(circleId),
-      ])
+
+    // Fired together, not awaited together: when requested, the flags feed
+    // is much slower than the rest, so bundling it into the same Promise.all
+    // would make everything else wait on it before showing anything.
+    const mainBatch = Promise.all([
+      api.getPlaidAccounts(circleId),
+      api.getPlaidSpending(circleId),
+      api.getPlaidSubscriptions(circleId),
+      api.getPlaidDetectedBills(circleId),
+    ]).then(([acc, spend, subs, bills]) => {
       setAccounts(acc)
       setSpending(spend)
       setSubscriptions(subs)
       setDetectedBills(bills)
-      setDetectedFlags(flags)
-    } catch (err) {
-      setError(err.message)
-    } finally {
-      setLoading(false)
+    }).catch(err => setError(err.message)).finally(() => setLoading(false))
+
+    if (!includeFlags) {
+      await mainBatch
+      return
     }
-  }, [circleId])
+
+    setFlagsLoading(true)
+    const flagsBatch = api.getPlaidDetectedFlags(circleId)
+      .then(setDetectedFlags)
+      // Silent on purpose: this is a nice-to-have suggestion feed, not core
+      // bank data -- Flags page works fine without it.
+      .catch(() => {})
+      .finally(() => setFlagsLoading(false))
+
+    await Promise.all([mainBatch, flagsBatch])
+  }, [circleId, includeFlags])
 
   useEffect(() => { refresh() }, [refresh])
 
@@ -92,5 +110,5 @@ export function usePlaidBank(circleId) {
     }
   }
 
-  return { accounts, spending, subscriptions, detectedBills, detectedFlags, loading, error, connecting, connect, disconnect, refresh }
+  return { accounts, spending, subscriptions, detectedBills, detectedFlags, flagsLoading, loading, error, connecting, connect, disconnect, refresh }
 }

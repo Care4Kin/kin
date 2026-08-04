@@ -28,7 +28,7 @@ export default function Flags() {
   const { circleId, user, loading: authLoading, circleChecked } = useAuth()
   const isCaregiver = user?.role === 'caregiver'
   const { items: flags, setItems: setFlags, loading, error } = useResourceList(() => api.getFlags(circleId), [circleId], !!circleId)
-  const bank = usePlaidBank(circleId)
+  const bank = usePlaidBank(circleId, { includeFlags: true })
   const [showForm, setShowForm] = useState(false)
   const [form, setForm] = useState(emptyForm)
   const [saving, setSaving] = useState(false)
@@ -131,6 +131,9 @@ const visible = filter === 'all'
 
       <HumanSupportCard className="mb-lg" />
 
+      {bank.flagsLoading && bank.detectedFlags.length === 0 && (
+        <p className="field-hint mb-lg">Checking your connected bank for anything unusual…</p>
+      )}
       <DetectedFlagItems items={bank.detectedFlags} onAdd={handleAddDetectedFlag} onDismiss={handleDismissDetectedFlag} />
 
     <div className="filter-bar">
