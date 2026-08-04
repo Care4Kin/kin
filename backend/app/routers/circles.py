@@ -19,6 +19,8 @@ def _permissions(member: CircleMember) -> dict:
         'can_view_prescriptions': member.can_view_prescriptions,
         'can_view_accounts': member.can_view_accounts,
         'can_view_flags': member.can_view_flags,
+        'can_view_subscriptions': member.can_view_subscriptions,
+        'can_view_appointments': member.can_view_appointments,
     }
 
 @router.get('/mine')
@@ -110,6 +112,8 @@ def invite_member(
             pending.can_view_prescriptions = body.can_view_prescriptions
             pending.can_view_accounts = body.can_view_accounts
             pending.can_view_flags = body.can_view_flags
+            pending.can_view_subscriptions = body.can_view_subscriptions
+            pending.can_view_appointments = body.can_view_appointments
         else:
             pending = CircleInvitation(
                 circle_id=circle_id,
@@ -118,6 +122,8 @@ def invite_member(
                 can_view_prescriptions=body.can_view_prescriptions,
                 can_view_accounts=body.can_view_accounts,
                 can_view_flags=body.can_view_flags,
+                can_view_subscriptions=body.can_view_subscriptions,
+                can_view_appointments=body.can_view_appointments,
             )
             db.add(pending)
         db.commit()
@@ -148,6 +154,8 @@ def invite_member(
         can_view_prescriptions=body.can_view_prescriptions,
         can_view_accounts=body.can_view_accounts,
         can_view_flags=body.can_view_flags,
+        can_view_subscriptions=body.can_view_subscriptions,
+        can_view_appointments=body.can_view_appointments,
     )
     db.add(member)
     db.commit()

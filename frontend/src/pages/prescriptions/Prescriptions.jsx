@@ -212,8 +212,6 @@ export default function Prescriptions() {
 
       {isCaregiver && <PrescriptionSummary rxs={rxs} />}
 
-      <WeeklyPillBoard rxs={rxs} takenWeek={takenWeek} />
-
       <div className="card-list">
         {rxs.map(rx => <RxCard key={rx.prescription_id} rx={rx} isCaregiver={isCaregiver} onDelete={handleDelete} onEdit={handleEditClick} />)}
       </div>
@@ -342,49 +340,6 @@ function PrescriptionSummary({ rxs }) {
         {urgent.length > 0 ? <AlertTriangle size={24} strokeWidth={2} /> : <Check size={24} strokeWidth={2} />}
       </span>
     </div>
-  )
-}
-
-function WeeklyPillBoard({ rxs, takenWeek }) {
-  const scheduled = rxs.filter(rx => rx.is_active !== false && rx.schedule_days)
-  if (scheduled.length === 0) return null
-
-  const week = getCurrentWeek()
-  const todayC = todayCode()
-
-  return (
-    <section className="mb-lg">
-      <h2 className="section-label">This Week's Pills</h2>
-
-      <div className="card-list">
-        {scheduled.map(rx => {
-          const days = rx.schedule_days.split(',')
-          return (
-            <div key={rx.prescription_id} className="info-card">
-              <span className="info-card-title">{rx.medication_name}</span>
-              <div className="pill-week-strip">
-                {week.map(d => {
-                  const isScheduled = days.includes(d.code)
-                  const isTaken = Boolean(takenWeek[rx.prescription_id]?.has(d.date))
-                  const isToday = d.code === todayC
-                  const classes = [
-                    'pill-week-day',
-                    !isScheduled && 'pill-week-day--unscheduled',
-                    isTaken && 'pill-week-day--taken',
-                    isToday && 'pill-week-day--today',
-                  ].filter(Boolean).join(' ')
-                  return (
-                    <span key={d.code} className={classes} title={`${DAY_NAMES[d.code]}${isScheduled ? (isTaken ? ' — taken' : ' — not taken yet') : ' — not scheduled'}`}>
-                      {DAY_LETTERS[d.code]}
-                    </span>
-                  )
-                })}
-              </div>
-            </div>
-          )
-        })}
-      </div>
-    </section>
   )
 }
 
