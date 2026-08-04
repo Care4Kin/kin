@@ -32,8 +32,20 @@ KIN_SYSTEM_INSTRUCTION = (
     "or invent numbers or dates. If a question needs a tool that isn't "
     "available to you, say plainly that the elder hasn't shared that "
     "information with you rather than trying to answer anyway. Keep answers "
-    "short (1-3 sentences), warm, and in plain language with no markdown."
+    "short (1-3 sentences), warm, and in plain language with no markdown. "
+    "If the user asks how to reach a real person for help -- for example "
+    "about a scam, fraud, or something they don't want to handle alone -- "
+    "call get_human_support_contacts and answer using only that data; never "
+    "invent a phone number."
 )
+
+def get_human_support_contacts() -> list[dict]:
+    """Get real phone numbers for reaching a human for help with scams, fraud, or general support -- not AI-generated, these are real public hotlines."""
+    return [
+        {'name': 'AARP Fraud Watch Network Helpline', 'phone': '1-877-908-3360', 'hours': 'Every day'},
+        {'name': 'Medicare', 'phone': '1-800-633-4227', 'hours': '24/7'},
+        {'name': 'Eldercare Locator', 'phone': '1-800-677-1116', 'hours': 'Weekdays'},
+    ]
 
 # llama-3.3-70b-versatile occasionally emits a malformed tool call (e.g. a raw
 # `<function=...>` tag) instead of a real JSON tool_call, which Groq rejects
@@ -91,7 +103,7 @@ def answer_kin_question(
         rows = db.query(Account).filter(Account.circle_id == circle_id).all()
         return [{'name': a.name, 'category': a.category} for a in rows]
 
-    tools = [get_subscriptions, get_appointments]
+    tools = [get_subscriptions, get_appointments, get_human_support_contacts]
     if is_elder or permissions.get('can_view_bills'):
         tools.append(get_bills)
     if is_elder or permissions.get('can_view_prescriptions'):
@@ -148,6 +160,28 @@ def assess_flag_risk(flag_type: str, description: str) -> FlagRiskAssessment:
         "attempt) in plain language a non-technical elder or caregiver can "
         "understand. If it doesn't look scam-related, say so plainly and rate "
         "it low. Give a short suggested next step.\n\n"
+        "Respond with ONLY a JSON object matching this exact shape, no other text: "
+        '{"risk_level": "low" | "medium" | "high", "explanation": string, "suggested_action": string}'
+    )
+    client = Groq(api_key=settings.groq_api_key)
+    response = client.chat.completions.create(
+        model=MODEL,
+        messages=[{'role': 'user', 'content': prompt}],
+        response_format={'type': 'json_object'},
+    )
+    return FlagRiskAssessment.model_validate_json(response.choices[0].message.content)
+
+def assess_bank_transaction_risk(merchant: str, amount: float, category: str) -> FlagRiskAssessment:
+    prompt = (
+        f"A bank transaction stands out as unusually large for this account: "
+        f"${amount:.2f} to \"{merchant}\" (category: {category}). This is a heuristic "
+        "flag based on the amount alone, not a proven problem -- most large "
+        "transactions are completely legitimate (rent, a big purchase, a transfer "
+        "to savings). Assess whether this looks like it could match a scam pattern "
+        "(wire fraud, a fake emergency payment, an unusual one-time transfer) in "
+        "plain language a non-technical elder or caregiver can understand. If "
+        "there's nothing suspicious about it beyond the size, say so plainly and "
+        "rate it low. Give a short suggested next step.\n\n"
         "Respond with ONLY a JSON object matching this exact shape, no other text: "
         '{"risk_level": "low" | "medium" | "high", "explanation": string, "suggested_action": string}'
     )

@@ -71,9 +71,13 @@ def register(body: RegisterRequest, db: Session = Depends(get_db)):
     email = normalize_email(body.email)
     if db.query(User).filter(User.email == email).first():
         raise HTTPException(409, 'Email already registered')
+    if not body.password and not body.phone and not body.security_answer:
+        raise HTTPException(400, 'Choose a password, or provide a phone number or security question so you can sign back in')
     user = User(
         email=email,
-        password_hash=hash_password(body.password),
+        # No password given -- e.g. signing up via phone or security question
+        # instead -- gets a random one nobody needs to remember, same as Google signup.
+        password_hash=hash_password(body.password) if body.password else hash_password(secrets.token_urlsafe(32)),
         full_name=body.full_name,
         role=body.role,
         phone=normalize_phone(body.phone) if body.phone else None,

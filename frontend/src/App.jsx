@@ -20,6 +20,11 @@ import AskKin from './pages/ask-kin/AskKin'
 import Circle from './pages/circle/Circle'
 import Settings from './pages/settings/Settings'
 import Feedback from './pages/feedback/Feedback'
+import Faq from './pages/faq/Faq'
+import ScamLibrary from './pages/scam-library/ScamLibrary'
+import CaregiverResources from './pages/caregiver-resources/CaregiverResources'
+import DeviceSetupGuide from './pages/device-guide/DeviceSetupGuide'
+import HowItWorks from './pages/how-it-works/HowItWorks'
 
 function PrivateRoute({ children }) {
   const { user, loading } = useAuth()
@@ -47,6 +52,11 @@ export default function App() {
           <Route path="appointments" element={<Appointments />} />
           <Route path="ask-kin" element={<AskKin />} />
           <Route path="circle" element={<Circle />} />
+          <Route path="faq" element={<Faq />} />
+          <Route path="scam-library" element={<ScamLibrary />} />
+          <Route path="caregiver-resources" element={<CaregiverResources />} />
+          <Route path="device-guide" element={<DeviceSetupGuide />} />
+          <Route path="how-it-works" element={<HowItWorks />} />
           <Route
             path="settings"
             element={

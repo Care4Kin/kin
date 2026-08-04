@@ -23,6 +23,7 @@ export default function Appointments() {
   const [form, setForm] = useState(emptyForm)
   const [saving, setSaving] = useState(false)
   const [formError, setFormError] = useState('')
+  const [editingId, setEditingId] = useState(null)
   const [actionError, setActionError] = useState('')
 
   if (authLoading) return null
@@ -31,7 +32,7 @@ export default function Appointments() {
   if (!circleId || loading) return <p className="page-status">Loading appointments…</p>
   if (error) return <FormMessage variant="error" className="page-status page-status--error">{error}</FormMessage>
 
-  async function handleAdd(e) {
+  async function handleSubmit(e) {
     e.preventDefault()
     setFormError('')
     if (!form.title.trim() || !form.location.trim()) {
@@ -39,22 +40,42 @@ export default function Appointments() {
       return
     }
     setSaving(true)
+    const payload = {
+      title: form.title.trim(),
+      date: form.date,
+      time: form.time,
+      location: form.location.trim(),
+      notes: form.notes || null,
+    }
     try {
-      const appt = await api.createAppointment(circleId, {
-        title: form.title.trim(),
-        date: form.date,
-        time: form.time,
-        location: form.location.trim(),
-        notes: form.notes || null,
-      })
-      setAppointments(prev => [...prev, appt].sort((a, b) => a.date.localeCompare(b.date)))
+      if (editingId) {
+        const appt = await api.updateAppointment(circleId, editingId, payload)
+        setAppointments(prev => prev.map(a => a.appointment_id === appt.appointment_id ? appt : a).sort((a, b) => a.date.localeCompare(b.date)))
+      } else {
+        const appt = await api.createAppointment(circleId, payload)
+        setAppointments(prev => [...prev, appt].sort((a, b) => a.date.localeCompare(b.date)))
+      }
       setForm(emptyForm)
+      setEditingId(null)
       setShowForm(false)
     } catch (err) {
       setFormError(err.message)
     } finally {
       setSaving(false)
     }
+  }
+
+  function handleEditClick(appt) {
+    setForm({
+      title: appt.title || '',
+      date: appt.date || '',
+      time: appt.time || '',
+      location: appt.location || '',
+      notes: appt.notes || '',
+    })
+    setEditingId(appt.appointment_id)
+    setFormError('')
+    setShowForm(true)
   }
 
   async function handleDelete(appt) {
@@ -67,6 +88,10 @@ export default function Appointments() {
     }
   }
 
+  const today = todayStr()
+  const upcoming = appointments.filter(a => a.date >= today)
+  const past = appointments.filter(a => a.date < today)
+
   return (
     <div className="page">
       <h1 className="page-title">Appointments</h1>
@@ -75,7 +100,7 @@ export default function Appointments() {
       {isCaregiver && <AppointmentSummary appointments={appointments} />}
 
       {showForm ? (
-        <form className="inline-form" onSubmit={handleAdd}>
+        <form className="inline-form" onSubmit={handleSubmit}>
           <div className="field-group">
             <label htmlFor="appt-title">What's the appointment?</label>
             <input id="appt-title" required value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} />
@@ -87,7 +112,7 @@ export default function Appointments() {
                 id="appt-date"
                 type="date"
                 required
-                min={todayStr()}
+                min={editingId ? undefined : todayStr()}
                 value={form.date}
                 onChange={e => setForm({ ...form, date: e.target.value })}
               />
@@ -107,18 +132,32 @@ export default function Appointments() {
           </div>
           <FormMessage variant="error">{formError}</FormMessage>
           <div className="btn-row">
-            <button type="submit" className="btn-primary" disabled={saving}>{saving ? 'Saving…' : 'Add Appointment'}</button>
-            <button type="button" className="btn-secondary" onClick={() => { setShowForm(false); setFormError('') }}>Cancel</button>
+            <button type="submit" className="btn-primary" disabled={saving}>
+              {saving ? 'Saving…' : editingId ? 'Save Changes' : 'Add Appointment'}
+            </button>
+            <button type="button" className="btn-secondary" onClick={() => { setShowForm(false); setFormError(''); setForm(emptyForm); setEditingId(null) }}>Cancel</button>
           </div>
         </form>
       ) : (
-        <button className="add-toggle" aria-expanded={showForm} onClick={() => setShowForm(true)}>+ Add an appointment</button>
+        <button className="add-toggle" aria-expanded={showForm} onClick={() => { setForm(emptyForm); setEditingId(null); setShowForm(true) }}>+ Add an appointment</button>
       )}
 
-      <div className="card-list">
-        {appointments.length === 0 && <p className="page-status">No upcoming appointments yet.</p>}
-        {appointments.map(a => <AppointmentCard key={a.appointment_id} appt={a} onDelete={handleDelete} />)}
-      </div>
+      <section className="mt-lg">
+        <h2 className="section-label">Upcoming</h2>
+        <div className="card-list">
+          {upcoming.length === 0 && <p className="page-status">No upcoming appointments yet.</p>}
+          {upcoming.map(a => <AppointmentCard key={a.appointment_id} appt={a} onDelete={handleDelete} onEdit={handleEditClick} />)}
+        </div>
+      </section>
+
+      {past.length > 0 && (
+        <section className="mt-lg">
+          <h2 className="section-label">Past</h2>
+          <div className="card-list">
+            {past.map(a => <AppointmentCard key={a.appointment_id} appt={a} onDelete={handleDelete} onEdit={handleEditClick} />)}
+          </div>
+        </section>
+      )}
     </div>
   )
 }
@@ -141,7 +180,7 @@ function AppointmentSummary({ appointments }) {
   )
 }
 
-function AppointmentCard({ appt, onDelete }) {
+function AppointmentCard({ appt, onDelete, onEdit }) {
   const date = new Date(appt.date + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })
   const time = appt.time ? new Date(`2000-01-01T${appt.time}`).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }) : null
 
@@ -156,6 +195,9 @@ function AppointmentCard({ appt, onDelete }) {
         {appt.notes && <InfoRow label="Notes" value={appt.notes} />}
       </div>
       <div className="action-row">
+        <button className="action-btn" onClick={() => onEdit(appt)} title="Edit this appointment">
+          Edit
+        </button>
         <button className="action-btn action-btn--danger" onClick={() => onDelete(appt)} title="Remove this appointment">
           Delete
         </button>

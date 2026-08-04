@@ -1,4 +1,6 @@
+import statistics
 from collections import defaultdict
+from datetime import date, timedelta
 
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
@@ -18,11 +20,13 @@ from app.middleware.auth import get_current_user, require_elder, require_permiss
 from app.models.plaid_item import PlaidItem
 from app.models.user import User
 from app.schemas.plaid import LinkTokenOut, ExchangeTokenRequest, DismissSuggestionRequest
+from app.services.groq_client import assess_bank_transaction_risk, groq_configured
 from app.services.plaid_client import get_plaid_client, plaid_configured
 from app.services.plaid_suggestions import dismiss_suggestion, dismissed_keys
 
 router = APIRouter()
 require_accounts_access = require_permission('can_view_accounts')
+require_flags_access = require_permission('can_view_flags')
 
 # Plaid's personal_finance_category.primary values that look like recurring
 # bills vs. recurring subscriptions. Anything outside both sets (groceries,
@@ -219,6 +223,63 @@ def get_detected_bills(circle_id: int, db: Session = Depends(get_db), circle=Dep
         r for r in _detect_recurring_charges(client, items)
         if r['category'] in BILL_CATEGORIES and r['source_key'] not in dismissed
     ]
+
+def _detect_suspicious_transactions(client, items) -> list:
+    """Heuristic only, not a fraud model: flags a transaction as worth a second
+    look if it's a large outlier for that specific account (more than 3x that
+    account's own median transaction, and at least $500), over the last 90
+    days. Capped to the largest few so this stays a short, actionable list --
+    the AI risk assessment below is what actually decides whether it's shown."""
+    cutoff = date.today() - timedelta(days=90)
+    candidates = []
+    for item in items:
+        txns = [
+            t for t in _fetch_all_transactions(client, item.access_token)
+            if (t.get('amount') or 0) > 0 and t.get('date') and t['date'] >= cutoff
+        ]
+        if len(txns) < 3:
+            continue  # not enough history on this account to judge what's normal
+        median = statistics.median(t['amount'] for t in txns)
+        threshold = max(500, 3 * median)
+        candidates.extend(t for t in txns if t['amount'] > threshold)
+
+    candidates.sort(key=lambda t: t['amount'], reverse=True)
+    return candidates[:5]
+
+@router.get('/{circle_id}/plaid/flags')
+def get_detected_suspicious_transactions(circle_id: int, db: Session = Depends(get_db), circle=Depends(require_flags_access)):
+    _require_plaid_configured()
+    if not groq_configured():
+        return []
+    client = get_plaid_client()
+    items = db.query(PlaidItem).filter(PlaidItem.circle_id == circle_id).all()
+    dismissed = dismissed_keys(db, circle_id)
+
+    results = []
+    for txn in _detect_suspicious_transactions(client, items):
+        source_key = f"txn:{txn.get('transaction_id')}"
+        if source_key in dismissed:
+            continue
+        merchant = txn.get('merchant_name') or txn.get('name') or 'Unknown'
+        category = (txn.get('personal_finance_category') or {}).get('primary') or 'OTHER'
+        try:
+            assessment = assess_bank_transaction_risk(merchant, txn['amount'], category)
+        except Exception as e:
+            print(f'suspicious transaction assessment failed for circle {circle_id}: {e}')
+            continue
+        if assessment.risk_level == 'low':
+            continue
+        results.append({
+            'merchant': merchant,
+            'amount': round(txn['amount'], 2),
+            'date': str(txn.get('date')),
+            'category': category,
+            'source_key': source_key,
+            'risk_level': assessment.risk_level,
+            'explanation': assessment.explanation,
+            'suggested_action': assessment.suggested_action,
+        })
+    return results
 
 @router.post('/{circle_id}/plaid/dismiss', status_code=201)
 def dismiss_detected_suggestion(

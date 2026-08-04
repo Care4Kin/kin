@@ -11,6 +11,7 @@ export function usePlaidBank(circleId) {
   const [spending, setSpending] = useState([])
   const [subscriptions, setSubscriptions] = useState([])
   const [detectedBills, setDetectedBills] = useState([])
+  const [detectedFlags, setDetectedFlags] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [linkToken, setLinkToken] = useState(null)
@@ -21,16 +22,18 @@ export function usePlaidBank(circleId) {
     setLoading(true)
     setError('')
     try {
-      const [acc, spend, subs, bills] = await Promise.all([
+      const [acc, spend, subs, bills, flags] = await Promise.all([
         api.getPlaidAccounts(circleId),
         api.getPlaidSpending(circleId),
         api.getPlaidSubscriptions(circleId),
         api.getPlaidDetectedBills(circleId),
+        api.getPlaidDetectedFlags(circleId),
       ])
       setAccounts(acc)
       setSpending(spend)
       setSubscriptions(subs)
       setDetectedBills(bills)
+      setDetectedFlags(flags)
     } catch (err) {
       setError(err.message)
     } finally {
@@ -89,5 +92,5 @@ export function usePlaidBank(circleId) {
     }
   }
 
-  return { accounts, spending, subscriptions, detectedBills, loading, error, connecting, connect, disconnect, refresh }
+  return { accounts, spending, subscriptions, detectedBills, detectedFlags, loading, error, connecting, connect, disconnect, refresh }
 }

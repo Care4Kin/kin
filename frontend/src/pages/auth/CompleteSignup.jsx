@@ -76,7 +76,7 @@ export default function CompleteSignup() {
 
           <FormMessage variant="error">{error}</FormMessage>
 
-          <button type="submit" className="btn-primary" disabled={loading}>
+          <button type="submit" className="btn-primary" disabled={loading} title="Finish setting up your account">
             {loading ? 'Setting up…' : 'Finish'}
           </button>
         </form>

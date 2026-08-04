@@ -36,22 +36,28 @@ export default function Register() {
   async function handleSubmit(e) {
     e.preventDefault()
     setError('')
-    if (form.password !== form.confirm_password) {
+    if (form.password && form.password !== form.confirm_password) {
       setError('Passwords do not match')
+      return
+    }
+    if (!form.password && !form.phone.trim() && !form.security_answer.trim()) {
+      setError('Choose a password, or provide a phone number or security question so you can sign back in')
       return
     }
     setLoading(true)
     try {
       await api.register({
         email: form.email,
-        password: form.password,
+        password: form.password || undefined,
         full_name: form.full_name,
         role: form.role,
         phone: form.phone,
         security_question: form.security_question,
         security_answer: form.security_answer,
       })
-      const data = await api.login({ email: form.email, password: form.password })
+      // Sign them straight in with the security answer they just set, rather
+      // than the password field, since that field may have been left blank.
+      const data = await api.loginWithSecurityQuestion({ email: form.email, security_answer: form.security_answer })
       login({ user_id: data.user_id, role: data.role, full_name: data.full_name, email: data.email }, data.token)
       navigate('/dashboard', { state: { justSignedUp: true } })
     } catch (err) {
@@ -122,7 +128,10 @@ export default function Register() {
           </div>
 
           <div className="field-group">
-            <label htmlFor="password">Password</label>
+            <label htmlFor="password">Password (optional)</label>
+            <p className="field-hint">
+              Don't want to remember a password? Leave this blank — your security question below will let you sign back in.
+            </p>
             <input
               id="password"
               name="password"
@@ -130,22 +139,23 @@ export default function Register() {
               autoComplete="new-password"
               value={form.password}
               onChange={handleChange}
-              required
             />
           </div>
 
-          <div className="field-group">
-            <label htmlFor="confirm_password">Re-enter Password</label>
-            <input
-              id="confirm_password"
-              name="confirm_password"
-              type="password"
-              autoComplete="new-password"
-              value={form.confirm_password}
-              onChange={handleChange}
-              required
-            />
-          </div>
+          {form.password && (
+            <div className="field-group">
+              <label htmlFor="confirm_password">Re-enter Password</label>
+              <input
+                id="confirm_password"
+                name="confirm_password"
+                type="password"
+                autoComplete="new-password"
+                value={form.confirm_password}
+                onChange={handleChange}
+                required
+              />
+            </div>
+          )}
 
           <RolePicker value={form.role} onChange={role => setForm({ ...form, role })} />
 
@@ -176,7 +186,7 @@ export default function Register() {
 
           <FormMessage variant="error">{error}</FormMessage>
 
-          <button type="submit" className="btn-primary" disabled={loading}>
+          <button type="submit" className="btn-primary" disabled={loading} title="Create your Kin account">
             {loading ? 'Creating account…' : 'Sign Up'}
           </button>
         </form>

@@ -120,13 +120,13 @@ export default function Login() {
         <h1 className="auth-title">Log In</h1>
 
         <div className="auth-mode-toggle">
-          <button type="button" className={mode === 'email' ? 'active' : ''} onClick={() => { setMode('email'); setError('') }}>
+          <button type="button" className={mode === 'email' ? 'active' : ''} onClick={() => { setMode('email'); setError('') }} title="Sign in with your email and password">
             Email
           </button>
-          <button type="button" className={mode === 'phone' ? 'active' : ''} onClick={() => { setMode('phone'); setError('') }}>
+          <button type="button" className={mode === 'phone' ? 'active' : ''} onClick={() => { setMode('phone'); setError('') }} title="Sign in with a code texted to your phone">
             Phone
           </button>
-          <button type="button" className={mode === 'question' ? 'active' : ''} onClick={() => { setMode('question'); setError('') }}>
+          <button type="button" className={mode === 'question' ? 'active' : ''} onClick={() => { setMode('question'); setError('') }} title="Sign in by answering your security question">
             Security Question
           </button>
         </div>
@@ -165,7 +165,7 @@ export default function Login() {
               Forgot my password
             </Link>
 
-            <button type="submit" className="btn-primary" disabled={loading}>
+            <button type="submit" className="btn-primary" disabled={loading} title="Log in with your email and password">
               {loading ? 'Logging in…' : 'Log In'}
             </button>
           </form>
@@ -188,7 +188,7 @@ export default function Login() {
 
             <FormMessage variant="error">{error}</FormMessage>
 
-            <button type="submit" className="btn-primary" disabled={loading}>
+            <button type="submit" className="btn-primary" disabled={loading} title="Text a one-time code to this phone number">
               {loading ? 'Sending…' : 'Send Code'}
             </button>
           </form>
@@ -211,10 +211,10 @@ export default function Login() {
 
             <FormMessage variant="error">{error}</FormMessage>
 
-            <button type="submit" className="btn-primary" disabled={loading}>
+            <button type="submit" className="btn-primary" disabled={loading} title="Confirm the code and log in">
               {loading ? 'Checking…' : 'Log In'}
             </button>
-            <button type="button" className="btn-secondary" onClick={() => { setCodeSent(false); setCode(''); setPhone(''); setError('') }}>
+            <button type="button" className="btn-secondary" onClick={() => { setCodeSent(false); setCode(''); setPhone(''); setError('') }} title="Enter a different phone number">
               Use a different number
             </button>
           </form>
@@ -237,7 +237,7 @@ export default function Login() {
 
             <FormMessage variant="error">{error}</FormMessage>
 
-            <button type="submit" className="btn-primary" disabled={loading}>
+            <button type="submit" className="btn-primary" disabled={loading} title="Look up your security question">
               {loading ? 'Looking up…' : 'Continue'}
             </button>
           </form>
@@ -262,10 +262,10 @@ export default function Login() {
 
             <FormMessage variant="error">{error}</FormMessage>
 
-            <button type="submit" className="btn-primary" disabled={loading}>
+            <button type="submit" className="btn-primary" disabled={loading} title="Confirm your answer and log in">
               {loading ? 'Checking…' : 'Log In'}
             </button>
-            <button type="button" className="btn-secondary" onClick={() => { setQuestionFetched(false); setQuestionAnswer(''); setQuestionEmail(''); setError('') }}>
+            <button type="button" className="btn-secondary" onClick={() => { setQuestionFetched(false); setQuestionAnswer(''); setQuestionEmail(''); setError('') }} title="Look up a different account">
               Use a different email
             </button>
           </form>

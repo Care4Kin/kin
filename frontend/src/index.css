@@ -186,6 +186,55 @@ body {
 a { color: inherit; text-decoration: none; }
 button, input, select, textarea { font: inherit; }
 
+/* ─── Accessibility: text size + high contrast (Settings) ──────────── */
+/* rem is used throughout the app, so scaling the root font-size scales
+   every rem-based measurement — headings, padding, buttons — together,
+   not just body copy. */
+:root[data-text-size="large"] { font-size: 112.5%; }
+:root[data-text-size="large"] body { font-size: 20px; }
+:root[data-text-size="xlarge"] { font-size: 125%; }
+:root[data-text-size="xlarge"] body { font-size: 22px; }
+
+/* A theme-independent override, not a tweak to each color theme — the goal
+   is a maximally simple, unambiguous palette regardless of which of the six
+   themes is active. */
+:root[data-high-contrast="true"] {
+  --bg:              #FFFFFF;
+  --surface:         #FFFFFF;
+  --surface-2:       #F0F0F0;
+  --border:          #000000;
+  --green-dark:      #DDEFE3;
+  --green-mid:       #005A2B;
+  --green-mid-hover: #00401E;
+  --green-light:     #004020;
+  --green-pale:      #003318;
+  --warn:            #B00000;
+  --warn-border:     #B00000;
+  --warn-light:      #8A0000;
+  --warn-muted:      #FBDCDC;
+  --warn-pale:       #FDECEC;
+  --warn-on-pale:    #7A0000;
+  --text:            #000000;
+  --text-muted:      #000000;
+  --text-on-accent:  #FFFFFF;
+}
+
+/* ─── Skip to content ────────────────────────────────────────────── */
+.skip-link {
+  position: absolute;
+  top: -3rem;
+  left: 1rem;
+  z-index: 1000;
+  background: var(--surface);
+  color: var(--text);
+  border: 2px solid var(--green-light);
+  border-radius: var(--radius-sm);
+  padding: 0.6rem 1rem;
+  font-weight: 700;
+  transition: top 0.15s;
+}
+.skip-link:focus { top: 1rem; }
+
 /* ─── App shell ──────────────────────────────────────────────────── */
 .app-shell {
   display: flex;
@@ -589,6 +638,16 @@ button, input, select, textarea { font: inherit; }
 .role-option-title { font-size: 1rem; font-weight: 700; color: var(--text); text-transform: none; letter-spacing: normal; }
 .role-option-desc { font-size: 0.85rem; color: var(--text-muted); text-transform: none; letter-spacing: normal; }
 
+.checkbox-row {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-top: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+.checkbox-row input[type="checkbox"] { width: 1.15rem; height: 1.15rem; accent-color: var(--green-mid); }
+
 .theme-swatch {
   display: flex;
   width: 100%;
@@ -681,6 +740,13 @@ button, input, select, textarea { font: inherit; }
   font-size: 0.8rem;
   color: var(--text-muted);
 }
+
+.checklist { list-style: none; display: flex; flex-direction: column; gap: 0.5rem; }
+.checklist-item { display: flex; align-items: center; gap: 0.6rem; font-size: 0.95rem; color: var(--text); }
+.checklist-item span:first-child { flex-shrink: 0; color: var(--green-light); font-weight: 700; }
+.checklist-item--done { color: var(--text-muted); text-decoration: line-through; }
+.checklist-item--done span:first-child { color: var(--text-muted); }
+.checklist-item a { color: var(--green-light); font-weight: 700; text-decoration: underline; }
 
 .dashboard-grid {
   display: grid;
@@ -890,6 +956,9 @@ button, input, select, textarea { font: inherit; }
 }
 
 .info-card-rows { display: flex; flex-direction: column; gap: 0.35rem; margin-top: 0.25rem; }
+
+.faq-item summary.info-card-title { cursor: pointer; }
+.faq-item summary::-webkit-details-marker { color: var(--green-light); }
 
 .info-row { display: flex; gap: 0.5rem; align-items: baseline; }
 .info-row-label {
