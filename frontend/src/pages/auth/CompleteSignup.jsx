@@ -41,7 +41,7 @@ export default function CompleteSignup() {
         security_answer: securityAnswer.trim() || null,
       })
       login({ user_id: data.user_id, role: data.role, full_name: data.full_name, email: data.email }, data.token)
-      navigate('/dashboard', { state: { justSignedUp: true } })
+      navigate('/dashboard')
     } catch (err) {
       setError(err.message)
     } finally {
@@ -76,7 +76,7 @@ export default function CompleteSignup() {
 
           <FormMessage variant="error">{error}</FormMessage>
 
-          <button type="submit" className="btn-primary" disabled={loading}>
+          <button type="submit" className="btn-primary" disabled={loading} title="Finish setting up your account">
             {loading ? 'Setting up…' : 'Finish'}
           </button>
         </form>

@@ -56,7 +56,7 @@ export default function ForgotPassword() {
         {done ? (
           <>
             <p className="field-hint">Your password has been updated. You can log in now.</p>
-            <button className="btn-primary" onClick={() => navigate('/login')}>Go to Log In</button>
+            <button className="btn-primary" onClick={() => navigate('/login')} title="Go back to the log in page">Go to Log In</button>
           </>
         ) : step === 'email' ? (
           <form onSubmit={handleEmailSubmit} className="auth-form">
@@ -75,7 +75,7 @@ export default function ForgotPassword() {
 
             <FormMessage variant="error">{error}</FormMessage>
 
-            <button type="submit" className="btn-primary" disabled={loading}>
+            <button type="submit" className="btn-primary" disabled={loading} title="Look up your security question">
               {loading ? 'Looking up…' : 'Continue'}
             </button>
           </form>
@@ -126,7 +126,7 @@ export default function ForgotPassword() {
 
             <FormMessage variant="error">{error}</FormMessage>
 
-            <button type="submit" className="btn-primary" disabled={loading}>
+            <button type="submit" className="btn-primary" disabled={loading} title="Save your new password">
               {loading ? 'Updating…' : 'Reset Password'}
             </button>
           </form>

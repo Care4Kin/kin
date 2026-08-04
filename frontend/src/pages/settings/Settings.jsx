@@ -2,9 +2,11 @@ import { useState, useEffect } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import { useTheme } from '../../context/ThemeContext'
+import { useAccessibility } from '../../context/AccessibilityContext'
 import { api } from '../../services/api'
 import { useFetch } from '../../hooks/useFetch'
 import FormMessage from '../../components/FormMessage'
+import HumanSupportCard from '../../components/HumanSupportCard'
 
 const THEME_GROUPS = [
   { label: 'Light mode', themes: [
@@ -25,6 +27,12 @@ const SECURITY_QUESTIONS = [
   "What is your mother's maiden name?",
   'What was the name of your first school?',
   `What is the name of your current caregiver?`,
+]
+
+const TEXT_SIZES = [
+  { value: 'normal', label: 'Normal' },
+  { value: 'large', label: 'Large' },
+  { value: 'xlarge', label: 'Extra Large' },
 ]
 
 const DIGEST_FREQUENCIES = [
@@ -52,16 +60,29 @@ export default function Settings() {
     <div className="page">
       <h1 className="page-title">Settings</h1>
       <AppearanceSection />
+      <AccessibilitySection />
       <ProfileSection me={me} />
       {user?.role === 'caregiver' && <DigestFrequencySection circleId={circleId} />}
       <PasswordSection />
       <SecurityQuestionSection me={me} />
       <section className="inline-form">
+        <h2 className="section-label">Help &amp; Resources</h2>
+        <p className="field-hint mb-sm">Answers, safety information, and real people to call.</p>
+        <div className="btn-row" style={{ flexWrap: 'wrap' }}>
+          <Link to="/how-it-works" className="btn-secondary" style={{ flex: '1 1 45%' }}>How Kin Works</Link>
+          <Link to="/faq" className="btn-secondary" style={{ flex: '1 1 45%' }}>FAQ</Link>
+          <Link to="/scam-library" className="btn-secondary" style={{ flex: '1 1 45%' }}>Scam Reference Library</Link>
+          <Link to="/caregiver-resources" className="btn-secondary" style={{ flex: '1 1 45%' }}>Caregiver Resources</Link>
+          <Link to="/device-guide" className="btn-secondary" style={{ flex: '1 1 45%' }}>Device Setup Guide</Link>
+        </div>
+        <HumanSupportCard className="mt-md" />
+      </section>
+      <section className="inline-form">
         <h2 className="section-label">Feedback</h2>
         <p className="field-hint mb-sm">Disagree with something, or find it uncomfortable? Tell the Kin team directly and privately.</p>
         <Link to="/feedback" className="btn-secondary" style={{ display: 'block', textAlign: 'center', width: '100%' }}>Send Feedback</Link>
       </section>
-      <button className="btn-secondary" style={{ width: '100%' }} onClick={handleSignOut}>Sign Out</button>
+      <button className="btn-secondary" style={{ width: '100%' }} onClick={handleSignOut} title="Sign out of your Kin account">Sign Out</button>
     </div>
   )
 }
@@ -149,6 +170,35 @@ function AppearanceSection() {
   )
 }
 
+function AccessibilitySection() {
+  const { textSize, setTextSize, highContrast, setHighContrast } = useAccessibility()
+
+  return (
+    <section className="inline-form">
+      <h2 className="section-label">Accessibility</h2>
+      <p className="field-hint mb-sm">
+        These adjust text size and contrast in the app itself. For a screen reader, turn on
+        your phone or computer's built-in one (like VoiceOver or TalkBack) — Kin is built to work with it.
+      </p>
+      <fieldset className="field-group">
+        <legend>Text Size</legend>
+        <div className="role-choice">
+          {TEXT_SIZES.map(t => (
+            <label key={t.value} className={`role-option ${textSize === t.value ? 'role-option--active' : ''}`}>
+              <input type="radio" name="text-size" value={t.value} checked={textSize === t.value} onChange={() => setTextSize(t.value)} />
+              <span className="role-option-title">{t.label}</span>
+            </label>
+          ))}
+        </div>
+      </fieldset>
+      <label className="checkbox-row">
+        <input type="checkbox" checked={highContrast} onChange={e => setHighContrast(e.target.checked)} />
+        High contrast colors
+      </label>
+    </section>
+  )
+}
+
 function ProfileSection({ me }) {
   const [form, setForm] = useState({ full_name: me.full_name, phone: me.phone || '' })
   const [saving, setSaving] = useState(false)
@@ -188,7 +238,7 @@ function ProfileSection({ me }) {
         </div>
         <FormMessage variant="error">{error}</FormMessage>
         <FormMessage variant="success">{message}</FormMessage>
-        <button type="submit" className="btn-primary" disabled={saving}>{saving ? 'Saving…' : 'Save Profile'}</button>
+        <button type="submit" className="btn-primary" disabled={saving} title="Save your name and phone number">{saving ? 'Saving…' : 'Save Profile'}</button>
       </form>
     </section>
   )
@@ -238,7 +288,7 @@ function PasswordSection() {
         </div>
         <FormMessage variant="error">{error}</FormMessage>
         <FormMessage variant="success">{message}</FormMessage>
-        <button type="submit" className="btn-primary" disabled={saving}>{saving ? 'Updating…' : 'Update Password'}</button>
+        <button type="submit" className="btn-primary" disabled={saving} title="Save your new password">{saving ? 'Updating…' : 'Update Password'}</button>
       </form>
     </section>
   )
@@ -283,7 +333,7 @@ function SecurityQuestionSection({ me }) {
         </div>
         <FormMessage variant="error">{error}</FormMessage>
         <FormMessage variant="success">{message}</FormMessage>
-        <button type="submit" className="btn-primary" disabled={saving}>{saving ? 'Saving…' : 'Update Security Question'}</button>
+        <button type="submit" className="btn-primary" disabled={saving} title="Save your new security question and answer">{saving ? 'Saving…' : 'Update Security Question'}</button>
       </form>
     </section>
   )

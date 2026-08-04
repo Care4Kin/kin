@@ -6,7 +6,10 @@ Theme = Literal['white-emerald', 'sage-cream', 'soft-blue-slate', 'sunset-coral'
 
 class RegisterRequest(BaseModel):
     email: str
-    password: str
+    # Optional so a user can sign up without a password -- e.g. via phone
+    # sign-in or their security question -- instead of memorizing one. A
+    # random one is generated server-side when omitted, same as Google signup.
+    password: Optional[str] = None
     full_name: str
     role: Role
     phone: Optional[str] = None

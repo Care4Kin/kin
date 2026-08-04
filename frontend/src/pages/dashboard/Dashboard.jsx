@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Link, useLocation } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import { api } from '../../services/api'
 import { daysUntil } from '../../utils/date'
@@ -34,25 +34,19 @@ const CAREGIVER_TIPS = [
   { text: 'Flags are not just for scams — use them to track anything that seems off, even small things.', author: 'Marcus, caregiver' },
 ]
 
-const SIGNUP_TIPS = [
-  { text: 'Welcome to Kin! No bank or government agency will ever ask for your password over the phone — not even us.' },
-  { text: "You're all set up. The freezer is a great place for ice cream, not passwords — a password manager works better." },
-  { text: "Glad you're here. One habit that helps: if a call or text feels urgent and scary, that's exactly when to slow down and check with family." },
-]
-
-function getRandomTip(role) {
-  const pool = [...GENERAL_TIPS, ...(role === 'caregiver' ? CAREGIVER_TIPS : ELDER_TIPS)]
-  return pool[Math.floor(Math.random() * pool.length)]
+// Same tip all day, a new one the next day — not reseeded on every reload.
+function dayOfYear(d = new Date()) {
+  const start = new Date(d.getFullYear(), 0, 0)
+  return Math.floor((d - start) / 86400000)
 }
 
-function getSignupTip() {
-  return SIGNUP_TIPS[Math.floor(Math.random() * SIGNUP_TIPS.length)]
+function getTipOfDay(role) {
+  const pool = [...GENERAL_TIPS, ...(role === 'caregiver' ? CAREGIVER_TIPS : ELDER_TIPS)]
+  return pool[dayOfYear() % pool.length]
 }
 
 export default function Dashboard() {
   const { user, circleId, loading: authLoading, circleChecked } = useAuth()
-  const location = useLocation()
-  const justSignedUp = Boolean(location.state?.justSignedUp)
   const [counts, setCounts] = useState({})
   const [data, setData] = useState(null)
   const [bankCount, setBankCount] = useState(0)
@@ -90,7 +84,7 @@ export default function Dashboard() {
   const accountsCount = (counts.accounts || 0) + bankCount
 
   const isCaregiver = user?.role === 'caregiver'
-  const [tip] = useState(() => justSignedUp ? getSignupTip() : getRandomTip(user?.role))
+  const [tip] = useState(() => getTipOfDay(user?.role))
 
   if (authLoading) return null
   if (!user) return <LoggedOutGate title="Dashboard" description="Your home base — bills, prescriptions, appointments, and more, all in one place, shared with your family." />
@@ -100,12 +94,14 @@ export default function Dashboard() {
   return (
     <div className="page dashboard">
       <div className="tip-banner">
-        <span className="tip-label">{justSignedUp ? 'Welcome' : 'Tip for today'}</span>
+        <span className="tip-label">Tip for today</span>
         <p>"{tip.text}"</p>
         {tip.author && <p className="tip-author">— {tip.author}</p>}
       </div>
 
-      {isCaregiver && data && <CaregiverSummary data={data} />}
+      <GetStartedChecklist isCaregiver={isCaregiver} counts={counts} accountsCount={accountsCount} />
+
+      {data && <AtAGlanceSummary data={data} />}
 
       <div className="dashboard-grid">
         <SummaryCard title="Bills" description="Track what you owe and when it's due" href="/bills" accent="green" count={counts.bills} />
@@ -122,6 +118,37 @@ export default function Dashboard() {
   )
 }
 
+function GetStartedChecklist({ isCaregiver, counts, accountsCount }) {
+  const items = isCaregiver
+    ? [
+        {
+          label: "Wait for your family member to add their first bill, prescription, or account",
+          done: (counts.bills || 0) > 0 || (counts.prescriptions || 0) > 0 || accountsCount > 0,
+        },
+      ]
+    : [
+        { label: 'Invite a family member to your circle', done: (counts.circle || 0) > 0, href: '/circle' },
+        { label: 'Add your first bill or account', done: (counts.bills || 0) > 0 || accountsCount > 0, href: '/bills' },
+        { label: 'Add a prescription', done: (counts.prescriptions || 0) > 0, href: '/prescriptions' },
+      ]
+
+  if (items.every(i => i.done)) return null
+
+  return (
+    <section className="tip-banner mb-lg">
+      <span className="tip-label">Get Started</span>
+      <ul className="checklist">
+        {items.map(item => (
+          <li key={item.label} className={`checklist-item ${item.done ? 'checklist-item--done' : ''}`}>
+            <span aria-hidden="true">{item.done ? '✓' : '○'}</span>
+            {item.href && !item.done ? <Link to={item.href}>{item.label}</Link> : <span>{item.label}</span>}
+          </li>
+        ))}
+      </ul>
+    </section>
+  )
+}
+
 function SummaryCard({ title, description, href, accent, count }) {
   return (
     <Link to={href} className={`summary-card summary-card--${accent}`}>
@@ -132,7 +159,7 @@ function SummaryCard({ title, description, href, accent, count }) {
   )
 }
 
-function CaregiverSummary({ data }) {
+function AtAGlanceSummary({ data }) {
   const unpaidBills = data.bills.filter(b => !b.is_paid)
   const unpaidTotal = unpaidBills.reduce((sum, b) => sum + Number(b.amount || 0), 0)
   const openFlags = data.flags.filter(f => !f.is_resolved)

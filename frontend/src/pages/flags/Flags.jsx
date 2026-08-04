@@ -3,9 +3,12 @@ import { AlertTriangle, Check } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
 import { api } from '../../services/api'
 import { useResourceList } from '../../hooks/useResourceList'
+import { usePlaidBank } from '../../hooks/usePlaidBank'
 import FormMessage from '../../components/FormMessage'
 import LoggedOutGate from '../../components/LoggedOutGate'
 import NoCircleGate from '../../components/NoCircleGate'
+import HumanSupportCard from '../../components/HumanSupportCard'
+import DetectedFlagItems from '../../components/DetectedFlagItems'
 
 const TYPE_LABELS = { call: 'Phone Call', email: 'Email', text: 'Text', bill: 'Bill', other: 'Other' }
 
@@ -25,6 +28,7 @@ export default function Flags() {
   const { circleId, user, loading: authLoading, circleChecked } = useAuth()
   const isCaregiver = user?.role === 'caregiver'
   const { items: flags, setItems: setFlags, loading, error } = useResourceList(() => api.getFlags(circleId), [circleId], !!circleId)
+  const bank = usePlaidBank(circleId)
   const [showForm, setShowForm] = useState(false)
   const [form, setForm] = useState(emptyForm)
   const [saving, setSaving] = useState(false)
@@ -95,6 +99,20 @@ export default function Flags() {
     }
   }
 
+async function handleAddDetectedFlag(item) {
+    const flag = await api.createFlag(circleId, {
+      type: 'other',
+      description: `Unusual bank transaction: $${item.amount.toFixed(2)} to ${item.merchant} on ${item.date}`,
+      severity: item.risk_level === 'high' ? 'high' : 'low',
+      source_key: item.source_key,
+    })
+    setFlags(prev => [flag, ...prev])
+  }
+
+  async function handleDismissDetectedFlag(item) {
+    await api.dismissPlaidSuggestion(circleId, item.source_key)
+  }
+
 const visible = filter === 'all'
   ? flags
   : filter === 'open'
@@ -110,6 +128,10 @@ const visible = filter === 'all'
       <FormMessage variant="error" className="page-status page-status--error">{actionError}</FormMessage>
 
       {isCaregiver && <FlagSummary flags={flags} />}
+
+      <HumanSupportCard className="mb-lg" />
+
+      <DetectedFlagItems items={bank.detectedFlags} onAdd={handleAddDetectedFlag} onDismiss={handleDismissDetectedFlag} />
 
     <div className="filter-bar">
       {FILTERS.map(f => (

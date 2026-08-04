@@ -120,6 +120,7 @@ export const api = {
   getPlaidSpending: (circleId) => request('GET', `/api/circles/${circleId}/plaid/spending`),
   getPlaidSubscriptions: (circleId) => request('GET', `/api/circles/${circleId}/plaid/subscriptions`),
   getPlaidDetectedBills: (circleId) => request('GET', `/api/circles/${circleId}/plaid/bills`),
+  getPlaidDetectedFlags: (circleId) => request('GET', `/api/circles/${circleId}/plaid/flags`),
   dismissPlaidSuggestion: (circleId, sourceKey) => request('POST', `/api/circles/${circleId}/plaid/dismiss`, { source_key: sourceKey }),
   removePlaidItem: (circleId, plaidItemId) => request('DELETE', `/api/circles/${circleId}/plaid/items/${plaidItemId}`),
 

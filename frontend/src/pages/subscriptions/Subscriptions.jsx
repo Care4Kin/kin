@@ -22,6 +22,7 @@ export default function Subscriptions() {
   const [form, setForm] = useState({ name: '', monthly_cost: '' })
   const [saving, setSaving] = useState(false)
   const [formError, setFormError] = useState('')
+  const [editingId, setEditingId] = useState(null)
   const [actionError, setActionError] = useState('')
 
   if (authLoading) return null
@@ -30,7 +31,7 @@ export default function Subscriptions() {
   if (!circleId || loading) return <p className="page-status">Loading subscriptions…</p>
   if (error) return <FormMessage variant="error" className="page-status page-status--error">{error}</FormMessage>
 
-  async function handleAdd(e) {
+  async function handleSubmit(e) {
     e.preventDefault()
     setFormError('')
     if (!form.name.trim()) {
@@ -38,19 +39,30 @@ export default function Subscriptions() {
       return
     }
     setSaving(true)
+    const payload = { name: form.name.trim(), monthly_cost: Number(form.monthly_cost) }
     try {
-      const sub = await api.createSubscription(circleId, {
-        name: form.name.trim(),
-        monthly_cost: Number(form.monthly_cost),
-      })
-      setSubs(prev => [...prev, sub])
+      if (editingId) {
+        const sub = await api.updateSubscription(circleId, editingId, payload)
+        setSubs(prev => prev.map(s => s.subscription_id === sub.subscription_id ? sub : s))
+      } else {
+        const sub = await api.createSubscription(circleId, payload)
+        setSubs(prev => [...prev, sub])
+      }
       setForm({ name: '', monthly_cost: '' })
+      setEditingId(null)
       setShowForm(false)
     } catch (err) {
       setFormError(err.message)
     } finally {
       setSaving(false)
     }
+  }
+
+  function handleEditClick(sub) {
+    setForm({ name: sub.name || '', monthly_cost: sub.monthly_cost != null ? String(sub.monthly_cost) : '' })
+    setEditingId(sub.subscription_id)
+    setFormError('')
+    setShowForm(true)
   }
 
   async function toggleActive(sub) {
@@ -119,7 +131,7 @@ export default function Subscriptions() {
       )}
 
       {showForm ? (
-        <form className="inline-form" onSubmit={handleAdd}>
+        <form className="inline-form" onSubmit={handleSubmit}>
           <div className="field-group">
             <label htmlFor="sub-name">Subscription Name</label>
             <input id="sub-name" required value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} />
@@ -130,18 +142,20 @@ export default function Subscriptions() {
           </div>
           <FormMessage variant="error">{formError}</FormMessage>
           <div className="btn-row">
-            <button type="submit" className="btn-primary" disabled={saving}>{saving ? 'Saving…' : 'Add Subscription'}</button>
-            <button type="button" className="btn-secondary" onClick={() => { setShowForm(false); setFormError('') }}>Cancel</button>
+            <button type="submit" className="btn-primary" disabled={saving}>
+              {saving ? 'Saving…' : editingId ? 'Save Changes' : 'Add Subscription'}
+            </button>
+            <button type="button" className="btn-secondary" onClick={() => { setShowForm(false); setFormError(''); setForm({ name: '', monthly_cost: '' }); setEditingId(null) }}>Cancel</button>
           </div>
         </form>
       ) : (
-        <button className="add-toggle" aria-expanded={showForm} onClick={() => setShowForm(true)}>+ Add a subscription</button>
+        <button className="add-toggle" aria-expanded={showForm} onClick={() => { setForm({ name: '', monthly_cost: '' }); setEditingId(null); setShowForm(true) }}>+ Add a subscription</button>
       )}
 
       <section>
         <h2 className="section-label">Active</h2>
         <div className="card-list">
-          {active.map(s => <SubRow key={s.subscription_id} sub={s} isCaregiver={isCaregiver} onToggleActive={toggleActive} onDelete={handleDelete} onMarkReviewed={handleMarkReviewed} />)}
+          {active.map(s => <SubRow key={s.subscription_id} sub={s} isCaregiver={isCaregiver} onToggleActive={toggleActive} onDelete={handleDelete} onMarkReviewed={handleMarkReviewed} onEdit={handleEditClick} />)}
         </div>
       </section>
 
@@ -149,7 +163,7 @@ export default function Subscriptions() {
         <section className="mt-lg">
           <h2 className="section-label">Inactive</h2>
           <div className="card-list">
-            {inactive.map(s => <SubRow key={s.subscription_id} sub={s} isCaregiver={isCaregiver} onToggleActive={toggleActive} onDelete={handleDelete} onMarkReviewed={handleMarkReviewed} />)}
+            {inactive.map(s => <SubRow key={s.subscription_id} sub={s} isCaregiver={isCaregiver} onToggleActive={toggleActive} onDelete={handleDelete} onMarkReviewed={handleMarkReviewed} onEdit={handleEditClick} />)}
           </div>
         </section>
       )}
@@ -167,7 +181,7 @@ export default function Subscriptions() {
   )
 }
 
-function SubRow({ sub, isCaregiver, onToggleActive, onDelete, onMarkReviewed }) {
+function SubRow({ sub, isCaregiver, onToggleActive, onDelete, onMarkReviewed, onEdit }) {
   const stale = isCaregiver && sub.is_active && needsReview(sub)
   return (
     <div className={`bill-row row-stacked ${!sub.is_active ? 'bill-row--paid' : ''}`}>
@@ -184,6 +198,9 @@ function SubRow({ sub, isCaregiver, onToggleActive, onDelete, onMarkReviewed }) 
       <div className="action-row">
         <button className="action-btn" onClick={() => onToggleActive(sub)} title={sub.is_active ? 'Mark this subscription as inactive' : 'Mark this subscription as active'}>
           {sub.is_active ? 'Mark Inactive' : 'Mark Active'}
+        </button>
+        <button className="action-btn" onClick={() => onEdit(sub)} title="Edit this subscription">
+          Edit
         </button>
         {stale && (
           <button className="action-btn" onClick={() => onMarkReviewed(sub)} title="Mark this subscription as reviewed today">

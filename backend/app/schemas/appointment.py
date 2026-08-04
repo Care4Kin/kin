@@ -23,4 +23,6 @@ class AppointmentUpdate(BaseModel):
     location: Optional[str] = None
     notes: Optional[str] = None
 
-    _validate_date = field_validator('date')(_date_not_in_past)
+    # No _date_not_in_past validator here (unlike AppointmentCreate): editing
+    # a past appointment's notes/location resends its existing date, which
+    # would otherwise fail this check on every edit of an already-past visit.

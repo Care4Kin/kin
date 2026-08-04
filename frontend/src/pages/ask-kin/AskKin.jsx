@@ -9,6 +9,7 @@ const SUGGESTIONS = [
   "What's my Netflix costing me a year?",
   'Do I have any appointments coming up?',
   'Which prescriptions need a refill soon?',
+  'How do I reach a real person for help?',
 ]
 
 export default function AskKin() {

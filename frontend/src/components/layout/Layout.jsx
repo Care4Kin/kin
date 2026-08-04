@@ -7,10 +7,11 @@ import OnboardingSlides from '../onboarding/OnboardingSlides'
 export default function Layout() {
   return (
     <div className="app-shell">
+      <a href="#main-content" className="skip-link">Skip to content</a>
       <TopBar />
       <div className="app-body">
         <Sidebar />
-        <main className="main-content">
+        <main className="main-content" id="main-content">
           <Outlet />
         </main>
       </div>
