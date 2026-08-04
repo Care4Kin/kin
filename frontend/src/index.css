@@ -842,6 +842,23 @@ button, input, select, textarea { font: inherit; }
 /* ─── Card list ──────────────────────────────────────────────────── */
 .card-list { display: flex; flex-direction: column; gap: 0.6rem; }
 
+/* Prescriptions: on mobile the bottom nav is fixed, so a short list leaves
+   dead space beneath it. Let the list absorb that space by spreading its
+   cards out instead of leaving one big gap at the bottom. Desktop already
+   fills the width via the 2-up grid below, so this is mobile-only. */
+@media (max-width: 1023px) {
+  .rx-page {
+    display: flex;
+    flex-direction: column;
+    min-height: calc(100vh - var(--top-bar-h) - var(--bottom-nav-h));
+  }
+
+  .rx-page .card-list {
+    flex: 1;
+    justify-content: space-evenly;
+  }
+}
+
 .info-card {
   background: var(--surface);
   border: 1px solid var(--border);

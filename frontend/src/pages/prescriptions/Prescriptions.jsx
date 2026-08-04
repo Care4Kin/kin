@@ -23,6 +23,7 @@ export default function Prescriptions() {
   const [actionError, setActionError] = useState('')
   const [takenWeek, setTakenWeek] = useState({})
   const [pendingToggles, setPendingToggles] = useState(new Set())
+  const [streakVersion, setStreakVersion] = useState(0)
   const formRef = useRef(null)
 
   useEffect(() => {
@@ -130,6 +131,7 @@ export default function Prescriptions() {
     try {
       if (wasTaken) await api.unmarkPillTaken(circleId, rx.prescription_id, dateStr)
       else await api.markPillTaken(circleId, rx.prescription_id, dateStr)
+      setStreakVersion(v => v + 1)
     } catch (err) {
       setActionError(err.message)
       setTakenWeek(prev => {
@@ -143,11 +145,11 @@ export default function Prescriptions() {
   }
 
   return (
-    <div className="page">
+    <div className="page rx-page">
       <h1 className="page-title">Prescriptions</h1>
       <FormMessage variant="error" className="page-status page-status--error">{actionError}</FormMessage>
 
-      <PillOrganizerTray circleId={circleId} rxs={rxs} takenWeek={takenWeek} pendingToggles={pendingToggles} onToggle={handleTogglePill} />
+      <PillOrganizerTray circleId={circleId} rxs={rxs} takenWeek={takenWeek} pendingToggles={pendingToggles} onToggle={handleTogglePill} streakVersion={streakVersion} />
 
       {showForm ? (
         <form className="inline-form" onSubmit={handleSubmit} ref={formRef}>
@@ -219,7 +221,7 @@ export default function Prescriptions() {
   )
 }
 
-function PillOrganizerTray({ circleId, rxs, takenWeek, pendingToggles, onToggle }) {
+function PillOrganizerTray({ circleId, rxs, takenWeek, pendingToggles, onToggle, streakVersion }) {
   const [expanded, setExpanded] = useState(true)
   const [streak, setStreak] = useState(null)
   const [justBumped, setJustBumped] = useState(false)
@@ -228,7 +230,7 @@ function PillOrganizerTray({ circleId, rxs, takenWeek, pendingToggles, onToggle 
   useEffect(() => {
     if (!circleId) return
     api.getPillStreak(circleId).then(setStreak).catch(() => {})
-  }, [circleId, takenWeek])
+  }, [circleId, streakVersion])
 
   useEffect(() => {
     if (!streak) return
