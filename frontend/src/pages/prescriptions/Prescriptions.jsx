@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { AlertTriangle, Check } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
 import { api } from '../../services/api'
@@ -23,6 +23,11 @@ export default function Prescriptions() {
   const [actionError, setActionError] = useState('')
   const [takenWeek, setTakenWeek] = useState({})
   const [pendingToggles, setPendingToggles] = useState(new Set())
+  const formRef = useRef(null)
+
+  useEffect(() => {
+    if (editingId != null) formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }, [editingId])
 
   useEffect(() => {
     if (!circleId) return
@@ -143,7 +148,7 @@ export default function Prescriptions() {
       <FormMessage variant="error" className="page-status page-status--error">{actionError}</FormMessage>
 
       {showForm ? (
-        <form className="inline-form" onSubmit={handleSubmit}>
+        <form className="inline-form" onSubmit={handleSubmit} ref={formRef}>
           <div className="field-group">
             <label htmlFor="rx-name">Medication Name</label>
             <input id="rx-name" required value={form.medication_name} onChange={e => setForm({ ...form, medication_name: e.target.value })} />
