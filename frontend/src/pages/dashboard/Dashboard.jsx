@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Link, useLocation } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import { api } from '../../services/api'
 import { daysUntil } from '../../utils/date'
@@ -34,12 +34,6 @@ const CAREGIVER_TIPS = [
   { text: 'Flags are not just for scams — use them to track anything that seems off, even small things.', author: 'Marcus, caregiver' },
 ]
 
-const SIGNUP_TIPS = [
-  { text: 'Welcome to Kin! No bank or government agency will ever ask for your password over the phone — not even us.' },
-  { text: "You're all set up. The freezer is a great place for ice cream, not passwords — a password manager works better." },
-  { text: "Glad you're here. One habit that helps: if a call or text feels urgent and scary, that's exactly when to slow down and check with family." },
-]
-
 // Same tip all day, a new one the next day — not reseeded on every reload.
 function dayOfYear(d = new Date()) {
   const start = new Date(d.getFullYear(), 0, 0)
@@ -51,14 +45,8 @@ function getTipOfDay(role) {
   return pool[dayOfYear() % pool.length]
 }
 
-function getSignupTip() {
-  return SIGNUP_TIPS[Math.floor(Math.random() * SIGNUP_TIPS.length)]
-}
-
 export default function Dashboard() {
   const { user, circleId, loading: authLoading, circleChecked } = useAuth()
-  const location = useLocation()
-  const justSignedUp = Boolean(location.state?.justSignedUp)
   const [counts, setCounts] = useState({})
   const [data, setData] = useState(null)
   const [bankCount, setBankCount] = useState(0)
@@ -96,7 +84,7 @@ export default function Dashboard() {
   const accountsCount = (counts.accounts || 0) + bankCount
 
   const isCaregiver = user?.role === 'caregiver'
-  const [tip] = useState(() => justSignedUp ? getSignupTip() : getTipOfDay(user?.role))
+  const [tip] = useState(() => getTipOfDay(user?.role))
 
   if (authLoading) return null
   if (!user) return <LoggedOutGate title="Dashboard" description="Your home base — bills, prescriptions, appointments, and more, all in one place, shared with your family." />
@@ -106,10 +94,9 @@ export default function Dashboard() {
   return (
     <div className="page dashboard">
       <div className="tip-banner">
-        <span className="tip-label">{justSignedUp ? 'Welcome' : 'Tip for today'}</span>
+        <span className="tip-label">Tip for today</span>
         <p>"{tip.text}"</p>
         {tip.author && <p className="tip-author">— {tip.author}</p>}
-        {justSignedUp && <Link to="/how-it-works" className="tip-author" style={{ display: 'block', marginTop: '0.5rem' }}>New here? See how Kin works →</Link>}
       </div>
 
       <GetStartedChecklist isCaregiver={isCaregiver} counts={counts} accountsCount={accountsCount} />

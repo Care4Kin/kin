@@ -59,7 +59,7 @@ export default function Register() {
       // than the password field, since that field may have been left blank.
       const data = await api.loginWithSecurityQuestion({ email: form.email, security_answer: form.security_answer })
       login({ user_id: data.user_id, role: data.role, full_name: data.full_name, email: data.email }, data.token)
-      navigate('/dashboard', { state: { justSignedUp: true } })
+      navigate('/dashboard')
     } catch (err) {
       setError(err.message)
     } finally {
@@ -77,7 +77,7 @@ export default function Register() {
       }
       // Email already had an account — just log them in.
       login({ user_id: data.user_id, role: data.role, full_name: data.full_name, email: data.email }, data.token)
-      navigate('/dashboard', { state: { justSignedUp: true } })
+      navigate('/dashboard')
     } catch (err) {
       setError(err.message)
     }
