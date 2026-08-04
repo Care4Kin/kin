@@ -7,12 +7,16 @@ class MemberInvite(BaseModel):
     can_view_prescriptions: bool = True
     can_view_accounts: bool = True
     can_view_flags: bool = True
+    can_view_subscriptions: bool = True
+    can_view_appointments: bool = True
 
 class MemberPermissionsUpdate(BaseModel):
     can_view_bills: Optional[bool] = None
     can_view_prescriptions: Optional[bool] = None
     can_view_accounts: Optional[bool] = None
     can_view_flags: Optional[bool] = None
+    can_view_subscriptions: Optional[bool] = None
+    can_view_appointments: Optional[bool] = None
 
 DigestFrequency = Literal['off', 'daily', 'weekly', 'biweekly', 'monthly']
 
