@@ -13,4 +13,4 @@ google-auth==2.56.2
 requests==2.34.2
 plaid-python==40.1.0
 certifi==2026.06.17
-google-genai==2.13.0
+groq==1.6.0
