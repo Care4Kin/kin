@@ -237,6 +237,7 @@ button, input, select, textarea { font: inherit; }
 
 /* ─── App shell ──────────────────────────────────────────────────── */
 .app-shell {
+  position: relative; /* scopes .skip-link to this centered column, not the full browser viewport */
   display: flex;
   flex-direction: column;
   min-height: 100vh;
