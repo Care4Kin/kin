@@ -83,6 +83,7 @@ def register(body: RegisterRequest, db: Session = Depends(get_db)):
         phone=normalize_phone(body.phone) if body.phone else None,
         security_question=body.security_question,
         security_answer_hash=hash_password(normalize_answer(body.security_answer)) if body.security_answer else None,
+        has_seen_onboarding=False,
     )
     db.add(user)
     db.commit()
@@ -189,6 +190,7 @@ def google_complete(body: GoogleCompleteRequest, db: Session = Depends(get_db)):
         google_sub=idinfo['sub'],
         security_question=body.security_question,
         security_answer_hash=hash_password(normalize_answer(body.security_answer)) if body.security_answer else None,
+        has_seen_onboarding=False,
     )
     db.add(user)
     db.commit()
