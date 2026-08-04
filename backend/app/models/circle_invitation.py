@@ -11,5 +11,7 @@ class CircleInvitation(Base):
     can_view_prescriptions = Column(Boolean, default=True)
     can_view_accounts = Column(Boolean, default=True)
     can_view_flags = Column(Boolean, default=True)
+    can_view_subscriptions = Column(Boolean, default=True)
+    can_view_appointments = Column(Boolean, default=True)
     created_at = Column(TIMESTAMP, server_default=func.now())
     accepted_at = Column(TIMESTAMP)
