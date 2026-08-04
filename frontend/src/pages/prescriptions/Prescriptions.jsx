@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { AlertTriangle, Check } from 'lucide-react'
+import { AlertTriangle, Check, X, Flame } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
 import { api } from '../../services/api'
 import { useResourceList } from '../../hooks/useResourceList'
@@ -147,6 +147,8 @@ export default function Prescriptions() {
       <h1 className="page-title">Prescriptions</h1>
       <FormMessage variant="error" className="page-status page-status--error">{actionError}</FormMessage>
 
+      <PillOrganizerTray circleId={circleId} rxs={rxs} takenWeek={takenWeek} pendingToggles={pendingToggles} onToggle={handleTogglePill} />
+
       {showForm ? (
         <form className="inline-form" onSubmit={handleSubmit} ref={formRef}>
           <div className="field-group">
@@ -210,12 +212,122 @@ export default function Prescriptions() {
 
       {isCaregiver && <PrescriptionSummary rxs={rxs} />}
 
-      <WeeklyPillBoard rxs={rxs} takenWeek={takenWeek} pendingToggles={pendingToggles} onToggle={handleTogglePill} />
+      <WeeklyPillBoard rxs={rxs} takenWeek={takenWeek} />
 
       <div className="card-list">
         {rxs.map(rx => <RxCard key={rx.prescription_id} rx={rx} isCaregiver={isCaregiver} onDelete={handleDelete} onEdit={handleEditClick} />)}
       </div>
     </div>
+  )
+}
+
+function PillOrganizerTray({ circleId, rxs, takenWeek, pendingToggles, onToggle }) {
+  const [expanded, setExpanded] = useState(true)
+  const [streak, setStreak] = useState(null)
+  const [justBumped, setJustBumped] = useState(false)
+  const prevStreakRef = useRef(undefined)
+
+  useEffect(() => {
+    if (!circleId) return
+    api.getPillStreak(circleId).then(setStreak).catch(() => {})
+  }, [circleId, takenWeek])
+
+  useEffect(() => {
+    if (!streak) return
+    if (prevStreakRef.current !== undefined && streak.current_streak > prevStreakRef.current) {
+      setJustBumped(true)
+      const t = setTimeout(() => setJustBumped(false), 700)
+      prevStreakRef.current = streak.current_streak
+      return () => clearTimeout(t)
+    }
+    prevStreakRef.current = streak.current_streak
+  }, [streak])
+
+  const scheduled = rxs.filter(rx => rx.is_active !== false && rx.schedule_days)
+  if (scheduled.length === 0) return null
+
+  const week = getCurrentWeek()
+  const todayC = todayCode()
+  const todayDate = week.find(d => d.code === todayC).date
+  const scheduledToday = scheduled.filter(rx => rx.schedule_days.split(',').includes(todayC))
+  const takenTodayCount = scheduledToday.filter(rx => takenWeek[rx.prescription_id]?.has(todayDate)).length
+  const allTakenToday = scheduledToday.length > 0 && takenTodayCount === scheduledToday.length
+
+  return (
+    <section className="pill-organizer mb-lg">
+      <div className="pill-organizer-header">
+        <div>
+          <h2 className="section-label">Today's Pills</h2>
+          <p className="field-hint">
+            {DAY_NAMES[todayC]} — {scheduledToday.length > 0 ? `${takenTodayCount}/${scheduledToday.length} taken` : 'nothing scheduled today'}
+          </p>
+        </div>
+        {streak && streak.current_streak > 0 && (
+          <div className={`streak-badge ${justBumped ? 'streak-badge--bump' : ''}`}>
+            <Flame size={20} strokeWidth={2} aria-hidden="true" />
+            <span>{streak.current_streak}-day streak</span>
+          </div>
+        )}
+      </div>
+
+      <div className="pill-organizer-row" role="group" aria-label="This week's pill schedule">
+        {week.map(d => {
+          const dayRxs = scheduled.filter(rx => rx.schedule_days.split(',').includes(d.code))
+          const takenCount = dayRxs.filter(rx => takenWeek[rx.prescription_id]?.has(d.date)).length
+          const isToday = d.code === todayC
+          const isFuture = d.date > todayDate
+          let state = 'empty'
+          if (dayRxs.length > 0) {
+            if (takenCount === dayRxs.length) state = 'complete'
+            else if (isToday || isFuture) state = 'pending'
+            else state = 'missed'
+          }
+          return (
+            <button
+              key={d.code}
+              type="button"
+              className={`pill-organizer-day pill-organizer-day--${state} ${isToday ? 'pill-organizer-day--today' : ''}`}
+              disabled={!isToday}
+              aria-expanded={isToday ? expanded : undefined}
+              onClick={isToday ? () => setExpanded(e => !e) : undefined}
+              title={`${DAY_NAMES[d.code]}${dayRxs.length > 0 ? ` — ${takenCount}/${dayRxs.length} taken` : ' — nothing scheduled'}`}
+            >
+              <span className="pill-organizer-day-letter">{DAY_LETTERS[d.code]}</span>
+              <span className="pill-organizer-day-icon" aria-hidden="true">
+                {state === 'complete' && <Check size={14} strokeWidth={3} />}
+                {state === 'missed' && <X size={12} strokeWidth={3} />}
+              </span>
+            </button>
+          )
+        })}
+      </div>
+
+      {expanded && (
+        scheduledToday.length > 0 ? (
+          <div className="pill-organizer-chips">
+            {scheduledToday.map(rx => {
+              const isTaken = Boolean(takenWeek[rx.prescription_id]?.has(todayDate))
+              const key = `${rx.prescription_id}:${todayDate}`
+              return (
+                <button
+                  key={rx.prescription_id}
+                  type="button"
+                  className={`pill-chip ${isTaken ? 'pill-chip--taken' : ''}`}
+                  disabled={pendingToggles.has(key)}
+                  onClick={() => onToggle(rx, todayDate)}
+                >
+                  <span className="pill-chip-icon" aria-hidden="true" />
+                  {rx.medication_name}{rx.dosage ? ` — ${rx.dosage}` : ''}
+                </button>
+              )
+            })}
+            {allTakenToday && <p className="pill-organizer-complete">All set for today ✓</p>}
+          </div>
+        ) : (
+          <p className="field-hint mt-sm">Nothing scheduled for today.</p>
+        )
+      )}
+    </section>
   )
 }
 
@@ -233,39 +345,16 @@ function PrescriptionSummary({ rxs }) {
   )
 }
 
-function WeeklyPillBoard({ rxs, takenWeek, pendingToggles, onToggle }) {
+function WeeklyPillBoard({ rxs, takenWeek }) {
   const scheduled = rxs.filter(rx => rx.is_active !== false && rx.schedule_days)
   if (scheduled.length === 0) return null
 
   const week = getCurrentWeek()
   const todayC = todayCode()
-  const todayDate = week.find(d => d.code === todayC).date
-  const scheduledToday = scheduled.filter(rx => rx.schedule_days.split(',').includes(todayC))
 
   return (
     <section className="mb-lg">
       <h2 className="section-label">This Week's Pills</h2>
-
-      {scheduledToday.length > 0 && (
-        <>
-          <p className="field-hint mb-sm">Today is {DAY_NAMES[todayC]} — check off what you take.</p>
-          <div className="info-card mb-md">
-            <div className="permission-grid">
-              {scheduledToday.map(rx => (
-                <label key={rx.prescription_id} className="permission-item">
-                  <input
-                    type="checkbox"
-                    checked={Boolean(takenWeek[rx.prescription_id]?.has(todayDate))}
-                    disabled={pendingToggles.has(`${rx.prescription_id}:${todayDate}`)}
-                    onChange={() => onToggle(rx, todayDate)}
-                  />
-                  {rx.medication_name}{rx.dosage ? ` — ${rx.dosage}` : ''}
-                </label>
-              ))}
-            </div>
-          </div>
-        </>
-      )}
 
       <div className="card-list">
         {scheduled.map(rx => {
