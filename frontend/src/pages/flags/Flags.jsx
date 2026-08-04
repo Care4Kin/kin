@@ -82,10 +82,13 @@ export default function Flags() {
     }
   }
 
-  async function handleResolve(flag) {
+  async function handleResolve(flag, note) {
     setActionError('')
     try {
-      const updated = await api.updateFlag(circleId, flag.flag_id, { is_resolved: !flag.is_resolved })
+      const payload = flag.is_resolved
+        ? { is_resolved: false }
+        : { is_resolved: true, resolution_note: note || null }
+      const updated = await api.updateFlag(circleId, flag.flag_id, payload)
       setFlags(prev => prev.map(f => f.flag_id === updated.flag_id ? updated : f))
     } catch (err) {
       setActionError(err.message)
@@ -191,6 +194,15 @@ function FlagSummary({ flags }) {
 }
 
 function FlagCard({ flag, onResolve, onEdit, onDelete }) {
+  const [showResolveNote, setShowResolveNote] = useState(false)
+  const [note, setNote] = useState('')
+
+  function confirmResolve() {
+    onResolve(flag, note.trim())
+    setShowResolveNote(false)
+    setNote('')
+  }
+
   return (
     <div className={`info-card ${flag.severity === 'high' && !flag.is_resolved ? 'info-card--urgent' : ''}`}>
       <div className="info-card-header">
@@ -213,10 +225,31 @@ function FlagCard({ flag, onResolve, onEdit, onDelete }) {
           {flag.ai_suggested_action && <p className="flag-ai-action"><strong>Suggested next step:</strong> {flag.ai_suggested_action}</p>}
         </div>
       )}
+      {flag.is_resolved && flag.resolution_note && (
+        <p className="info-card-note"><strong>Resolution:</strong> {flag.resolution_note}</p>
+      )}
+      {showResolveNote && (
+        <div className="inline-form-row">
+          <input
+            autoFocus
+            placeholder="What did you do about it? (optional)"
+            value={note}
+            onChange={e => setNote(e.target.value)}
+            onKeyDown={e => e.key === 'Enter' && confirmResolve()}
+          />
+        </div>
+      )}
       <div className="action-row">
-        <button className="action-btn" onClick={() => onResolve(flag)} title={flag.is_resolved ? 'Reopen this flag' : 'Mark this as resolved'}>
-          {flag.is_resolved ? 'Reopen' : 'Mark Resolved'}
-        </button>
+        {flag.is_resolved ? (
+          <button className="action-btn" onClick={() => onResolve(flag)} title="Reopen this flag">Reopen</button>
+        ) : showResolveNote ? (
+          <>
+            <button className="action-btn" onClick={confirmResolve}>Confirm</button>
+            <button className="action-btn" onClick={() => { setShowResolveNote(false); setNote('') }}>Cancel</button>
+          </>
+        ) : (
+          <button className="action-btn" onClick={() => setShowResolveNote(true)} title="Mark this as resolved">Mark Resolved</button>
+        )}
         <button className="action-btn" onClick={() => onEdit(flag)} title="Edit this flag">
           Edit
         </button>

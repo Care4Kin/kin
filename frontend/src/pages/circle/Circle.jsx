@@ -25,6 +25,20 @@ export default function Circle() {
 
   useEffect(() => { if (data) setCircle(data) }, [data])
 
+  // Caregiver invite-accepts happen from another person's session, so there's
+  // no local event to react to -- poll while the page is open, and refetch
+  // whenever the tab regains focus, so the elder sees it without a manual reload.
+  useEffect(() => {
+    if (!circleId) return
+    const refetch = () => api.getCircle(circleId).then(setCircle).catch(() => {})
+    const interval = setInterval(refetch, 30000)
+    window.addEventListener('focus', refetch)
+    return () => {
+      clearInterval(interval)
+      window.removeEventListener('focus', refetch)
+    }
+  }, [circleId])
+
   if (authLoading) return null
   if (!user) return <LoggedOutGate title="My Circle" description="See who's helping and manage who can see what — you're always in control." />
   if (circleChecked && !circleId) return <NoCircleGate title="My Circle" />

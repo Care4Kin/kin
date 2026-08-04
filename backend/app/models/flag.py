@@ -17,6 +17,7 @@ class Flag(Base):
     severity = Column(Text, default='low')
     is_resolved = Column(Boolean, default=False)
     resolved_at = Column(TIMESTAMP)
+    resolution_note = Column(Text)
     created_at = Column(TIMESTAMP, server_default=func.now())
     ai_risk_level = Column(Text)
     ai_explanation = Column(Text)

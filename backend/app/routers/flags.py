@@ -47,6 +47,7 @@ def update_flag(circle_id: int, flag_id: int, body: FlagUpdate, db: Session = De
             flag.resolved_at = utcnow()
         elif not updates['is_resolved']:
             flag.resolved_at = None
+            flag.resolution_note = None
     for k, v in updates.items():
         setattr(flag, k, v)
     db.commit()
