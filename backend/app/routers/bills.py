@@ -5,6 +5,7 @@ from app.database import get_db
 from app.middleware.auth import require_permission
 from app.models.bill import Bill
 from app.schemas.bill import BillCreate, BillUpdate
+from app.services.plaid_suggestions import stage_dismiss_suggestion
 
 router = APIRouter()
 require_bills_access = require_permission('can_view_bills')
@@ -18,8 +19,12 @@ def get_bills(circle_id: int, is_paid: Optional[bool] = None, db: Session = Depe
 
 @router.post('/{circle_id}/bills', status_code=201)
 def create_bill(circle_id: int, body: BillCreate, db: Session = Depends(get_db), circle=Depends(require_bills_access)):
-    bill = Bill(circle_id=circle_id, **body.model_dump())
+    data = body.model_dump()
+    source_key = data.pop('source_key', None)
+    bill = Bill(circle_id=circle_id, **data)
     db.add(bill)
+    if source_key:
+        stage_dismiss_suggestion(db, circle_id, source_key)
     db.commit()
     db.refresh(bill)
     return bill

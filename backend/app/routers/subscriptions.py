@@ -5,6 +5,7 @@ from app.database import get_db
 from app.middleware.auth import require_permission
 from app.models.subscription import Subscription
 from app.schemas.subscription import SubscriptionCreate, SubscriptionUpdate
+from app.services.plaid_suggestions import stage_dismiss_suggestion
 
 router = APIRouter()
 require_subscriptions_access = require_permission('can_view_subscriptions')
@@ -18,8 +19,12 @@ def get_subscriptions(circle_id: int, is_active: Optional[bool] = None, db: Sess
 
 @router.post('/{circle_id}/subscriptions', status_code=201)
 def create_subscription(circle_id: int, body: SubscriptionCreate, db: Session = Depends(get_db), circle=Depends(require_subscriptions_access)):
-    sub = Subscription(circle_id=circle_id, **body.model_dump())
+    data = body.model_dump()
+    source_key = data.pop('source_key', None)
+    sub = Subscription(circle_id=circle_id, **data)
     db.add(sub)
+    if source_key:
+        stage_dismiss_suggestion(db, circle_id, source_key)
     db.commit()
     db.refresh(sub)
     return sub
