@@ -220,7 +220,7 @@ function PrescriptionSummary({ rxs }) {
 
   return (
     <div className="stat-banner">
-      <span className="stat-banner-label">{active.length} active · {urgent.length} due soon</span>
+      <span className="stat-banner-label">{active.length} active{urgent.length > 0 ? ` (${urgent.length} due soon)` : ''}</span>
       <span className="stat-banner-value" aria-hidden="true">
         {urgent.length > 0 ? <AlertTriangle size={24} strokeWidth={2} /> : <Check size={24} strokeWidth={2} />}
       </span>

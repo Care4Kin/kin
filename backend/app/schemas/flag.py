@@ -14,3 +14,4 @@ class FlagUpdate(BaseModel):
     type: Optional[FlagType] = None
     description: Optional[str] = None
     severity: Optional[FlagSeverity] = None
+    resolution_note: Optional[str] = None
