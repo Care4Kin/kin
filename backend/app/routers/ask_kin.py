@@ -6,13 +6,13 @@ from app.middleware.auth import get_current_user, require_circle_access
 from app.models.circle_member import CircleMember
 from app.models.user import User
 from app.schemas.ask_kin import AskKinRequest
-from app.services.gemini_client import answer_kin_question, gemini_configured
+from app.services.groq_client import answer_kin_question, groq_configured
 
 router = APIRouter()
 
 @router.post('/{circle_id}/ask-kin')
 def ask_kin(circle_id: int, body: AskKinRequest, current_user: User = Depends(get_current_user), db: Session = Depends(get_db), circle=Depends(require_circle_access)):
-    if not gemini_configured():
+    if not groq_configured():
         raise HTTPException(503, 'Ask Kin is not available right now')
 
     is_elder = current_user.user_id == circle.elder_id

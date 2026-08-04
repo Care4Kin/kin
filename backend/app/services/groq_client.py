@@ -1,7 +1,7 @@
+import json
 from typing import Literal
 
-from google import genai
-from google.genai import types
+from groq import Groq, BadRequestError
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
@@ -12,19 +12,18 @@ from app.models.appointment import Appointment
 from app.models.prescription import Prescription
 from app.models.account import Account
 
-def gemini_configured() -> bool:
-    return bool(settings.gemini_api_key)
+MODEL = 'llama-3.3-70b-versatile'
+
+def groq_configured() -> bool:
+    return bool(settings.groq_api_key)
 
 def generate_digest_text(prompt: str) -> str:
-    client = genai.Client(api_key=settings.gemini_api_key)
-    response = client.models.generate_content(
-        # A version-less alias -- Google points it at whatever their current
-        # recommended flash-tier model is, so this doesn't go stale the way a
-        # pinned snapshot (e.g. gemini-2.5-flash) can for newer API keys.
-        model='gemini-flash-latest',
-        contents=prompt,
+    client = Groq(api_key=settings.groq_api_key)
+    response = client.chat.completions.create(
+        model=MODEL,
+        messages=[{'role': 'user', 'content': prompt}],
     )
-    return response.text.strip()
+    return response.choices[0].message.content.strip()
 
 KIN_SYSTEM_INSTRUCTION = (
     "You are Ask Kin, a friendly assistant inside the Kin family app. Answer "
@@ -35,6 +34,29 @@ KIN_SYSTEM_INSTRUCTION = (
     "information with you rather than trying to answer anyway. Keep answers "
     "short (1-3 sentences), warm, and in plain language with no markdown."
 )
+
+# llama-3.3-70b-versatile occasionally emits a malformed tool call (e.g. a raw
+# `<function=...>` tag) instead of a real JSON tool_call, which Groq rejects
+# with a 400 tool_use_failed -- retrying the same request works almost every
+# time since the failure isn't tied to the input, just sampling noise.
+def _complete_with_tool_retry(client, **kwargs):
+    for attempt in range(5):
+        try:
+            return client.chat.completions.create(**kwargs)
+        except BadRequestError as e:
+            body = e.body if isinstance(e.body, dict) else {}
+            if body.get('error', {}).get('code') != 'tool_use_failed' or attempt == 4:
+                raise
+
+def _tool_schema(func) -> dict:
+    return {
+        'type': 'function',
+        'function': {
+            'name': func.__name__,
+            'description': (func.__doc__ or '').strip(),
+            'parameters': {'type': 'object', 'properties': {}, 'required': []},
+        },
+    }
 
 def answer_kin_question(
     circle_id: int,
@@ -77,22 +99,41 @@ def answer_kin_question(
     if is_elder or permissions.get('can_view_accounts'):
         tools.append(get_accounts)
 
-    contents = [
-        types.Content(role=h['role'], parts=[types.Part(text=h['content'])])
-        for h in history[-12:]
-    ]
-    contents.append(types.Content(role='user', parts=[types.Part(text=question)]))
+    tools_by_name = {t.__name__: t for t in tools}
+    tool_schemas = [_tool_schema(t) for t in tools]
 
-    client = genai.Client(api_key=settings.gemini_api_key)
-    response = client.models.generate_content(
-        model='gemini-flash-latest',
-        contents=contents,
-        config=types.GenerateContentConfig(
-            tools=tools,
-            system_instruction=KIN_SYSTEM_INSTRUCTION,
-        ),
-    )
-    return response.text.strip()
+    messages = [{'role': 'system', 'content': KIN_SYSTEM_INSTRUCTION}]
+    for h in history[-12:]:
+        role = 'assistant' if h['role'] == 'model' else h['role']
+        messages.append({'role': role, 'content': h['content']})
+    messages.append({'role': 'user', 'content': question})
+
+    client = Groq(api_key=settings.groq_api_key)
+    for _ in range(5):
+        response = _complete_with_tool_retry(
+            client,
+            model=MODEL,
+            messages=messages,
+            tools=tool_schemas,
+        )
+        message = response.choices[0].message
+        if not message.tool_calls:
+            return message.content.strip()
+
+        messages.append({
+            'role': 'assistant',
+            'content': message.content or '',
+            'tool_calls': [tc.model_dump() for tc in message.tool_calls],
+        })
+        for tc in message.tool_calls:
+            func = tools_by_name[tc.function.name]
+            messages.append({
+                'role': 'tool',
+                'tool_call_id': tc.id,
+                'content': json.dumps(func()),
+            })
+
+    return "Sorry, I'm having trouble answering that right now."
 
 class FlagRiskAssessment(BaseModel):
     risk_level: Literal['low', 'medium', 'high']
@@ -106,15 +147,14 @@ def assess_flag_risk(flag_type: str, description: str) -> FlagRiskAssessment:
         "grandparent scam, tech support scam, gift card scam, or phishing "
         "attempt) in plain language a non-technical elder or caregiver can "
         "understand. If it doesn't look scam-related, say so plainly and rate "
-        "it low. Give a short suggested next step."
+        "it low. Give a short suggested next step.\n\n"
+        "Respond with ONLY a JSON object matching this exact shape, no other text: "
+        '{"risk_level": "low" | "medium" | "high", "explanation": string, "suggested_action": string}'
     )
-    client = genai.Client(api_key=settings.gemini_api_key)
-    response = client.models.generate_content(
-        model='gemini-flash-latest',
-        contents=prompt,
-        config=types.GenerateContentConfig(
-            response_mime_type='application/json',
-            response_schema=FlagRiskAssessment,
-        ),
+    client = Groq(api_key=settings.groq_api_key)
+    response = client.chat.completions.create(
+        model=MODEL,
+        messages=[{'role': 'user', 'content': prompt}],
+        response_format={'type': 'json_object'},
     )
-    return response.parsed
+    return FlagRiskAssessment.model_validate_json(response.choices[0].message.content)

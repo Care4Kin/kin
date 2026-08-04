@@ -12,7 +12,7 @@ from app.models.prescription import Prescription
 from app.models.flag import Flag
 from app.models.account import Account
 from app.models.appointment import Appointment
-from app.services.gemini_client import generate_digest_text, gemini_configured
+from app.services.groq_client import generate_digest_text, groq_configured
 from app.services.email import send_email
 from app.utils import utcnow, as_aware
 
@@ -135,8 +135,8 @@ def generate_and_send_digests(db: Session) -> dict:
     based on their own digest_frequency preference, scoped to only the
     sections that caregiver's permissions allow them to see. Returns counts
     for the caller to report back."""
-    if not gemini_configured():
-        return {'sent': 0, 'skipped': 0, 'reason': 'Gemini API key not configured'}
+    if not groq_configured():
+        return {'sent': 0, 'skipped': 0, 'reason': 'Groq API key not configured'}
 
     sent = 0
     skipped = 0

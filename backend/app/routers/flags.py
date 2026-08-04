@@ -6,7 +6,7 @@ from app.middleware.auth import get_current_user, require_permission
 from app.models.flag import Flag
 from app.models.user import User
 from app.schemas.flag import FlagCreate, FlagUpdate
-from app.services.gemini_client import assess_flag_risk, gemini_configured
+from app.services.groq_client import assess_flag_risk, groq_configured
 from app.utils import utcnow
 
 router = APIRouter()
@@ -22,7 +22,7 @@ def get_flags(circle_id: int, is_resolved: Optional[bool] = None, db: Session = 
 @router.post('/{circle_id}/flags', status_code=201)
 def create_flag(circle_id: int, body: FlagCreate, current_user: User = Depends(get_current_user), db: Session = Depends(get_db), circle=Depends(require_flags_access)):
     flag = Flag(circle_id=circle_id, created_by=current_user.user_id, **body.model_dump())
-    if gemini_configured():
+    if groq_configured():
         try:
             assessment = assess_flag_risk(flag.type, flag.description)
             flag.ai_risk_level = assessment.risk_level
