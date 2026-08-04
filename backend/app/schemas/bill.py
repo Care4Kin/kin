@@ -14,6 +14,10 @@ class BillCreate(BaseModel):
     amount: float
     due_date: date
     category: Optional[str] = None
+    # Opaque dedup key from a detected-bank suggestion (see plaid.py). Not stored
+    # on the bill itself — just tells the endpoint which suggestion to permanently
+    # dismiss so it doesn't reappear after this bill is renamed or deleted.
+    source_key: Optional[str] = None
 
     _validate_amount = field_validator('amount')(_amount_not_too_large)
 

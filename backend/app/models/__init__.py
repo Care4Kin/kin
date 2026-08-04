@@ -11,4 +11,5 @@ from app.models.flag import Flag
 from app.models.note import Note
 from app.models.appointment import Appointment
 from app.models.plaid_item import PlaidItem
+from app.models.plaid_dismissed_suggestion import PlaidDismissedSuggestion
 from app.models.feedback_message import FeedbackMessage

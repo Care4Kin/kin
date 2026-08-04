@@ -12,6 +12,10 @@ def _amount_not_too_large(v):
 class SubscriptionCreate(BaseModel):
     name: str
     monthly_cost: float
+    # Opaque dedup key from a detected-bank suggestion (see plaid.py). Not stored
+    # on the subscription itself — just tells the endpoint which suggestion to
+    # permanently dismiss so it doesn't reappear after a rename or deletion.
+    source_key: Optional[str] = None
 
     _validate_monthly_cost = field_validator('monthly_cost')(_amount_not_too_large)
 

@@ -74,8 +74,16 @@ export default function Subscriptions() {
   }
 
   async function handleAddDetected(item) {
-    const sub = await api.createSubscription(circleId, { name: item.merchant, monthly_cost: item.average_amount })
+    const sub = await api.createSubscription(circleId, {
+      name: item.merchant,
+      monthly_cost: item.average_amount,
+      source_key: item.source_key,
+    })
     setSubs(prev => [...prev, sub])
+  }
+
+  async function handleDismissDetected(item) {
+    await api.dismissPlaidSuggestion(circleId, item.source_key)
   }
 
   async function handleMarkReviewed(sub) {
@@ -150,6 +158,7 @@ export default function Subscriptions() {
         items={bank.subscriptions}
         existingNames={new Set(subs.map(s => s.name.trim().toLowerCase()))}
         onAdd={handleAddDetected}
+        onDismiss={handleDismissDetected}
         title="Detected From Your Bank"
         hint="Recurring charges we noticed on a connected bank account that look like subscriptions."
         className="mt-lg"

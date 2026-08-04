@@ -19,4 +19,5 @@ class User(Base):
     phone_verification_code_hash = Column(Text)
     phone_verification_expires_at = Column(TIMESTAMP(timezone=True))
     google_sub = Column(Text, unique=True)
+    has_seen_onboarding = Column(Boolean, nullable=False, server_default='true')
     created_at = Column(TIMESTAMP, server_default=func.now())

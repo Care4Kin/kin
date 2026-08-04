@@ -97,8 +97,13 @@ export default function Bills() {
       name: item.merchant,
       amount: item.average_amount,
       due_date: nextOccurrence(item.last_date),
+      source_key: item.source_key,
     })
     setBills(prev => [...prev, bill])
+  }
+
+  async function handleDismissDetected(item) {
+    await api.dismissPlaidSuggestion(circleId, item.source_key)
   }
 
   const unpaid = bills.filter(b => !b.is_paid)
@@ -154,6 +159,7 @@ export default function Bills() {
         items={bank.detectedBills}
         existingNames={new Set(bills.map(b => b.name.trim().toLowerCase()))}
         onAdd={handleAddDetected}
+        onDismiss={handleDismissDetected}
         title="Detected From Your Bank"
         hint="Recurring charges we noticed on a connected bank account that look like bills."
       />

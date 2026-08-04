@@ -50,11 +50,13 @@ class UserProfileOut(BaseModel):
     theme: str
     phone: Optional[str] = None
     security_question: Optional[str] = None
+    has_seen_onboarding: bool
 
 class ProfileUpdateRequest(BaseModel):
     full_name: Optional[str] = None
     phone: Optional[str] = None
     theme: Optional[Theme] = None
+    has_seen_onboarding: Optional[bool] = None
 
 class ChangePasswordRequest(BaseModel):
     current_password: str

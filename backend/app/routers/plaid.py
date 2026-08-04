@@ -17,8 +17,9 @@ from app.database import get_db
 from app.middleware.auth import get_current_user, require_elder, require_permission
 from app.models.plaid_item import PlaidItem
 from app.models.user import User
-from app.schemas.plaid import LinkTokenOut, ExchangeTokenRequest
+from app.schemas.plaid import LinkTokenOut, ExchangeTokenRequest, DismissSuggestionRequest
 from app.services.plaid_client import get_plaid_client, plaid_configured
+from app.services.plaid_suggestions import dismiss_suggestion, dismissed_keys
 
 router = APIRouter()
 require_accounts_access = require_permission('can_view_accounts')
@@ -145,6 +146,18 @@ def get_spending_breakdown(circle_id: int, db: Session = Depends(get_db), circle
     breakdown.sort(key=lambda r: r['amount'], reverse=True)
     return breakdown
 
+def _merchant_key(txn) -> str:
+    # merchant_entity_id is a stable, Plaid-generated ID for the real-world
+    # merchant, so charges group correctly even when the descriptor string
+    # varies between statements (e.g. "COMCAST" vs "COMCAST CABLE COMM").
+    # Falls back to the normalized name when Plaid can't resolve an entity
+    # (common in sandbox/test data and for smaller merchants).
+    entity_id = txn.get('merchant_entity_id')
+    if entity_id:
+        return f'entity:{entity_id}'
+    name = (txn.get('merchant_name') or txn.get('name') or 'Unknown').strip().lower()
+    return f'name:{name}'
+
 def _detect_recurring_charges(client, items) -> list:
     groups = defaultdict(list)
     for item in items:
@@ -152,8 +165,7 @@ def _detect_recurring_charges(client, items) -> list:
             amount = txn.get('amount') or 0
             if amount <= 0:
                 continue
-            key = (txn.get('merchant_name') or txn.get('name') or 'Unknown').strip().lower()
-            groups[key].append(txn)
+            groups[_merchant_key(txn)].append(txn)
 
     recurring = []
     for key, txns in groups.items():
@@ -171,11 +183,12 @@ def _detect_recurring_charges(client, items) -> list:
         months = {str(t['date'])[:7] for t in txns if t.get('date')}
         if not within_tolerance or len(months) < 2:
             continue
-        display_name = txns[0].get('merchant_name') or txns[0].get('name') or key.title()
+        display_name = txns[0].get('merchant_name') or txns[0].get('name') or 'Unknown'
         dates = sorted([t.get('date') for t in txns if t.get('date')])
         category = (txns[0].get('personal_finance_category') or {}).get('primary') or 'OTHER'
         recurring.append({
             'merchant': display_name,
+            'source_key': key,
             'average_amount': round(avg, 2),
             'occurrences': len(txns),
             'last_date': dates[-1] if dates else None,
@@ -190,14 +203,32 @@ def get_detected_subscriptions(circle_id: int, db: Session = Depends(get_db), ci
     _require_plaid_configured()
     client = get_plaid_client()
     items = db.query(PlaidItem).filter(PlaidItem.circle_id == circle_id).all()
-    return [r for r in _detect_recurring_charges(client, items) if r['category'] in SUBSCRIPTION_CATEGORIES]
+    dismissed = dismissed_keys(db, circle_id)
+    return [
+        r for r in _detect_recurring_charges(client, items)
+        if r['category'] in SUBSCRIPTION_CATEGORIES and r['source_key'] not in dismissed
+    ]
 
 @router.get('/{circle_id}/plaid/bills')
 def get_detected_bills(circle_id: int, db: Session = Depends(get_db), circle=Depends(require_accounts_access)):
     _require_plaid_configured()
     client = get_plaid_client()
     items = db.query(PlaidItem).filter(PlaidItem.circle_id == circle_id).all()
-    return [r for r in _detect_recurring_charges(client, items) if r['category'] in BILL_CATEGORIES]
+    dismissed = dismissed_keys(db, circle_id)
+    return [
+        r for r in _detect_recurring_charges(client, items)
+        if r['category'] in BILL_CATEGORIES and r['source_key'] not in dismissed
+    ]
+
+@router.post('/{circle_id}/plaid/dismiss', status_code=201)
+def dismiss_detected_suggestion(
+    circle_id: int,
+    body: DismissSuggestionRequest,
+    db: Session = Depends(get_db),
+    circle=Depends(require_accounts_access),
+):
+    dismiss_suggestion(db, circle_id, body.source_key)
+    return {'message': 'Suggestion dismissed'}
 
 @router.delete('/{circle_id}/plaid/items/{plaid_item_id}')
 def remove_linked_item(
