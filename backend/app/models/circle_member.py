@@ -17,6 +17,8 @@ class CircleMember(Base):
     can_view_prescriptions = Column(Boolean, default=True)
     can_view_accounts = Column(Boolean, default=True)
     can_view_flags = Column(Boolean, default=True)
+    can_view_subscriptions = Column(Boolean, default=True)
+    can_view_appointments = Column(Boolean, default=True)
     accepted_at = Column(TIMESTAMP)
     digest_frequency = Column(Text, nullable=False, server_default='weekly')
     last_digest_sent_at = Column(TIMESTAMP)

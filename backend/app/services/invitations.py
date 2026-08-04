@@ -26,6 +26,8 @@ def claim_invitations(user: User, db: Session) -> None:
                 can_view_prescriptions=inv.can_view_prescriptions,
                 can_view_accounts=inv.can_view_accounts,
                 can_view_flags=inv.can_view_flags,
+                can_view_subscriptions=inv.can_view_subscriptions,
+                can_view_appointments=inv.can_view_appointments,
                 accepted_at=now,
             ))
         inv.accepted_at = now

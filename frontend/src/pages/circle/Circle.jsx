@@ -11,6 +11,8 @@ const PERMISSION_LABELS = {
   can_view_prescriptions: 'Prescriptions',
   can_view_accounts: 'Accounts',
   can_view_flags: 'Suspicious Activity',
+  can_view_subscriptions: 'Subscriptions',
+  can_view_appointments: 'Appointments',
 }
 
 export default function Circle() {
