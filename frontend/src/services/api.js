@@ -88,6 +88,7 @@ export const api = {
   getPillsTakenWeek: (circleId) => request('GET', `/api/circles/${circleId}/prescriptions/taken-week`),
   markPillTaken: (circleId, rxId, takenDate) => request('POST', `/api/circles/${circleId}/prescriptions/${rxId}/taken${takenDate ? `?taken_date=${takenDate}` : ''}`),
   unmarkPillTaken: (circleId, rxId, takenDate) => request('DELETE', `/api/circles/${circleId}/prescriptions/${rxId}/taken${takenDate ? `?taken_date=${takenDate}` : ''}`),
+  getPillStreak: (circleId) => request('GET', `/api/circles/${circleId}/prescriptions/streak`),
 
   // Accounts
   getAccounts: (circleId) => request('GET', `/api/circles/${circleId}/accounts`),

@@ -939,6 +939,7 @@ button, input, select, textarea { font: inherit; }
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
+  scroll-margin-top: calc(var(--top-bar-h) + 1rem);
 }
 
 .inline-form form {
@@ -1061,6 +1062,150 @@ button, input, select, textarea { font: inherit; }
 .pill-week-day--unscheduled { opacity: 0.3; }
 .pill-week-day--taken { background: var(--green-mid); color: var(--text-on-accent); border-color: var(--green-mid); }
 .pill-week-day--today { border-color: var(--green-light); border-width: 2px; }
+
+/* ─── Pill organizer tray ─────────────────────────────────────────── */
+.pill-organizer {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 1rem;
+}
+
+.pill-organizer-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.streak-badge {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.35rem 0.65rem;
+  border-radius: 999px;
+  background: var(--green-dark);
+  color: var(--green-pale);
+  font-size: 0.8rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.streak-badge svg { color: var(--green-mid); }
+.streak-badge--bump { animation: streak-pop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both; }
+
+.pill-organizer-row {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.pill-organizer-day {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.5rem 0.25rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  color: var(--text-muted);
+}
+
+.pill-organizer-day--today { border-color: var(--green-light); border-width: 2px; cursor: pointer; }
+.pill-organizer-day--today:hover { background: var(--green-dark); }
+.pill-organizer-day:disabled { cursor: default; }
+
+.pill-organizer-day-letter { font-size: 0.7rem; font-weight: 700; }
+
+.pill-organizer-day-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.4rem;
+  height: 1.4rem;
+  border-radius: 50%;
+}
+
+.pill-organizer-day--complete .pill-organizer-day-icon { background: var(--green-mid); color: var(--text-on-accent); }
+.pill-organizer-day--missed .pill-organizer-day-icon { background: var(--warn-muted); color: var(--warn-light); }
+.pill-organizer-day--pending .pill-organizer-day-icon { border: 1px dashed var(--border); }
+.pill-organizer-day--empty .pill-organizer-day-icon { opacity: 0.25; }
+
+.pill-organizer-chips {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-top: 0.85rem;
+  animation: organizer-open 0.25s ease-out both;
+}
+
+.pill-chip {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.6rem 0.8rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  color: var(--text);
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 0.2s, border-color 0.2s, color 0.2s;
+}
+.pill-chip:hover { border-color: var(--green-light); }
+.pill-chip:disabled { opacity: 0.6; cursor: default; }
+
+.pill-chip-icon {
+  flex-shrink: 0;
+  width: 1.1rem;
+  height: 1.1rem;
+  border-radius: 50%;
+  border: 2px solid var(--border);
+  background: var(--surface);
+}
+
+.pill-chip--taken {
+  background: var(--green-dark);
+  border-color: var(--green-mid);
+  color: var(--green-pale);
+}
+.pill-chip--taken .pill-chip-icon {
+  background: var(--green-mid);
+  border-color: var(--green-mid);
+  animation: pill-pop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+.pill-organizer-complete {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--green-mid);
+  margin: 0;
+}
+
+@keyframes streak-pop {
+  0%   { transform: scale(1); }
+  40%  { transform: scale(1.25); }
+  100% { transform: scale(1); }
+}
+@keyframes organizer-open {
+  from { opacity: 0; transform: translateY(-0.4rem); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes pill-pop {
+  0%   { transform: scale(0.6); }
+  60%  { transform: scale(1.3); }
+  100% { transform: scale(1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .streak-badge--bump,
+  .pill-organizer-chips,
+  .pill-chip--taken .pill-chip-icon {
+    animation: none;
+  }
+}
 
 /* ─── Caregiver "At a Glance" summary ────────────────────────────── */
 .caregiver-summary { margin-bottom: 1.5rem; }
