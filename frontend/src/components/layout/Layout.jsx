@@ -2,6 +2,7 @@ import { Outlet } from 'react-router-dom'
 import BottomNav from './BottomNav'
 import Sidebar from './Sidebar'
 import TopBar from './TopBar'
+import AppFooter from './AppFooter'
 import OnboardingSlides from '../onboarding/OnboardingSlides'
 
 export default function Layout() {
@@ -15,6 +16,7 @@ export default function Layout() {
           <Outlet />
         </main>
       </div>
+      <AppFooter />
       <BottomNav />
       <OnboardingSlides />
     </div>
