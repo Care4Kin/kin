@@ -26,14 +26,20 @@ function TreeMark() {
   )
 }
 
-export default function KinLogo({ size = 'sm', to }) {
+export default function KinLogo({ size = 'sm', to, animate = true }) {
   // Keying the mark on the current path remounts it on every navigation, so
   // the (play-once) rise/grow animation restarts each time the user changes
   // pages — exactly the requested behavior.
   const { pathname } = useLocation()
 
+  // The rise/grow entrance animation assumes it's visible the moment it
+  // mounts. Instances that mount off-screen (e.g. in a footer far below the
+  // fold) can get stuck mid-animation -- browsers may not tick a CSS
+  // animation forward for an element that's not yet in the viewport, so it
+  // never reaches its "to" keyframe. animate=false skips the animation
+  // entirely and just renders the finished state.
   const mark = (
-    <span className={`kin-logo kin-logo--${size}`} key={pathname} aria-hidden="true">
+    <span className={`kin-logo kin-logo--${size} ${animate ? '' : 'kin-logo--static'}`} key={animate ? pathname : 'static'} aria-hidden="true">
       <span className="kin-logo-letter kin-logo-k">K</span>
       <TreeMark />
       <span className="kin-logo-letter kin-logo-n">N</span>
