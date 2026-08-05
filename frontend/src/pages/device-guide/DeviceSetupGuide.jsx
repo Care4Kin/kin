@@ -15,13 +15,13 @@ export default function DeviceSetupGuide() {
         A plain-language walkthrough for helping a family member get Kin set up on their phone or tablet — even over the phone, without being in the same room.
       </p>
 
-      <ol className="landing-steps">
+      <ol className="resource-steps">
         {STEPS.map((s, i) => (
-          <li key={s.title} className="landing-step">
+          <li key={s.title} className="resource-step">
             <span className="landing-step-num">{i + 1}</span>
-            <div>
-              <span className="landing-step-title">{s.title}</span>
-              <span className="landing-step-desc">{s.desc}</span>
+            <div className="resource-step-body">
+              <span className="resource-step-title">{s.title}</span>
+              <span className="resource-step-desc">{s.desc}</span>
             </div>
           </li>
         ))}

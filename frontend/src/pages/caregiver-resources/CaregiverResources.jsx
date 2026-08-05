@@ -26,13 +26,13 @@ export default function CaregiverResources() {
         </p>
       )}
 
-      <ol className="landing-steps">
+      <ol className="resource-steps">
         {TIPS.map((t, i) => (
-          <li key={t.title} className="landing-step">
+          <li key={t.title} className="resource-step">
             <span className="landing-step-num">{i + 1}</span>
-            <div>
-              <span className="landing-step-title">{t.title}</span>
-              <span className="landing-step-desc">{t.desc}</span>
+            <div className="resource-step-body">
+              <span className="resource-step-title">{t.title}</span>
+              <span className="resource-step-desc">{t.desc}</span>
             </div>
           </li>
         ))}

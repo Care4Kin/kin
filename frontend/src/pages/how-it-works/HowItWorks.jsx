@@ -17,13 +17,13 @@ export default function HowItWorks() {
         A short walkthrough of each part of the dashboard, and what to do if something is ever flagged.
       </p>
 
-      <ol className="landing-steps">
+      <ol className="resource-steps">
         {SECTIONS.map((s, i) => (
-          <li key={s.title} className="landing-step">
+          <li key={s.title} className="resource-step">
             <span className="landing-step-num">{i + 1}</span>
-            <div>
-              <span className="landing-step-title">{s.title}</span>
-              <span className="landing-step-desc">{s.desc}</span>
+            <div className="resource-step-body">
+              <span className="resource-step-title">{s.title}</span>
+              <span className="resource-step-desc">{s.desc}</span>
             </div>
           </li>
         ))}

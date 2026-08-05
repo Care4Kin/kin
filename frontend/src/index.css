@@ -186,6 +186,10 @@ body {
   color: var(--text);
   line-height: 1.55;
   -webkit-font-smoothing: antialiased;
+  /* User-entered text (bill names, notes, etc.) has no natural break points —
+     without this, one long unbroken word blows out the layout horizontally
+     instead of wrapping. */
+  overflow-wrap: break-word;
 }
 
 a { color: inherit; text-decoration: none; }
@@ -382,6 +386,7 @@ button, input, select, textarea { font: inherit; }
 /* ─── Main content ───────────────────────────────────────────────── */
 .main-content {
   flex: 1;
+  min-width: 0;
   padding: calc(var(--top-bar-h) + 1.25rem) 1.25rem calc(var(--bottom-nav-h) + 1.25rem);
 }
 
@@ -451,6 +456,12 @@ button, input, select, textarea { font: inherit; }
    the cascade tie to a same-specificity rule later in the file. */
 .card-list { display: flex; flex-direction: column; gap: 0.6rem; }
 
+/* Same reasoning applies to these two -- their desktop column-count
+   overrides below were silently losing the cascade tie to same-specificity
+   rules that used to live later in the file (both are now merged in here). */
+.dashboard-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.85rem; }
+.caregiver-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 0.85rem; }
+
 /* ─── App footer (desktop only — see the media query below) ───────── */
 .app-footer { display: none; }
 
@@ -506,7 +517,7 @@ button, input, select, textarea { font: inherit; }
   .card-list {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 0.75rem;
+    gap: 0.85rem;
     align-items: start;
   }
 
@@ -812,12 +823,6 @@ button, input, select, textarea { font: inherit; }
 .checklist-item--done span:first-child { color: var(--text-muted); }
 .checklist-item a { color: var(--green-light); font-weight: 700; text-decoration: underline; }
 
-.dashboard-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 0.85rem;
-}
-
 .summary-card {
   position: relative;
   display: flex;
@@ -825,7 +830,7 @@ button, input, select, textarea { font: inherit; }
   gap: 0.4rem;
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: var(--radius);
+  border-radius: var(--radius-sm);
   padding: 1rem;
   cursor: pointer;
   box-shadow: var(--shadow-sm);
@@ -950,7 +955,7 @@ button, input, select, textarea { font: inherit; }
 .bill-row--paid { opacity: 0.55; }
 .bill-row--late { border-left: 3px solid var(--warn-border); }
 
-.bill-row-info { display: flex; flex-direction: column; gap: 0.2rem; }
+.bill-row-info { display: flex; flex-direction: column; gap: 0.2rem; min-width: 0; }
 .bill-row-name { font-weight: 600; font-size: 1rem; }
 .bill-row-category { font-size: 0.75rem; color: var(--text-muted); text-transform: capitalize; }
 
@@ -1004,6 +1009,10 @@ button, input, select, textarea { font: inherit; }
   flex-direction: column;
   gap: 0.5rem;
   box-shadow: var(--shadow-sm);
+  /* Without this, a card sitting in a grid/flex row won't shrink below the
+     min-content width of its text, so one long unbroken word (or a wall of
+     characters with no spaces) blows out the whole row instead of wrapping. */
+  min-width: 0;
 }
 
 .info-card--urgent { border-left: 3px solid var(--warn-border); }
@@ -1054,6 +1063,7 @@ button, input, select, textarea { font: inherit; }
 }
 .badge--warn { background: var(--warn-muted); color: var(--warn-light); }
 .badge--ok   { background: var(--green-dark); color: var(--green-pale); }
+.badge--danger { background: var(--warn); color: var(--text-on-accent); }
 
 /* ─── Stat banner ────────────────────────────────────────────────── */
 .stat-banner {
@@ -1361,17 +1371,11 @@ button, input, select, textarea { font: inherit; }
 /* ─── Caregiver "At a Glance" summary ────────────────────────────── */
 .caregiver-summary { margin-bottom: 1.5rem; }
 
-.caregiver-stats {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 0.75rem;
-}
-
 .stat-tile {
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
-  padding: 0.85rem;
+  padding: 1rem;
   display: flex;
   flex-direction: column;
   gap: 0.15rem;
@@ -1616,8 +1620,8 @@ button, input, select, textarea { font: inherit; }
   gap: 0.3rem;
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 1.1rem;
+  border-radius: var(--radius-sm);
+  padding: 1rem;
   cursor: pointer;
   box-shadow: var(--shadow-sm);
   transition: border-color 0.15s, background 0.15s, transform 0.15s, box-shadow 0.15s;
@@ -1647,6 +1651,14 @@ button, input, select, textarea { font: inherit; }
 }
 .landing-step-title { font-weight: 700; font-size: 0.95rem; color: var(--text); }
 .landing-step-desc { font-size: 0.85rem; color: var(--text-muted); line-height: 1.4; max-width: 26ch; }
+
+/* ─── Numbered resource list (Caregiver Resources) ───────────────────── */
+.resource-steps { list-style: none; display: flex; flex-direction: column; gap: 1.25rem; margin-top: 1.5rem; }
+.resource-step { display: flex; align-items: flex-start; gap: 1rem; }
+.resource-step .landing-step-num { flex-shrink: 0; margin-bottom: 0; }
+.resource-step-body { display: flex; flex-direction: column; gap: 0.2rem; }
+.resource-step-title { font-weight: 700; font-size: 1rem; color: var(--text); }
+.resource-step-desc { font-size: 0.9rem; color: var(--text-muted); line-height: 1.5; }
 
 /* Full-bleed colored bands -- span the whole viewport width even though
    .landing-v2 itself has no max-width, while .landing-inner keeps the text
@@ -1799,6 +1811,25 @@ button, input, select, textarea { font: inherit; }
   display: flex;
   gap: 0.6rem;
   z-index: 90;
+}
+
+@media (min-width: 1024px) {
+  /* There's no bottom nav to dock above at this width, and a fixed bar
+     would otherwise float permanently over the page footer on every
+     scroll -- so it becomes a normal card sitting after the chat thread
+     instead of pinned to the viewport. */
+  .ask-kin-page { padding-bottom: 1.25rem; }
+  .chat-input-bar {
+    position: static;
+    left: auto;
+    transform: none;
+    max-width: none;
+    margin-top: 1rem;
+    border: 1px solid var(--border);
+    border-top: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-sm);
+  }
 }
 
 .chat-input-bar input {

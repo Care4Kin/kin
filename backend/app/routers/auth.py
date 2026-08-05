@@ -74,7 +74,7 @@ def register(body: RegisterRequest, db: Session = Depends(get_db)):
     email = normalize_email(body.email)
     if db.query(User).filter(User.email == email).first():
         raise HTTPException(409, 'Email already registered')
-    if not body.password and not body.phone and not body.security_answer:
+    if not body.password and not (body.phone or '').strip() and not (body.security_answer or '').strip():
         raise HTTPException(400, 'Choose a password, or provide a phone number or security question so you can sign back in')
     user = User(
         email=email,
@@ -85,7 +85,7 @@ def register(body: RegisterRequest, db: Session = Depends(get_db)):
         role=body.role,
         phone=normalize_phone(body.phone) if body.phone else None,
         security_question=body.security_question,
-        security_answer_hash=hash_password(normalize_answer(body.security_answer)) if body.security_answer else None,
+        security_answer_hash=hash_password(normalize_answer(body.security_answer)) if (body.security_answer or '').strip() else None,
         has_seen_onboarding=False,
     )
     db.add(user)
@@ -192,7 +192,7 @@ def google_complete(body: GoogleCompleteRequest, db: Session = Depends(get_db)):
         role=body.role,
         google_sub=idinfo['sub'],
         security_question=body.security_question,
-        security_answer_hash=hash_password(normalize_answer(body.security_answer)) if body.security_answer else None,
+        security_answer_hash=hash_password(normalize_answer(body.security_answer)) if (body.security_answer or '').strip() else None,
         has_seen_onboarding=False,
     )
     db.add(user)
