@@ -351,6 +351,7 @@ function RxCard({ rx, isCaregiver, onDelete, onEdit }) {
     ? new Date(rx.refill_date + 'T00:00:00').toLocaleDateString('en-US', { month: 'long', day: 'numeric' })
     : null
   const daysLeft = rx.refill_date ? daysUntil(rx.refill_date) : null
+  const overdue = daysLeft !== null && daysLeft < 0
   const urgent = daysLeft !== null && daysLeft <= 10
   const scheduleLabel = rx.schedule_days
     ? (rx.schedule_days.split(',').length === 7 ? 'Every day' : rx.schedule_days.split(',').map(c => DAY_NAMES[c].slice(0, 3)).join(', '))
@@ -362,11 +363,13 @@ function RxCard({ rx, isCaregiver, onDelete, onEdit }) {
     <div className={`info-card ${urgent ? 'info-card--urgent' : ''}`}>
       <div className="info-card-header">
         <span className="info-card-title">{rx.medication_name}</span>
-        {urgent && <span className="badge badge--warn">Refill soon</span>}
+        {overdue && <span className="badge badge--danger">Overdue</span>}
+        {urgent && !overdue && <span className="badge badge--warn">Refill soon</span>}
       </div>
       {refill && (
         <p className="info-card-note">
-          {urgent ? 'Refill needed: ' : 'Next refill: '}{refill}{daysLeft !== null ? ` (${daysLeft} days)` : ''}
+          {urgent ? 'Refill needed: ' : 'Next refill: '}{refill}
+          {overdue ? ` (${-daysLeft} ${-daysLeft === 1 ? 'day' : 'days'} overdue)` : daysLeft !== null ? ` (${daysLeft} days)` : ''}
         </p>
       )}
       {showDetails && (

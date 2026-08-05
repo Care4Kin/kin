@@ -82,7 +82,9 @@ export default function Settings() {
         <p className="field-hint mb-sm">Disagree with something, or find it uncomfortable? Tell the Kin team directly and privately.</p>
         <Link to="/feedback" className="btn-secondary" style={{ display: 'block', textAlign: 'center', width: '100%' }}>Send Feedback</Link>
       </section>
-      <button className="btn-secondary" style={{ width: '100%' }} onClick={handleSignOut} title="Sign out of your Kin account">Sign Out</button>
+      <section className="inline-form">
+        <button className="btn-secondary" style={{ width: '100%' }} onClick={handleSignOut} title="Sign out of your Kin account">Sign Out</button>
+      </section>
       <DangerZoneSection isElder={user?.role === 'elder'} />
     </div>
   )

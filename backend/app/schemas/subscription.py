@@ -7,6 +7,8 @@ MAX_AMOUNT = 99999999.99
 def _amount_not_too_large(v):
     if v is not None and v > MAX_AMOUNT:
         raise ValueError(f'That amount is too big — please enter a number under ${MAX_AMOUNT:,.2f}')
+    if v is not None and v < 0:
+        raise ValueError('Amount cannot be negative.')
     return v
 
 class SubscriptionCreate(BaseModel):

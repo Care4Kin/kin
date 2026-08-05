@@ -168,7 +168,9 @@ function AtAGlanceSummary({ data }) {
     const days = daysUntil(rx.refill_date)
     return days >= 0 && days <= 10
   })
-  const nextAppt = [...data.appointments].sort((a, b) => a.date.localeCompare(b.date))[0]
+  const nextAppt = data.appointments
+    .filter(a => daysUntil(a.date) >= 0)
+    .sort((a, b) => a.date.localeCompare(b.date))[0]
 
   return (
     <div className="caregiver-summary">
