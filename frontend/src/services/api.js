@@ -51,6 +51,7 @@ export const api = {
   getMe: () => request('GET', '/api/auth/me'),
   updateProfile: (data) => request('PATCH', '/api/auth/me', data),
   changePassword: (data) => request('POST', '/api/auth/change-password', data),
+  deleteMyAccount: (data) => request('DELETE', '/api/auth/me', data),
   updateSecurityQuestion: (data) => request('PATCH', '/api/auth/security-question', data),
   sendPhoneCode: (phone) => request('POST', '/api/auth/phone/send-code', { phone }),
   verifyPhoneCode: (phone, code) => request('POST', '/api/auth/phone/verify-code', { phone, code }),

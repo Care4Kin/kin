@@ -991,6 +991,23 @@ button, input, select, textarea { font: inherit; }
 .btn-secondary:hover { border-color: var(--green-light); transform: translateY(-1px); }
 .btn-secondary:active { transform: translateY(0); }
 
+.btn-danger {
+  background: var(--surface);
+  color: var(--warn-light);
+  border: 1px solid var(--warn-border);
+  border-radius: var(--radius-sm);
+  padding: 0.8rem 1.5rem;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  width: 100%;
+  transition: background 0.15s, color 0.15s, transform 0.15s;
+  margin-top: 0.25rem;
+}
+.btn-danger:hover { background: var(--warn); color: var(--text-on-accent); transform: translateY(-1px); }
+.btn-danger:active { transform: translateY(0); }
+.btn-danger:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
 /* ─── Small action buttons (mark paid, resolve, delete) ──────────── */
 .action-row { display: flex; gap: 0.5rem; margin-top: 0.4rem; }
 

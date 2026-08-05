@@ -62,6 +62,9 @@ class ChangePasswordRequest(BaseModel):
     current_password: str
     new_password: str
 
+class DeleteAccountRequest(BaseModel):
+    current_password: str
+
 class SecurityQuestionUpdateRequest(BaseModel):
     security_question: str
     security_answer: str

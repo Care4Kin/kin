@@ -8,11 +8,14 @@ from datetime import datetime, timedelta, timezone
 from app.database import get_db
 from app.middleware.auth import get_current_user
 from app.models.user import User
+from app.models.flag import Flag
+from app.models.note import Note
 from app.schemas.user import (
     RegisterRequest, LoginRequest, UserOut, LoginOut,
     SecurityQuestionOut, ResetPasswordRequest, SecurityLoginRequest,
     UserProfileOut, ProfileUpdateRequest, ChangePasswordRequest, SecurityQuestionUpdateRequest,
     PhoneSendCodeRequest, PhoneVerifyCodeRequest, GoogleAuthRequest, GoogleCompleteRequest,
+    DeleteAccountRequest,
 )
 from app.config import settings
 from app.services.sms import send_sms, twilio_configured
@@ -252,10 +255,30 @@ def update_me(body: ProfileUpdateRequest, current_user: User = Depends(get_curre
 @router.post('/change-password')
 def change_password(body: ChangePasswordRequest, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     if not verify_password(body.current_password, current_user.password_hash):
-        raise HTTPException(401, 'Current password is incorrect')
+        # 403, not 401 -- see delete_account for why: api.js force-logs-out
+        # on any 401 with a token present, which would fire here instead of
+        # showing the form error for what is just a failed re-auth check.
+        raise HTTPException(403, 'Current password is incorrect')
     current_user.password_hash = hash_password(body.new_password)
     db.commit()
     return {'message': 'Password updated'}
+
+@router.delete('/me')
+def delete_account(body: DeleteAccountRequest, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    if not verify_password(body.current_password, current_user.password_hash):
+        # 403, not 401 -- api.js treats any 401 on an authenticated request as
+        # "your session token is invalid" and force-reloads/logs the user out
+        # before the form ever sees the error. A wrong password here is a
+        # failed re-auth check, not an invalid session, so it must not 401.
+        raise HTTPException(403, 'Current password is incorrect')
+    # These two FKs have no cascade rule, unlike everything else tied to a
+    # user/circle -- null them out so a flag/note survives the author's
+    # account deletion instead of blocking it with a FK violation.
+    db.query(Flag).filter(Flag.created_by == current_user.user_id).update({'created_by': None})
+    db.query(Note).filter(Note.author_id == current_user.user_id).update({'author_id': None})
+    db.delete(current_user)
+    db.commit()
+    return {'message': 'Account deleted'}
 
 @router.patch('/security-question')
 def update_security_question(body: SecurityQuestionUpdateRequest, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):

@@ -62,6 +62,7 @@ export default function Settings() {
         <Link to="/feedback" className="btn-secondary" style={{ display: 'block', textAlign: 'center', width: '100%' }}>Send Feedback</Link>
       </section>
       <button className="btn-secondary" style={{ width: '100%' }} onClick={handleSignOut}>Sign Out</button>
+      <DangerZoneSection isElder={user?.role === 'elder'} />
     </div>
   )
 }
@@ -284,6 +285,55 @@ function SecurityQuestionSection({ me }) {
         <FormMessage variant="error">{error}</FormMessage>
         <FormMessage variant="success">{message}</FormMessage>
         <button type="submit" className="btn-primary" disabled={saving}>{saving ? 'Saving…' : 'Update Security Question'}</button>
+      </form>
+    </section>
+  )
+}
+
+function DangerZoneSection({ isElder }) {
+  const { logout } = useAuth()
+  const navigate = useNavigate()
+  const [form, setForm] = useState({ current_password: '', confirm_text: '' })
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState('')
+
+  const canSubmit = form.current_password.length > 0 && form.confirm_text === 'DELETE'
+
+  async function handleSubmit(e) {
+    e.preventDefault()
+    setError('')
+    setSaving(true)
+    try {
+      await api.deleteMyAccount({ current_password: form.current_password })
+      logout()
+      navigate('/')
+    } catch (err) {
+      setError(err.message)
+      setSaving(false)
+    }
+  }
+
+  return (
+    <section className="inline-form">
+      <h2 className="section-label">Danger Zone</h2>
+      <p className="field-hint mb-sm">
+        {isElder
+          ? 'Permanently delete your account. This deletes your entire family circle for everyone in it — every bill, prescription, account, subscription, appointment, note, and flag. This cannot be undone.'
+          : "Permanently delete your account. You'll be removed from any family circle you're helping with. This cannot be undone."}
+      </p>
+      <form onSubmit={handleSubmit}>
+        <div className="field-group">
+          <label htmlFor="delete-password">Current Password</label>
+          <input id="delete-password" type="password" required value={form.current_password} onChange={e => setForm({ ...form, current_password: e.target.value })} />
+        </div>
+        <div className="field-group">
+          <label htmlFor="delete-confirm">Type DELETE to confirm</label>
+          <input id="delete-confirm" required value={form.confirm_text} onChange={e => setForm({ ...form, confirm_text: e.target.value })} />
+        </div>
+        <FormMessage variant="error">{error}</FormMessage>
+        <button type="submit" className="btn-danger" disabled={saving || !canSubmit}>
+          {saving ? 'Deleting…' : 'Delete My Account'}
+        </button>
       </form>
     </section>
   )
