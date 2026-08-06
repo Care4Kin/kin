@@ -14,3 +14,7 @@ requests==2.34.2
 plaid-python==40.1.0
 certifi==2026.06.17
 groq==1.6.0
+# Transitive deps of twilio/google-auth pinned explicitly to patch known CVEs
+# (PYSEC-2026-3545/3546/3547, PYSEC-2026-3552) — both allow these versions.
+aiohttp==3.14.3
+cryptography==50.0.0
