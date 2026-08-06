@@ -41,10 +41,18 @@ export function AuthProvider({ children }) {
         return
       }
       setUser(u)
+      // `loading` only needs to reflect "have we checked localStorage for a
+      // session" — resolve it here rather than waiting on the circle
+      // round-trip below, which pages that actually depend on circle
+      // readiness already track separately via `circleChecked`. Coupling
+      // this to the circle fetch made anything gated on `loading` alone
+      // (e.g. the landing page's "Go to Dashboard" button) intermittently
+      // fail to render for however long that extra request took.
+      setLoading(false)
       ensureCircle(u)
         .then(c => { setCircleId(c.circle_id); setCircleError(false) })
         .catch(err => setCircleError(err?.status !== 404))
-        .finally(() => { setCircleChecked(true); setLoading(false) })
+        .finally(() => setCircleChecked(true))
     } else {
       setLoading(false)
     }
