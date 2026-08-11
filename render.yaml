@@ -9,7 +9,7 @@ services:
     name: kin-backend
     runtime: python
     rootDir: backend
-    plan: free
+    plan: starter
     branch: master
     autoDeploy: true
     buildCommand: pip install -r requirements.txt
