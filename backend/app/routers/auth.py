@@ -10,6 +10,7 @@ from app.middleware.auth import get_current_user
 from app.models.user import User
 from app.models.flag import Flag
 from app.models.note import Note
+from app.models.trusted_device import TrustedDevice
 from app.schemas.user import (
     RegisterRequest, LoginRequest, UserOut, LoginOut,
     SecurityQuestionOut, ResetPasswordRequest, SecurityLoginRequest,
@@ -49,6 +50,32 @@ def make_token(user_id: int) -> str:
 
 MAX_SECURITY_ATTEMPTS = 5
 SECURITY_LOCKOUT_MINUTES = 15
+
+# The security question is meant as a fallback for a device that's already
+# proven itself (a password/phone/Google login, or the moment the account was
+# created) -- not a way to sign in to someone's account from anywhere on the
+# strength of a guessable answer alone. Every other login method registers
+# the calling device as trusted; the security question just checks for one.
+def _is_known_device(user: User, device_id: str | None, db: Session) -> bool:
+    if not device_id:
+        return False
+    return db.query(TrustedDevice).filter(
+        TrustedDevice.user_id == user.user_id, TrustedDevice.device_id == device_id
+    ).first() is not None
+
+def _register_device(user: User, device_id: str | None, db: Session):
+    if not device_id or _is_known_device(user, device_id, db):
+        return
+    db.add(TrustedDevice(user_id=user.user_id, device_id=device_id))
+    db.commit()
+
+def _require_known_device(user: User, device_id: str | None, db: Session):
+    if not _is_known_device(user, device_id, db):
+        raise HTTPException(
+            403,
+            "For your safety, signing in with your security question only works on a device "
+            "you've used before. Please log in with your password or a text code first.",
+        )
 
 def _check_security_lockout(user: User):
     if user.security_question_locked_until:
@@ -92,6 +119,10 @@ def register(body: RegisterRequest, db: Session = Depends(get_db)):
     db.commit()
     db.refresh(user)
     claim_invitations(user, db)
+    # The device creating the account is inherently trusted -- this is what
+    # lets a brand-new security-question-only signup immediately log itself
+    # in afterward (see Register.jsx) without tripping the device check below.
+    _register_device(user, body.device_id, db)
     return user
 
 @router.post('/login', response_model=LoginOut)
@@ -99,6 +130,7 @@ def login(body: LoginRequest, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.email == normalize_email(body.email)).first()
     if not user or not verify_password(body.password, user.password_hash):
         raise HTTPException(401, 'Invalid email or password')
+    _register_device(user, body.device_id, db)
     return {'token': make_token(user.user_id), 'user_id': user.user_id, 'role': user.role, 'full_name': user.full_name, 'email': user.email}
 
 @router.post('/logout')
@@ -139,6 +171,7 @@ def verify_phone_code(body: PhoneVerifyCodeRequest, db: Session = Depends(get_db
     user.phone_verification_code_hash = None
     user.phone_verification_expires_at = None
     db.commit()
+    _register_device(user, body.device_id, db)
     return {'token': make_token(user.user_id), 'user_id': user.user_id, 'role': user.role, 'full_name': user.full_name, 'email': user.email}
 
 def _verify_google_token(id_token_str: str) -> dict:
@@ -173,6 +206,7 @@ def google_auth(body: GoogleAuthRequest, db: Session = Depends(get_db)):
         user.google_sub = idinfo['sub']
         db.commit()
 
+    _register_device(user, body.device_id, db)
     return {'token': make_token(user.user_id), 'user_id': user.user_id, 'role': user.role, 'full_name': user.full_name, 'email': user.email}
 
 @router.post('/google/complete', response_model=LoginOut)
@@ -199,6 +233,7 @@ def google_complete(body: GoogleCompleteRequest, db: Session = Depends(get_db)):
     db.commit()
     db.refresh(user)
     claim_invitations(user, db)
+    _register_device(user, body.device_id, db)
 
     return {'token': make_token(user.user_id), 'user_id': user.user_id, 'role': user.role, 'full_name': user.full_name, 'email': user.email}
 
@@ -214,6 +249,7 @@ def reset_password(body: ResetPasswordRequest, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.email == normalize_email(body.email)).first()
     if not user or not user.security_answer_hash:
         raise HTTPException(404, 'No security question found for that email')
+    _require_known_device(user, body.device_id, db)
     _check_security_lockout(user)
     if not verify_password(normalize_answer(body.security_answer), user.security_answer_hash):
         _record_failed_security_attempt(user, db)
@@ -228,6 +264,7 @@ def login_with_security_question(body: SecurityLoginRequest, db: Session = Depen
     user = db.query(User).filter(User.email == normalize_email(body.email)).first()
     if not user or not user.security_answer_hash:
         raise HTTPException(404, 'No security question found for that email')
+    _require_known_device(user, body.device_id, db)
     _check_security_lockout(user)
     if not verify_password(normalize_answer(body.security_answer), user.security_answer_hash):
         _record_failed_security_attempt(user, db)
