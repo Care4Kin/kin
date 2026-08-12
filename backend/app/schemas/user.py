@@ -15,10 +15,12 @@ class RegisterRequest(BaseModel):
     phone: Optional[str] = None
     security_question: Optional[str] = None
     security_answer: Optional[str] = None
+    device_id: Optional[str] = None
 
 class LoginRequest(BaseModel):
     email: str
     password: str
+    device_id: Optional[str] = None
 
 class UserOut(BaseModel):
     user_id: int
@@ -40,10 +42,12 @@ class ResetPasswordRequest(BaseModel):
     email: str
     security_answer: str
     new_password: str
+    device_id: Optional[str] = None
 
 class SecurityLoginRequest(BaseModel):
     email: str
     security_answer: str
+    device_id: Optional[str] = None
 
 class UserProfileOut(BaseModel):
     user_id: int
@@ -78,12 +82,15 @@ class PhoneSendCodeRequest(BaseModel):
 class PhoneVerifyCodeRequest(BaseModel):
     phone: str
     code: str
+    device_id: Optional[str] = None
 
 class GoogleAuthRequest(BaseModel):
     id_token: str
+    device_id: Optional[str] = None
 
 class GoogleCompleteRequest(BaseModel):
     id_token: str
     role: Role
     security_question: Optional[str] = None
     security_answer: Optional[str] = None
+    device_id: Optional[str] = None

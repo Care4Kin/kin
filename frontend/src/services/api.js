@@ -1,3 +1,5 @@
+import { getDeviceId } from '../utils/deviceId'
+
 const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
 
 function getToken() {
@@ -42,21 +44,21 @@ async function request(method, path, body) {
 
 export const api = {
   // Auth
-  register: (data) => request('POST', '/api/auth/register', data),
-  login: (data) => request('POST', '/api/auth/login', data),
+  register: (data) => request('POST', '/api/auth/register', { ...data, device_id: getDeviceId() }),
+  login: (data) => request('POST', '/api/auth/login', { ...data, device_id: getDeviceId() }),
   logout: () => request('POST', '/api/auth/logout'),
   getSecurityQuestion: (email) => request('GET', `/api/auth/security-question?email=${encodeURIComponent(email)}`),
-  resetPassword: (data) => request('POST', '/api/auth/reset-password', data),
-  loginWithSecurityQuestion: (data) => request('POST', '/api/auth/security-question/login', data),
+  resetPassword: (data) => request('POST', '/api/auth/reset-password', { ...data, device_id: getDeviceId() }),
+  loginWithSecurityQuestion: (data) => request('POST', '/api/auth/security-question/login', { ...data, device_id: getDeviceId() }),
   getMe: () => request('GET', '/api/auth/me'),
   updateProfile: (data) => request('PATCH', '/api/auth/me', data),
   changePassword: (data) => request('POST', '/api/auth/change-password', data),
   deleteMyAccount: (data) => request('DELETE', '/api/auth/me', data),
   updateSecurityQuestion: (data) => request('PATCH', '/api/auth/security-question', data),
   sendPhoneCode: (phone) => request('POST', '/api/auth/phone/send-code', { phone }),
-  verifyPhoneCode: (phone, code) => request('POST', '/api/auth/phone/verify-code', { phone, code }),
-  googleAuth: (idToken) => request('POST', '/api/auth/google', { id_token: idToken }),
-  googleComplete: (data) => request('POST', '/api/auth/google/complete', data),
+  verifyPhoneCode: (phone, code) => request('POST', '/api/auth/phone/verify-code', { phone, code, device_id: getDeviceId() }),
+  googleAuth: (idToken) => request('POST', '/api/auth/google', { id_token: idToken, device_id: getDeviceId() }),
+  googleComplete: (data) => request('POST', '/api/auth/google/complete', { ...data, device_id: getDeviceId() }),
 
   // Circles
   getMyCircle: () => request('GET', '/api/circles/mine'),
