@@ -338,7 +338,50 @@ function SecurityQuestionSection({ me }) {
         <FormMessage variant="success">{message}</FormMessage>
         <button type="submit" className="btn-primary" disabled={saving} title="Save your new security question and answer">{saving ? 'Saving…' : 'Update Security Question'}</button>
       </form>
+      <TrustDeviceToggle />
     </section>
+  )
+}
+
+function TrustDeviceToggle() {
+  const [trusted, setTrusted] = useState(null)
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState('')
+
+  useEffect(() => {
+    api.isThisDeviceTrusted().then(r => setTrusted(r.trusted)).catch(() => setTrusted(false))
+  }, [])
+
+  async function handleChange(e) {
+    const next = e.target.checked
+    setBusy(true)
+    setError('')
+    try {
+      if (next) await api.trustThisDevice()
+      else await api.untrustThisDevice()
+      setTrusted(next)
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  if (trusted === null) return null
+
+  return (
+    <div className="mt-md">
+      <label className="checkbox-row">
+        <input type="checkbox" checked={trusted} disabled={busy} onChange={handleChange} />
+        Trust this device for security-question sign-in
+      </label>
+      <p className="field-hint">
+        {trusted
+          ? "You can sign in here with just your security question — no password needed."
+          : "Signing in with just your security question only works on a device you've checked this on. Logging in with your password or a text code does this automatically."}
+      </p>
+      <FormMessage variant="error">{error}</FormMessage>
+    </div>
   )
 }
 

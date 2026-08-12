@@ -94,3 +94,9 @@ class GoogleCompleteRequest(BaseModel):
     security_question: Optional[str] = None
     security_answer: Optional[str] = None
     device_id: Optional[str] = None
+
+class TrustDeviceRequest(BaseModel):
+    device_id: str
+
+class TrustDeviceOut(BaseModel):
+    trusted: bool

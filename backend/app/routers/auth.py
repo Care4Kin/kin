@@ -16,7 +16,7 @@ from app.schemas.user import (
     SecurityQuestionOut, ResetPasswordRequest, SecurityLoginRequest,
     UserProfileOut, ProfileUpdateRequest, ChangePasswordRequest, SecurityQuestionUpdateRequest,
     PhoneSendCodeRequest, PhoneVerifyCodeRequest, GoogleAuthRequest, GoogleCompleteRequest,
-    DeleteAccountRequest,
+    DeleteAccountRequest, TrustDeviceRequest, TrustDeviceOut,
 )
 from app.config import settings
 from app.services.sms import send_sms, twilio_configured
@@ -327,3 +327,28 @@ def update_security_question(body: SecurityQuestionUpdateRequest, current_user: 
     current_user.security_answer_hash = hash_password(normalize_answer(body.security_answer))
     db.commit()
     return {'message': 'Security question updated'}
+
+# These three let an already-signed-in user directly manage whether *this*
+# browser can use their security question to sign in later -- the normal
+# path is automatic (any password/phone/Google login trusts the device that
+# did it), but a device can end up untrusted in ways that aren't obvious
+# from the outside (private browsing, a cleared localStorage, signing in
+# from a device other than the one attempting the security-question login).
+# Being logged in at all is already proof of the same thing a password
+# login would prove, so no re-auth is required here.
+@router.get('/trust-device', response_model=TrustDeviceOut)
+def get_device_trust(device_id: str, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    return {'trusted': _is_known_device(current_user, device_id, db)}
+
+@router.post('/trust-device', response_model=TrustDeviceOut)
+def add_device_trust(body: TrustDeviceRequest, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    _register_device(current_user, body.device_id, db)
+    return {'trusted': True}
+
+@router.delete('/trust-device', response_model=TrustDeviceOut)
+def remove_device_trust(device_id: str, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    db.query(TrustedDevice).filter(
+        TrustedDevice.user_id == current_user.user_id, TrustedDevice.device_id == device_id
+    ).delete()
+    db.commit()
+    return {'trusted': False}
